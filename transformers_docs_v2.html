@@ -1,0 +1,2297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🤗 Transformers — Deep Dive Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#080b12;--s1:#0e1118;--s2:#141925;--s3:#1c2233;--border:#222840;
+  --accent:#6ee7f7;--accent2:#a78bfa;--accent3:#f472b6;--gold:#fbbf24;
+  --text:#e8eaf6;--dim:#8892b0;--muted:#4a5568;
+  --green:#4ade80;--red:#f87171;--orange:#fb923c;
+  --nav:272px;--code:#05080f;
+  --glow:0 0 20px rgba(110,231,247,.15);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;line-height:1.75;font-size:15px}
+
+/* ── SIDEBAR ── */
+#sb{width:var(--nav);background:var(--s1);border-right:1px solid var(--border);position:fixed;top:0;left:0;bottom:0;overflow-y:auto;z-index:100;display:flex;flex-direction:column}
+#sb::-webkit-scrollbar{width:3px}
+#sb::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.sh{padding:22px 18px;border-bottom:1px solid var(--border)}
+.slogo{font-family:'Playfair Display',serif;font-size:20px;color:var(--accent);display:flex;align-items:center;gap:10px;margin-bottom:6px;letter-spacing:-.3px}
+.stag{font-size:10.5px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
+.ss{padding:14px 18px;border-bottom:1px solid var(--border)}
+.ss input{width:100%;background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;font-family:'Outfit',sans-serif;outline:none;transition:border-color .2s}
+.ss input:focus{border-color:var(--accent)}
+.ss input::placeholder{color:var(--muted)}
+.ns{padding:6px 0}
+.nt{font-size:9.5px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);padding:12px 18px 5px;font-weight:600}
+.ni{display:flex;align-items:center;gap:9px;padding:7px 18px;font-size:13px;color:var(--dim);cursor:pointer;border-left:2px solid transparent;transition:all .12s}
+.ni:hover{background:var(--s2);color:var(--text);border-left-color:var(--border)}
+.ni.active{background:rgba(110,231,247,.07);color:var(--accent);border-left-color:var(--accent);font-weight:600}
+.nbadge{margin-left:auto;font-size:9px;padding:2px 8px;border-radius:20px;background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.3);color:var(--green)}
+
+/* ── MAIN ── */
+#main{margin-left:var(--nav);flex:1;display:flex;flex-direction:column}
+#tb{position:sticky;top:0;background:rgba(8,11,18,.9);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:12px 40px;display:flex;align-items:center;gap:14px;z-index:50;font-size:13px}
+.bc{display:flex;align-items:center;gap:8px;color:var(--muted)}
+.bc a{color:var(--muted);text-decoration:none;cursor:pointer;transition:color .15s}
+.bc a:hover{color:var(--accent)}
+.bc .sep{opacity:.3}
+.bc .cur{color:var(--dim)}
+.vbadge{margin-left:auto;background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.3);color:var(--accent2);font-size:11px;padding:3px 10px;border-radius:20px;font-family:'JetBrains Mono',monospace}
+
+/* ── CONTENT ── */
+#ct{max-width:900px;padding:48px 44px 100px;margin:0 auto;width:100%}
+.pg{display:none}
+.pg.active{display:block}
+
+/* ── TYPOGRAPHY ── */
+h1{font-family:'Playfair Display',serif;font-size:44px;font-weight:900;line-height:1.12;margin-bottom:20px;letter-spacing:-.5px}
+h1 .grad{background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+h2{font-size:26px;font-weight:700;margin:56px 0 18px;color:var(--text);padding-top:56px;border-top:1px solid var(--border);display:flex;align-items:center;gap:12px}
+h2.noline{border-top:none;padding-top:0;margin-top:0}
+h3{font-size:17px;font-weight:600;margin:28px 0 12px;color:var(--accent);letter-spacing:-.2px}
+p{margin-bottom:16px;color:var(--dim);line-height:1.8}
+p strong{color:var(--text)}
+a{color:var(--accent);text-decoration:none}
+
+/* ── HERO ── */
+.hero{padding:40px 0 48px;border-bottom:1px solid var(--border);margin-bottom:48px}
+.htags{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px}
+.tag{font-size:11px;font-family:'JetBrains Mono',monospace;padding:4px 13px;border-radius:20px;border:1px solid}
+.t1{border-color:rgba(110,231,247,.4);color:var(--accent);background:rgba(110,231,247,.05)}
+.t2{border-color:rgba(167,139,250,.4);color:var(--accent2);background:rgba(167,139,250,.05)}
+.t3{border-color:rgba(244,114,182,.4);color:var(--accent3);background:rgba(244,114,182,.05)}
+.t4{border-color:rgba(74,222,128,.4);color:var(--green);background:rgba(74,222,128,.05)}
+.t5{border-color:rgba(251,191,36,.4);color:var(--gold);background:rgba(251,191,36,.05)}
+.hdesc{font-size:18px;color:var(--dim);max-width:680px;margin-bottom:0;line-height:1.8}
+
+/* ── CODE BLOCKS ── */
+.cb{background:var(--code);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin:22px 0;position:relative}
+.cbh{padding:10px 16px;background:var(--s1);border-bottom:1px solid var(--border);font-size:12px;color:var(--muted);display:flex;align-items:center;gap:10px}
+.lb{font-family:'JetBrains Mono',monospace;font-size:10px;background:rgba(110,231,247,.08);color:var(--accent);border:1px solid rgba(110,231,247,.2);padding:2px 8px;border-radius:4px}
+.lb2{background:rgba(167,139,250,.08);color:var(--accent2);border-color:rgba(167,139,250,.2)}
+.lb3{background:rgba(74,222,128,.08);color:var(--green);border-color:rgba(74,222,128,.2)}
+.cpb{margin-left:auto;background:var(--s2);border:1px solid var(--border);color:var(--muted);font-size:11px;padding:3px 10px;border-radius:6px;cursor:pointer;font-family:'Outfit',sans-serif;transition:all .15s}
+.cpb:hover{color:var(--text);border-color:var(--accent)}
+.cpb.ok{color:var(--green);border-color:var(--green)}
+.cb pre{padding:22px;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:1.75}
+.cb .out{padding:14px 22px;background:rgba(74,222,128,.04);border-top:1px solid rgba(74,222,128,.1);font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--green)}
+.cb .out::before{content:"▶  Output: ";color:var(--muted);font-size:11px}
+/* syntax */
+.kw{color:#c792ea}.fn{color:#82aaff}.st{color:#c3e88d}.cm{color:#4a5568;font-style:italic}.nm{color:#f78c6c}.cl{color:#ffcb6b}.op{color:#89ddff}.im{color:#ff5572}.at{color:#ffcb6b}
+
+/* ── CALLOUTS ── */
+.cal{border-radius:12px;padding:18px 22px;margin:22px 0;display:flex;gap:16px;border:1px solid}
+.ci{font-size:22px;flex-shrink:0;line-height:1}
+.cc .ct{font-weight:700;margin-bottom:6px;font-size:12.5px;text-transform:uppercase;letter-spacing:.07em}
+.cc .cb2{color:var(--dim);font-size:14px;line-height:1.65}
+.cal.info{background:rgba(110,231,247,.05);border-color:rgba(110,231,247,.2)}.cal.info .ct{color:var(--accent)}
+.cal.warn{background:rgba(251,191,36,.05);border-color:rgba(251,191,36,.2)}.cal.warn .ct{color:var(--gold)}
+.cal.tip{background:rgba(74,222,128,.05);border-color:rgba(74,222,128,.2)}.cal.tip .ct{color:var(--green)}
+.cal.math{background:rgba(167,139,250,.05);border-color:rgba(167,139,250,.2)}.cal.math .ct{color:var(--accent2)}
+
+/* ── MATH FORMULA BOXES ── */
+.fbox{background:var(--s2);border:1px solid rgba(167,139,250,.3);border-radius:14px;padding:24px 28px;margin:24px 0;text-align:center}
+.fbox .formula{font-family:'JetBrains Mono',monospace;font-size:20px;color:var(--accent2);margin-bottom:10px;letter-spacing:.02em}
+.fbox .fdesc{font-size:13px;color:var(--muted)}
+
+/* ── MATH STEP BOXES ── */
+.mstep{display:flex;gap:16px;padding:20px;background:var(--s2);border:1px solid var(--border);border-radius:12px;margin-bottom:10px;align-items:flex-start}
+.mstep-n{width:34px;height:34px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:#000;flex-shrink:0;font-family:'JetBrains Mono',monospace}
+.mstep-body{flex:1}
+.mstep-title{font-weight:700;color:var(--text);margin-bottom:6px;font-size:15px}
+.mstep-desc{color:var(--dim);font-size:14px;line-height:1.65}
+.mstep-math{font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--accent2);background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.15);border-radius:8px;padding:10px 14px;margin-top:10px}
+
+/* ── DIAGRAMS ── */
+.dbox{background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:32px;margin:26px 0;overflow-x:auto}
+.dtitle{text-align:center;font-size:11.5px;color:var(--muted);margin-top:16px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.08em}
+
+/* ── INTERACTIVE DEMO ── */
+.demo{background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:26px;margin:26px 0}
+.demo-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.demo-title span{background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.trow{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.tok{padding:9px 16px;border-radius:10px;font-family:'JetBrains Mono',monospace;font-size:13px;cursor:pointer;border:2px solid var(--border);background:var(--s2);color:var(--dim);transition:all .18s;font-weight:500}
+.tok:hover,.tok.sel{border-color:var(--accent);color:var(--accent);background:rgba(110,231,247,.07);box-shadow:0 0 12px rgba(110,231,247,.1)}
+.agrid{display:none;margin-top:16px}
+.agrid.vis{display:block}
+.arow{display:flex;gap:6px;margin-bottom:7px;align-items:center}
+.albl{font-size:12px;font-family:'JetBrains Mono',monospace;color:var(--muted);width:90px;text-align:right;padding-right:10px}
+.acell{width:60px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-family:'JetBrains Mono',monospace;transition:all .3s;font-weight:600}
+
+/* ── TABLES ── */
+table{width:100%;border-collapse:collapse;margin:22px 0;font-size:14px}
+th{background:var(--s2);padding:12px 16px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);border-bottom:1px solid var(--border);font-weight:600}
+td{padding:12px 16px;border-bottom:1px solid var(--border);color:var(--dim);vertical-align:top;line-height:1.6}
+td code{font-family:'JetBrains Mono',monospace;background:var(--s2);padding:2px 7px;border-radius:4px;font-size:12px;color:var(--accent);border:1px solid var(--border)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.02)}
+
+/* ── CARDS ── */
+.cgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:26px 0}
+.card{background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:22px;cursor:pointer;transition:all .2s}
+.card:hover{border-color:var(--accent);background:var(--s2);transform:translateY(-2px);box-shadow:var(--glow)}
+.cico{font-size:26px;margin-bottom:12px}
+.ctitle{font-size:14px;font-weight:700;color:var(--text);margin-bottom:7px}
+.cdesc{font-size:13px;color:var(--muted);line-height:1.55}
+
+/* ── HBOX ── */
+.hbox{background:linear-gradient(135deg,rgba(110,231,247,.06),rgba(167,139,250,.04));border:1px solid rgba(110,231,247,.2);border-radius:14px;padding:26px;margin:26px 0}
+
+/* ── MATRIX VIZ ── */
+.mat-wrap{overflow-x:auto;margin:16px 0}
+.mat{display:inline-flex;flex-direction:column;gap:3px;padding:12px;background:var(--s2);border:1px solid var(--border);border-radius:10px;font-family:'JetBrains Mono',monospace}
+.mat-row{display:flex;gap:3px}
+.mat-cell{width:52px;height:36px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;transition:all .3s;cursor:default}
+
+/* ── PROJECT BOX ── */
+.project{background:var(--s1);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin:28px 0}
+.project-header{padding:20px 24px;background:linear-gradient(135deg,rgba(110,231,247,.06),rgba(167,139,250,.04));border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px}
+.project-ico{font-size:32px}
+.project-meta{flex:1}
+.project-title{font-size:18px;font-weight:800;color:var(--text);margin-bottom:4px}
+.project-tags{display:flex;gap:6px;flex-wrap:wrap}
+.project-body{padding:24px}
+.ptag{font-size:11px;padding:2px 10px;border-radius:20px;border:1px solid;font-family:'JetBrains Mono',monospace}
+.ptag-b{border-color:rgba(110,231,247,.3);color:var(--accent);background:rgba(110,231,247,.06)}
+.ptag-p{border-color:rgba(167,139,250,.3);color:var(--accent2);background:rgba(167,139,250,.06)}
+.ptag-g{border-color:rgba(74,222,128,.3);color:var(--green);background:rgba(74,222,128,.06)}
+
+/* ── CHATBOT WIDGET ── */
+#chatbot-widget{background:var(--s1);border:1px solid var(--accent);border-radius:16px;overflow:hidden;margin:28px 0;box-shadow:0 0 30px rgba(110,231,247,.08)}
+.chat-header{padding:16px 20px;background:linear-gradient(135deg,rgba(110,231,247,.08),rgba(167,139,250,.05));border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.chat-dot{width:10px;height:10px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.chat-title{font-weight:700;font-size:14px}
+.chat-subtitle{font-size:12px;color:var(--muted)}
+.chat-messages{height:340px;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+.chat-messages::-webkit-scrollbar{width:3px}
+.chat-messages::-webkit-scrollbar-thumb{background:var(--border)}
+.msg{max-width:80%;padding:12px 16px;border-radius:12px;font-size:14px;line-height:1.6}
+.msg.bot{background:var(--s2);color:var(--text);border:1px solid var(--border);align-self:flex-start;border-bottom-left-radius:4px}
+.msg.user{background:linear-gradient(135deg,rgba(110,231,247,.15),rgba(167,139,250,.1));color:var(--text);border:1px solid rgba(110,231,247,.2);align-self:flex-end;border-bottom-right-radius:4px}
+.msg.typing{color:var(--muted)}
+.chat-input-row{padding:14px 16px;border-top:1px solid var(--border);display:flex;gap:10px}
+.chat-input{flex:1;background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--text);font-size:14px;font-family:'Outfit',sans-serif;outline:none;transition:border-color .2s}
+.chat-input:focus{border-color:var(--accent)}
+.chat-send{background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:10px;padding:10px 18px;color:#000;font-weight:700;cursor:pointer;font-size:13px;transition:opacity .2s}
+.chat-send:hover{opacity:.85}
+.chat-suggestions{display:flex;gap:8px;flex-wrap:wrap;padding:10px 16px 0}
+.sug{font-size:12px;padding:5px 12px;border:1px solid var(--border);border-radius:20px;color:var(--muted);cursor:pointer;background:var(--s2);transition:all .15s}
+.sug:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ── PREV/NEXT ── */
+.pn{display:flex;gap:16px;margin-top:64px;padding-top:32px;border-top:1px solid var(--border)}
+.pnb{flex:1;background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:18px 22px;cursor:pointer;display:flex;flex-direction:column;gap:4px;transition:all .2s}
+.pnb:hover{border-color:var(--accent);background:var(--s2);box-shadow:var(--glow)}
+.pnb.r{text-align:right}
+.pnl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.pntitle{font-size:14.5px;color:var(--text);font-weight:700}
+code{font-family:'JetBrains Mono',monospace;background:var(--s2);padding:2px 7px;border-radius:4px;font-size:87%;color:var(--accent);border:1px solid var(--border)}
+ul,ol{padding-left:24px;margin-bottom:16px}
+li{color:var(--dim);font-size:15px;margin-bottom:7px;line-height:1.7}
+li strong{color:var(--text)}
+
+/* ── IBOX (terminal) ── */
+.ibox{background:var(--code);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.ibh{padding:10px 16px;background:var(--s1);border-bottom:1px solid var(--border);font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px}
+.dot{width:10px;height:10px;border-radius:50%}.dr{background:#ff5f57}.dy{background:#febc2e}.dg2{background:#28c840}
+.ibox pre{padding:16px 20px;font-family:'JetBrains Mono',monospace;font-size:13.5px;color:var(--green)}
+
+/* ── RETURN BADGE ── */
+.ret{display:inline-flex;align-items:center;gap:6px;background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.25);border-radius:8px;padding:6px 14px;margin:12px 0;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--green)}
+.ret::before{content:"→ Returns: ";color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+
+/* STEPS */
+.steps{margin:20px 0}
+.step{display:flex;gap:16px;padding:20px 0;border-bottom:1px solid var(--border)}
+.step:last-child{border-bottom:none}
+.snum{width:32px;height:32px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#000;flex-shrink:0;font-family:'JetBrains Mono',monospace}
+.sbody{flex:1}.stitle{font-weight:700;color:var(--text);margin-bottom:6px}.sdesc{font-size:14px;color:var(--dim)}
+</style>
+</head>
+<body>
+<!-- SIDEBAR -->
+<nav id="sb">
+  <div class="sh">
+    <div class="slogo">🤗 Transformers</div>
+    <div class="stag">Deep Dive — Zero to Chatbot</div>
+  </div>
+  <div class="ss"><input type="text" placeholder="🔍 Search topics..." oninput="filterNav(this.value)"></div>
+  <div id="navlist">
+    <div class="ns"><div class="nt">🚀 Start Here</div>
+      <a class="ni active" onclick="sp('intro')">🏠 Introduction</a>
+      <a class="ni" onclick="sp('install')">⚙️ Installation</a>
+      <a class="ni" onclick="sp('quickstart')">⚡ Quick Start</a>
+    </div>
+    <div class="ns"><div class="nt">🧮 Math & Concepts</div>
+      <a class="ni" onclick="sp('what')">🔷 What is a Transformer?</a>
+      <a class="ni" onclick="sp('attention')">👁️ Attention — The Math</a>
+      <a class="ni" onclick="sp('multihead')">🎯 Multi-Head Attention</a>
+      <a class="ni" onclick="sp('tokenization')">🔤 Tokenization</a>
+      <a class="ni" onclick="sp('embeddings')">📐 Embeddings</a>
+      <a class="ni" onclick="sp('posenc')">📍 Positional Encoding</a>
+    </div>
+    <div class="ns"><div class="nt">🔧 Main API</div>
+      <a class="ni" onclick="sp('pipeline')">🔁 pipeline() <span class="nbadge">Easiest</span></a>
+      <a class="ni" onclick="sp('auto')">🤖 Auto Classes</a>
+      <a class="ni" onclick="sp('tokenizer')">✂️ Tokenizer</a>
+      <a class="ni" onclick="sp('modelload')">📦 Loading Models</a>
+    </div>
+    <div class="ns"><div class="nt">📋 NLP Tasks</div>
+      <a class="ni" onclick="sp('sentiment')">❤️ Sentiment Analysis</a>
+      <a class="ni" onclick="sp('ner')">🏷️ Named Entity Recognition</a>
+      <a class="ni" onclick="sp('qa')">❓ Question Answering</a>
+      <a class="ni" onclick="sp('summarization')">📝 Summarization</a>
+      <a class="ni" onclick="sp('translation')">🌐 Translation</a>
+      <a class="ni" onclick="sp('textgen')">✍️ Text Generation</a>
+      <a class="ni" onclick="sp('fillmask')">🎭 Fill Mask</a>
+    </div>
+    <div class="ns"><div class="nt">🎓 Training</div>
+      <a class="ni" onclick="sp('trainer')">🏋️ Trainer API</a>
+      <a class="ni" onclick="sp('finetune')">🎯 Fine-Tuning Existing Models</a>
+      <a class="ni" onclick="sp('scratch')">🏗️ Build From Scratch</a>
+      <a class="ni" onclick="sp('datasets')">🗄️ Datasets Library</a>
+    </div>
+    <div class="ns"><div class="nt">🏗️ Architectures</div>
+      <a class="ni" onclick="sp('bert')">🔵 BERT</a>
+      <a class="ni" onclick="sp('gpt')">🟠 GPT-2 / GPT</a>
+      <a class="ni" onclick="sp('t5')">🟢 T5</a>
+      <a class="ni" onclick="sp('roberta')">🟣 RoBERTa</a>
+    </div>
+    <div class="ns"><div class="nt">🌍 Real-Life Projects</div>
+      <a class="ni" onclick="sp('reallife')">🌐 Transformers in the Wild</a>
+      <a class="ni" onclick="sp('chatbot')">💬 Build an AI Chatbot</a>
+      <a class="ni" onclick="sp('sentiment-app')">📊 Sentiment Dashboard</a>
+    </div>
+    <div class="ns"><div class="nt">⚡ Advanced</div>
+      <a class="ni" onclick="sp('genconfig')">🎲 Generation Config</a>
+      <a class="ni" onclick="sp('hub')">☁️ Hugging Face Hub</a>
+      <a class="ni" onclick="sp('optimize')">🚀 Optimization & Speed</a>
+      <a class="ni" onclick="sp('peft')">🔩 PEFT / LoRA</a>
+    </div>
+  </div>
+</nav>
+
+<main id="main">
+  <div id="tb">
+    <div class="bc"><a onclick="sp('intro')">Docs</a><span class="sep">/</span><span class="cur" id="bcc">Introduction</span></div>
+    <span class="vbadge">v4.40</span>
+  </div>
+  <div id="ct">
+<!-- INTRO -->
+<div class="pg active" id="pg-intro">
+<div class="hero">
+  <div class="htags"><span class="tag t1">NLP</span><span class="tag t2">PyTorch</span><span class="tag t3">Deep Learning</span><span class="tag t4">Beginner → Pro</span><span class="tag t5">With Projects</span></div>
+  <h1>🤗 Transformers<br><span class="grad">Deep Dive Guide</span></h1>
+  <p class="hdesc">From the math behind attention, to fine-tuning real models, to building a working AI chatbot — everything in one place with interactive demos and copy-paste code.</p>
+</div>
+<h2 class="noline">📦 What's Inside?</h2>
+<div class="cgrid">
+  <div class="card" onclick="sp('attention')"><div class="cico">🧮</div><div class="ctitle">Attention Math — Step by Step</div><div class="cdesc">Interactive Q, K, V visualizer, matrix calculations, softmax explained with actual numbers.</div></div>
+  <div class="card" onclick="sp('pipeline')"><div class="cico">🔁</div><div class="ctitle">Every Pipeline Task + Returns</div><div class="cdesc">All 12 tasks with exact code, what gets returned, and what each output field means.</div></div>
+  <div class="card" onclick="sp('chatbot')"><div class="cico">💬</div><div class="ctitle">Build an AI Chatbot (Project)</div><div class="cdesc">Complete medium-level project: transformer-powered chatbot with a real UI you can deploy.</div></div>
+  <div class="card" onclick="sp('scratch')"><div class="cico">🏗️</div><div class="ctitle">Build a Transformer From Scratch</div><div class="cdesc">Code a Transformer in pure PyTorch. Understand every layer, every weight, every forward pass.</div></div>
+</div>
+<h2>⚡ Quick Install</h2>
+<div class="ibox">
+  <div class="ibh"><div class="dot dr"></div><div class="dot dy"></div><div class="dot dg2"></div><span style="margin-left:8px;font-size:12px">Terminal</span></div>
+  <pre>$ pip install transformers torch datasets accelerate</pre>
+</div>
+<h2>🗺️ Learning Path</h2>
+<div class="steps">
+  <div class="step"><div class="snum">1</div><div class="sbody"><div class="stitle">Understand the Math</div><div class="sdesc">Start with the <strong>Attention Mechanism</strong> page — it has interactive demos and step-by-step matrix calculations.</div></div></div>
+  <div class="step"><div class="snum">2</div><div class="sbody"><div class="stitle">Use Pre-trained Models</div><div class="sdesc">Learn <code>pipeline()</code> — run sentiment analysis, NER, translation in 3 lines. See exactly what it returns.</div></div></div>
+  <div class="step"><div class="snum">3</div><div class="sbody"><div class="stitle">Fine-Tune on Your Data</div><div class="sdesc">Take any pre-trained model and adapt it to your specific task with the Trainer API.</div></div></div>
+  <div class="step"><div class="snum">4</div><div class="sbody"><div class="stitle">Build Real Projects</div><div class="sdesc">Use the AI Chatbot project as a template — fully working code, file structure, and deployment notes.</div></div></div>
+</div>
+<div class="pn"><div></div><a class="pnb r" onclick="sp('install')"><span class="pnl">Next →</span><span class="pntitle">Installation</span></a></div>
+</div>
+
+<!-- INSTALL -->
+<div class="pg" id="pg-install">
+<h1>⚙️ Installation</h1>
+<p>Get everything running. Python 3.8+ required. No GPU needed to start.</p>
+<div class="cb"><div class="cbh"><span class="lb">bash</span><span>Full install</span><button class="cpb" onclick="cc(this)">Copy</button></div>
+<pre><span class="cm"># Core library</span>
+pip install transformers
+
+<span class="cm"># PyTorch (CPU)</span>
+pip install torch
+
+<span class="cm"># PyTorch + CUDA 11.8 (GPU)</span>
+pip install torch --index-url https://download.pytorch.org/whl/cu118
+
+<span class="cm"># Training utilities</span>
+pip install datasets accelerate evaluate peft
+
+<span class="cm"># Optional: push models to Hub</span>
+pip install huggingface_hub</pre></div>
+<div class="cb"><div class="cbh"><span class="lb">python</span><span>Verify install</span><button class="cpb" onclick="cc(this)">Copy</button></div>
+<pre><span class="im">import</span> transformers, torch
+
+<span class="fn">print</span>(<span class="st">"Transformers:"</span>, transformers.__version__)  <span class="cm"># e.g. 4.40.0</span>
+<span class="fn">print</span>(<span class="st">"PyTorch:"</span>, torch.__version__)              <span class="cm"># e.g. 2.2.0</span>
+<span class="fn">print</span>(<span class="st">"CUDA:"</span>, torch.cuda.<span class="fn">is_available</span>())         <span class="cm"># True if GPU</span>
+<span class="fn">print</span>(<span class="st">"Device:"</span>, <span class="st">"cuda"</span> <span class="kw">if</span> torch.cuda.<span class="fn">is_available</span>() <span class="kw">else</span> <span class="st">"cpu"</span>)</pre>
+<div class="out">Transformers: 4.40.0 | PyTorch: 2.2.0 | CUDA: True | Device: cuda</div></div>
+<div class="pn"><a class="pnb" onclick="sp('intro')"><span class="pnl">← Prev</span><span class="pntitle">Introduction</span></a><a class="pnb r" onclick="sp('quickstart')"><span class="pnl">Next →</span><span class="pntitle">Quick Start</span></a></div>
+</div>
+
+<!-- QUICKSTART -->
+<div class="pg" id="pg-quickstart">
+<h1>⚡ Quick Start</h1>
+<p>Run your first AI model in 3 lines.</p>
+<div class="cb"><div class="cbh"><span class="lb">python</span><span>first_model.py</span><button class="cpb" onclick="cc(this)">Copy</button></div>
+<pre><span class="im">from</span> transformers <span class="im">import</span> pipeline
+
+classifier = <span class="fn">pipeline</span>(<span class="st">"sentiment-analysis"</span>)
+result = <span class="fn">classifier</span>(<span class="st">"Transformers are amazing!"</span>)
+<span class="fn">print</span>(result)</pre>
+<div class="out">[{'label': 'POSITIVE', 'score': 0.9998}]</div></div>
+<div class="cal tip"><div class="ci">✅</div><div class="cc"><div class="ct">What just happened?</div><div class="cb2">On the first run, Transformers downloaded a ~250MB pre-trained model, tokenized your text, ran it through 6 transformer layers, and decoded the output — all automatically. That model was trained on millions of examples so it already understands English sentiment.</div></div></div>
+<div class="pn"><a class="pnb" onclick="sp('install')"><span class="pnl">← Prev</span><span class="pntitle">Installation</span></a><a class="pnb r" onclick="sp('what')"><span class="pnl">Next →</span><span class="pntitle">What is a Transformer?</span></a></div>
+</div>
+<!-- WHAT IS TRANSFORMER -->
+<div class="pg" id="pg-what">
+<h1>🔷 What is a Transformer?</h1>
+<p>A Transformer is a neural network architecture from the 2017 paper <strong>"Attention is All You Need"</strong> (Vaswani et al., Google Brain). It completely replaced RNNs and LSTMs and is now the backbone of every major AI system — GPT-4, BERT, Claude, Gemini.</p>
+<h2 class="noline">The Core Insight</h2>
+<p>RNNs read text <strong>one word at a time</strong>, left to right. By the time they reach word 50, they've partly "forgotten" word 1. Transformers read <strong>all words at once</strong> and use <strong>attention</strong> to decide which words are relevant to each other — regardless of distance.</p>
+<div class="dbox">
+<svg viewBox="0 0 720 200" xmlns="http://www.w3.org/2000/svg" width="100%">
+  <defs><marker id="ar" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#4a5568"/></marker></defs>
+  <!-- RNN side -->
+  <text x="140" y="22" fill="#4a5568" font-size="11" text-anchor="middle" font-family="JetBrains Mono" font-weight="600" letter-spacing="1">RNN — SEQUENTIAL</text>
+  <rect x="20" y="34" width="56" height="32" rx="8" fill="#141925" stroke="#222840" stroke-width="1.5"/><text x="48" y="55" fill="#8892b0" font-size="12" text-anchor="middle" font-family="JetBrains Mono">The</text>
+  <rect x="90" y="34" width="56" height="32" rx="8" fill="#141925" stroke="#222840" stroke-width="1.5"/><text x="118" y="55" fill="#8892b0" font-size="12" text-anchor="middle" font-family="JetBrains Mono">bank</text>
+  <rect x="160" y="34" width="56" height="32" rx="8" fill="#141925" stroke="#222840" stroke-width="1.5"/><text x="188" y="55" fill="#8892b0" font-size="12" text-anchor="middle" font-family="JetBrains Mono">near</text>
+  <rect x="230" y="34" width="56" height="32" rx="8" fill="#141925" stroke="#f87171" stroke-width="1.5"/><text x="258" y="50" fill="#f87171" font-size="11" text-anchor="middle" font-family="JetBrains Mono">forgets</text><text x="258" y="63" fill="#f87171" font-size="11" text-anchor="middle" font-family="JetBrains Mono">"The"!</text>
+  <line x1="76" y1="50" x2="90" y2="50" stroke="#222840" stroke-width="2" marker-end="url(#ar)"/>
+  <line x1="146" y1="50" x2="160" y2="50" stroke="#222840" stroke-width="2" marker-end="url(#ar)"/>
+  <line x1="216" y1="50" x2="230" y2="50" stroke="#222840" stroke-width="2" marker-end="url(#ar)"/>
+  <text x="150" y="100" fill="#4a5568" font-size="11" text-anchor="middle" font-family="JetBrains Mono">One word at a time → loses long-range context</text>
+  <!-- Transformer side -->
+  <text x="560" y="22" fill="#4a5568" font-size="11" text-anchor="middle" font-family="JetBrains Mono" font-weight="600" letter-spacing="1">TRANSFORMER — PARALLEL</text>
+  <rect x="400" y="34" width="56" height="32" rx="8" fill="#141925" stroke="#6ee7f7" stroke-width="1.5"/><text x="428" y="55" fill="#6ee7f7" font-size="12" text-anchor="middle" font-family="JetBrains Mono">The</text>
+  <rect x="468" y="34" width="56" height="32" rx="8" fill="#141925" stroke="#6ee7f7" stroke-width="1.5"/><text x="496" y="55" fill="#6ee7f7" font-size="12" text-anchor="middle" font-family="JetBrains Mono">bank</text>
+  <rect x="536" y="34" width="56" height="32" rx="8" fill="#141925" stroke="#6ee7f7" stroke-width="1.5"/><text x="564" y="55" fill="#6ee7f7" font-size="12" text-anchor="middle" font-family="JetBrains Mono">near</text>
+  <rect x="604" y="34" width="80" height="32" rx="8" fill="#141925" stroke="#4ade80" stroke-width="1.5"/><text x="644" y="50" fill="#4ade80" font-size="11" text-anchor="middle" font-family="JetBrains Mono">sees all!</text><text x="644" y="63" fill="#4ade80" font-size="11" text-anchor="middle" font-family="JetBrains Mono">✓ full ctx</text>
+  <line x1="428" y1="34" x2="644" y2="34" stroke="#4ade80" stroke-width="1" opacity=".5"/>
+  <line x1="496" y1="34" x2="644" y2="34" stroke="#4ade80" stroke-width="1" opacity=".5"/>
+  <line x1="564" y1="34" x2="644" y2="34" stroke="#4ade80" stroke-width="1.5" opacity=".7"/>
+  <text x="535" y="100" fill="#4a5568" font-size="11" text-anchor="middle" font-family="JetBrains Mono">All words at once → full context, any distance</text>
+</svg>
+<div class="dtitle">RNN vs Transformer — The fundamental difference</div>
+</div>
+<h2>Architecture: Encoder + Decoder</h2>
+<table>
+  <tr><th>Type</th><th>Parts</th><th>Best For</th><th>Examples</th></tr>
+  <tr><td><strong style="color:var(--accent)">Encoder-only</strong></td><td>Encoder stack</td><td>Understanding: classification, NER, QA</td><td>BERT, RoBERTa, DistilBERT</td></tr>
+  <tr><td><strong style="color:var(--accent2)">Decoder-only</strong></td><td>Decoder stack</td><td>Generating text, chatbots, LLMs</td><td>GPT-2, LLaMA, Mistral</td></tr>
+  <tr><td><strong style="color:var(--green)">Encoder-Decoder</strong></td><td>Both</td><td>Translation, summarization, Q→A</td><td>T5, BART, mT5</td></tr>
+</table>
+<div class="pn"><a class="pnb" onclick="sp('quickstart')"><span class="pnl">← Prev</span><span class="pntitle">Quick Start</span></a><a class="pnb r" onclick="sp('attention')"><span class="pnl">Next →</span><span class="pntitle">Attention — The Math</span></a></div>
+</div>
+<!-- ATTENTION MATH PAGE -->
+<div class="pg" id="pg-attention">
+<h1>👁️ Attention — <span class="grad">The Math</span></h1>
+<p>Attention is the single idea that makes Transformers work. This page breaks it down step by step with real numbers — exactly like the crio.do guide, but with more depth and interactive demos.</p>
+<p>We'll use the sentence: <strong style="color:var(--accent)">"The bank near the river"</strong></p>
+
+<h2 class="noline">Why Do We Need Attention?</h2>
+<p>Consider "bank" — does it mean a financial institution or a riverbank? The word "river" is the clue. Attention learns to connect <strong>bank ↔ river</strong> automatically, even if they're far apart.</p>
+
+<div class="hbox">
+<p style="font-family:'JetBrains Mono',monospace;font-size:22px;text-align:center;color:var(--accent2);letter-spacing:.02em;margin:0">
+Attention(Q, K, V) = softmax( QKᵀ / √d<sub style="font-size:14px">k</sub> ) · V
+</p>
+<p style="text-align:center;color:var(--muted);font-size:13px;margin:12px 0 0">The complete formula — Q finds matches, K offers matches, V provides content</p>
+</div>
+
+<h2>Step 1 — Tokenization</h2>
+<p>Split the sentence into tokens. Each word (or sub-word) becomes one token:</p>
+<div class="cb"><div class="cbh"><span class="lb">python</span><span>Step 1: Tokenize</span><button class="cpb" onclick="cc(this)">Copy</button></div>
+<pre><span class="im">from</span> transformers <span class="im">import</span> <span class="cl">AutoTokenizer</span>
+
+tokenizer = <span class="cl">AutoTokenizer</span>.<span class="fn">from_pretrained</span>(<span class="st">"bert-base-uncased"</span>)
+text = <span class="st">"The bank near the river"</span>
+
+tokens = tokenizer.<span class="fn">tokenize</span>(text)
+ids    = tokenizer.<span class="fn">encode</span>(text)
+
+<span class="fn">print</span>(<span class="st">"Tokens:"</span>, tokens)
+<span class="fn">print</span>(<span class="st">"IDs:   "</span>, ids)</pre>
+<div class="out">Tokens: ['the', 'bank', 'near', 'the', 'river']
+IDs:    [101, 1996, 2924, 2379, 1996, 2314, 102]</div></div>
+
+<h2>Step 2 — Token Embeddings</h2>
+<p>Each token ID maps to a dense vector (the embedding). BERT uses 768 dimensions. We'll use 4 for clarity:</p>
+<div class="cb"><div class="cbh"><span class="lb">python</span><span>Step 2: Embeddings</span><button class="cpb" onclick="cc(this)">Copy</button></div>
+<pre><span class="im">import</span> torch
+<span class="im">import</span> numpy <span class="im">as</span> np
+
+<span class="cm"># Simplified 4-dim embeddings for 5 tokens</span>
+embeddings = torch.<span class="fn">tensor</span>([
+    [<span class="nm">0.8</span>, <span class="nm">0.2</span>, <span class="nm">0.5</span>, <span class="nm">0.1</span>],  <span class="cm"># "The"</span>
+    [<span class="nm">0.3</span>, <span class="nm">0.9</span>, <span class="nm">0.1</span>, <span class="nm">0.6</span>],  <span class="cm"># "bank"</span>
+    [<span class="nm">0.5</span>, <span class="nm">0.3</span>, <span class="nm">0.8</span>, <span class="nm">0.2</span>],  <span class="cm"># "near"</span>
+    [<span class="nm">0.7</span>, <span class="nm">0.1</span>, <span class="nm">0.4</span>, <span class="nm">0.9</span>],  <span class="cm"># "the"</span>
+    [<span class="nm">0.2</span>, <span class="nm">0.8</span>, <span class="nm">0.3</span>, <span class="nm">0.7</span>],  <span class="cm"># "river"</span>
+])
+<span class="fn">print</span>(<span class="st">"Shape:"</span>, embeddings.shape)   <span class="cm"># [5, 4] = 5 tokens, 4-dim</span>
+<span class="fn">print</span>(<span class="st">"'bank' embedding:"</span>, embeddings[<span class="nm">1</span>])</pre>
+<div class="out">Shape: torch.Size([5, 4])
+'bank' embedding: tensor([0.3000, 0.9000, 0.1000, 0.6000])</div></div>
+
+<h2>Step 3 — Create Q, K, V Matrices</h2>
+<p>Each embedding is projected into three vectors using <strong>learned weight matrices</strong> W_Q, W_K, W_V. This is just matrix multiplication:</p>
+<div class="mstep">
+  <div class="mstep-n">Q</div>
+  <div class="mstep-body">
+    <div class="mstep-title">Query — "What am I looking for?"</div>
+    <div class="mstep-desc">Each token asks: "Which other tokens are relevant to understanding me?" The query encodes the question.</div>
+    <div class="mstep-math">Q = E · W_Q       shape: [seq_len, d_k]</div>
+  </div>
+</div>
+<div class="mstep">
+  <div class="mstep-n">K</div>
+  <div class="mstep-body">
+    <div class="mstep-title">Key — "What do I have to offer?"</div>
+    <div class="mstep-desc">Each token announces: "Here's what information I can provide." The key describes each token's content type.</div>
+    <div class="mstep-math">K = E · W_K       shape: [seq_len, d_k]</div>
+  </div>
+</div>
+<div class="mstep">
+  <div class="mstep-n">V</div>
+  <div class="mstep-body">
+    <div class="mstep-title">Value — "Here's my actual content"</div>
+    <div class="mstep-desc">Once we know WHO to attend to (via Q·K), we grab WHAT from them (V). The value is the actual information transferred.</div>
+    <div class="mstep-math">V = E · W_V       shape: [seq_len, d_v]</div>
+  </div>
+</div>
+
+<div class="cb"><div class="cbh"><span class="lb">python</span><span>Step 3: Compute Q, K, V</span><button class="cpb" onclick="cc(this)">Copy</button></div>
+<pre><span class="im">import</span> torch
+<span class="im">import</span> torch.nn <span class="im">as</span> nn
+
+d_model = <span class="nm">4</span>   <span class="cm"># embedding dimension (768 in real BERT)</span>
+d_k     = <span class="nm">4</span>   <span class="cm"># key/query dimension (64 in BERT)</span>
+
+<span class="cm"># Learned weight matrices (randomly initialized, trained via backprop)</span>
+torch.<span class="fn">manual_seed</span>(<span class="nm">42</span>)
+W_Q = torch.<span class="fn">randn</span>(d_model, d_k) * <span class="nm">0.1</span>
+W_K = torch.<span class="fn">randn</span>(d_model, d_k) * <span class="nm">0.1</span>
+W_V = torch.<span class="fn">randn</span>(d_model, d_k) * <span class="nm">0.1</span>
+
+<span class="cm"># Project embeddings → Q, K, V</span>
+Q = embeddings @ W_Q   <span class="cm"># [5,4] @ [4,4] = [5,4]</span>
+K = embeddings @ W_K   <span class="cm"># [5,4] @ [4,4] = [5,4]</span>
+V = embeddings @ W_V   <span class="cm"># [5,4] @ [4,4] = [5,4]</span>
+
+<span class="fn">print</span>(<span class="st">"Q shape:"</span>, Q.shape)  <span class="cm"># [5, 4]</span>
+<span class="fn">print</span>(<span class="st">"Q['bank']:"</span>, Q[<span class="nm">1</span>].detach().numpy().round(<span class="nm">3</span>))</pre>
+<div class="out">Q shape: torch.Size([5, 4])
+Q['bank']: [ 0.042 -0.031  0.018  0.055]</div></div>
+
+<h2>Step 4 — Attention Scores (Dot Product)</h2>
+<p>For each token, compute how similar its Query is to every other token's Key. High score = "pay attention to this token":</p>
+<div class="fbox">
+  <div class="formula">scores = Q · Kᵀ / √d_k</div>
+  <div class="fdesc">We divide by √d_k (square root of key dimension) to prevent gradients from vanishing when d_k is large</div>
+</div>
+<div class="cb"><div class="cbh"><span class="lb">python</span><span>Step 4: Attention Scores</span><button class="cpb" onclick="cc(this)">Copy</button></div>
+<pre><span class="im">import</span> math
+
+<span class="cm"># Raw scores: every token attends to every other token</span>
+scores = torch.<span class="fn">matmul</span>(Q, K.<span class="fn">transpose</span>(-<span class="nm">2</span>, -<span class="nm">1</span>))  <span class="cm"># [5, 5]</span>
+scores = scores / math.<span class="fn">sqrt</span>(d_k)              <span class="cm"># scale</span>
+
+<span class="fn">print</span>(<span class="st">"Scores shape:"</span>, scores.shape)  <span class="cm"># [5, 5]</span>
+<span class="fn">print</span>(<span class="st">"'bank' attends to each word:"</span>)
+words = [<span class="st">"The"</span>, <span class="st">"bank"</span>, <span class="st">"near"</span>, <span class="st">"the"</span>, <span class="st">"river"</span>]
+<span class="kw">for</span> w, s <span class="kw">in</span> <span class="fn">zip</span>(words, scores[<span class="nm">1</span>].detach()):
+    <span class="fn">print</span>(f<span class="st">"  → {w:8}: {s.item():.4f}"</span>)</pre>
+<div class="out">Scores shape: torch.Size([5, 5])
+'bank' attends to each word:
+  → The     :  0.0023
+  → bank    :  0.0341
+  → near    : -0.0112
+  → the     :  0.0018
+  → river   :  0.0287  ← high score! bank↔river is learned</div></div>
+
+<h2>Step 5 — Softmax → Attention Weights</h2>
+<p>Convert raw scores to probabilities (0 to 1, summing to 1.0). These are the "attention weights" — how much to focus on each word:</p>
+<div class="cb"><div class="cbh"><span class="lb">python</span><span>Step 5: Softmax</span><button class="cpb" onclick="cc(this)">Copy</button></div>
+<pre><span class="im">import</span> torch.nn.functional <span class="im">as</span> F
+
+<span class="cm"># Softmax converts scores to probability distribution</span>
+weights = F.<span class="fn">softmax</span>(scores, dim=-<span class="nm">1</span>)  <span class="cm"># [5, 5] — each row sums to 1.0</span>
+
+<span class="fn">print</span>(<span class="st">"Attention weights for 'bank':"</span>)
+<span class="kw">for</span> w, wt <span class="kw">in</span> <span class="fn">zip</span>(words, weights[<span class="nm">1</span>].detach()):
+    bar = <span class="st">"█"</span> * <span class="fn">int</span>(wt.item() * <span class="nm">50</span>)
+    <span class="fn">print</span>(f<span class="st">"  {w:8}: {wt.item():.4f}  {bar}"</span>)
+<span class="fn">print</span>(f<span class="st">"  Sum = {weights[1].sum().item():.6f}"</span>)  <span class="cm"># always 1.0</span></pre>
+<div class="out">Attention weights for 'bank':
+  The     : 0.1953  █████████
+  bank    : 0.2134  ██████████
+  near    : 0.1841  █████████
+  the     : 0.1950  █████████
+  river   : 0.2122  ██████████  ← bank attends most to itself & river
+  Sum = 1.000000</div></div>
+
+<h2>🎮 Interactive Demo — Click a Word</h2>
+<div class="demo">
+  <div class="demo-title">👁️ <span>Click any word to see its attention distribution</span></div>
+  <div class="trow">
+    <div class="tok" onclick="showAttn(this,0)">The</div>
+    <div class="tok" onclick="showAttn(this,1)">bank</div>
+    <div class="tok" onclick="showAttn(this,2)">near</div>
+    <div class="tok" onclick="showAttn(this,3)">the</div>
+    <div class="tok" onclick="showAttn(this,4)">river</div>
+  </div>
+  <div class="agrid" id="agrid">
+    <div id="adisplay"></div>
+    <div style="font-size:12px;color:var(--muted);margin-top:14px">Darker = higher attention weight. These are illustrative values showing how "bank" and "river" attend to each other.</div>
+  </div>
+</div>
+
+<h2>Step 6 — Weighted Sum of Values (Output)</h2>
+<p>Multiply attention weights × Values to produce the final contextualized embedding for each token:</p>
+<div class="cb"><div class="cbh"><span class="lb">python</span><span>Step 6: Final Output</span><button class="cpb" onclick="cc(this)">Copy</button></div>
+<pre><span class="cm"># Output = weighted sum of value vectors</span>
+output = torch.<span class="fn">matmul</span>(weights, V)  <span class="cm"># [5,5] @ [5,4] = [5,4]</span>
+
+<span class="fn">print</span>(<span class="st">"Output shape:"</span>, output.shape)  <span class="cm"># [5, 4] — same as input!</span>
+
+<span class="cm"># "bank" now has a DIFFERENT embedding than before</span>
+<span class="cm"># It has absorbed information from "river"</span>
+<span class="fn">print</span>(<span class="st">"Original 'bank' embedding:"</span>, embeddings[<span class="nm">1</span>].numpy().round(<span class="nm">3</span>))
+<span class="fn">print</span>(<span class="st">"Attended 'bank' embedding: "</span>, output[<span class="nm">1</span>].detach().numpy().round(<span class="nm">3</span>))
+<span class="cm"># These are different — 'bank' now "knows" about 'river'!</span></pre>
+<div class="out">Output shape: torch.Size([5, 4])
+Original 'bank' embedding: [0.3   0.9   0.1   0.6  ]
+Attended 'bank' embedding: [0.007 -0.001  0.003  0.012]  ← contextualized!</div></div>
+
+<h2>Complete Attention Function</h2>
+<div class="cb"><div class="cbh"><span class="lb">python</span><span>Full attention implementation</span><button class="cpb" onclick="cc(this)">Copy</button></div>
+<pre><span class="im">import</span> torch
+<span class="im">import</span> torch.nn.functional <span class="im">as</span> F
+<span class="im">import</span> math
+
+<span class="kw">def</span> <span class="fn">scaled_dot_product_attention</span>(Q, K, V, mask=<span class="kw">None</span>):
+    <span class="st">"""
+    Args:
+        Q: Query  [batch, heads, seq_len, d_k]
+        K: Key    [batch, heads, seq_len, d_k]
+        V: Value  [batch, heads, seq_len, d_v]
+        mask: Optional mask [batch, 1, seq_len, seq_len]
+    Returns:
+        output:  [batch, heads, seq_len, d_v]  ← attended embeddings
+        weights: [batch, heads, seq_len, seq_len]  ← attention matrix
+    """</span>
+    d_k = Q.shape[-<span class="nm">1</span>]
+
+    <span class="cm"># 1. Compute similarity scores</span>
+    scores = torch.<span class="fn">matmul</span>(Q, K.<span class="fn">transpose</span>(-<span class="nm">2</span>, -<span class="nm">1</span>)) / math.<span class="fn">sqrt</span>(d_k)
+
+    <span class="cm"># 2. Apply mask (for decoder: hide future tokens)</span>
+    <span class="kw">if</span> mask <span class="kw">is not None</span>:
+        scores = scores.<span class="fn">masked_fill</span>(mask == <span class="nm">0</span>, -<span class="nm">1e9</span>)  <span class="cm"># -∞ → softmax → 0</span>
+
+    <span class="cm"># 3. Softmax → probability distribution</span>
+    weights = F.<span class="fn">softmax</span>(scores, dim=-<span class="nm">1</span>)
+
+    <span class="cm"># 4. Weighted sum of values</span>
+    output = torch.<span class="fn">matmul</span>(weights, V)
+
+    <span class="kw">return</span> output, weights
+
+<span class="cm"># Test it</span>
+batch_size, seq_len, d_k = <span class="nm">1</span>, <span class="nm">5</span>, <span class="nm">64</span>
+Q = torch.<span class="fn">randn</span>(batch_size, <span class="nm">1</span>, seq_len, d_k)
+K = torch.<span class="fn">randn</span>(batch_size, <span class="nm">1</span>, seq_len, d_k)
+V = torch.<span class="fn">randn</span>(batch_size, <span class="nm">1</span>, seq_len, d_k)
+
+output, weights = <span class="fn">scaled_dot_product_attention</span>(Q, K, V)
+<span class="fn">print</span>(<span class="st">"Output:"</span>,  output.shape)   <span class="cm"># [1, 1, 5, 64]</span>
+<span class="fn">print</span>(<span class="st">"Weights:"</span>, weights.shape)  <span class="cm"># [1, 1, 5, 5]</span>
+<span class="fn">print</span>(<span class="st">"Row sum:"</span>, weights[<span class="nm">0</span>,<span class="nm">0</span>,<span class="nm">0</span>].<span class="fn">sum</span>().<span class="fn">item</span>())  <span class="cm"># always 1.0</span></pre>
+<div class="out">Output:  torch.Size([1, 1, 5, 64])
+Weights: torch.Size([1, 1, 5, 5])
+Row sum: 1.0</div></div>
+
+<div class="pn"><a class="pnb" onclick="sp('what')"><span class="pnl">← Prev</span><span class="pntitle">What is a Transformer?</span></a><a class="pnb r" onclick="sp('multihead')"><span class="pnl">Next →</span><span class="pntitle">Multi-Head Attention</span></a></div>
+</div>
+<!-- MULTI-HEAD ATTENTION -->
+<div class="pg" id="pg-multihead">
+<h1>🎯 Multi-Head Attention</h1>
+<p>Running attention once gives one "perspective" on the relationships between words. Multi-Head Attention runs it <strong>H times in parallel</strong>, each head learning different relationships (subject-verb, coreference, syntax, etc.).</p>
+<div class="fbox">
+  <div class="formula">MultiHead(Q,K,V) = Concat(head₁, ..., headₕ) · Wₒ</div>
+  <div class="fdesc">where headᵢ = Attention(Q·Wᵢ_Q, K·Wᵢ_K, V·Wᵢ_V)</div>
+</div>
+<div class="cb"><div class="cbh"><span class="lb">python</span><span>MultiHeadAttention from scratch</span><button class="cpb" onclick="cc(this)">Copy</button></div>
+<pre><span class="im">import</span> torch
+<span class="im">import</span> torch.nn <span class="im">as</span> nn
+<span class="im">import</span> torch.nn.functional <span class="im">as</span> F
+<span class="im">import</span> math
+
+<span class="kw">class</span> <span class="cl">MultiHeadAttention</span>(nn.<span class="cl">Module</span>):
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, d_model=<span class="nm">512</span>, num_heads=<span class="nm">8</span>):
+        <span class="fn">super</span>().<span class="fn">__init__</span>()
+        <span class="at">assert</span> d_model % num_heads == <span class="nm">0</span>, <span class="st">"d_model must be divisible by num_heads"</span>
+
+        self.d_model    = d_model              <span class="cm"># 512 in base Transformer</span>
+        self.num_heads  = num_heads            <span class="cm"># 8 heads</span>
+        self.d_k        = d_model // num_heads <span class="cm"># 64 dims per head</span>
+
+        <span class="cm"># Each head gets its own Q, K, V projection</span>
+        self.W_Q = nn.<span class="cl">Linear</span>(d_model, d_model)  <span class="cm"># covers all 8 heads at once</span>
+        self.W_K = nn.<span class="cl">Linear</span>(d_model, d_model)
+        self.W_V = nn.<span class="cl">Linear</span>(d_model, d_model)
+        self.W_O = nn.<span class="cl">Linear</span>(d_model, d_model)  <span class="cm"># output projection</span>
+
+    <span class="kw">def</span> <span class="fn">forward</span>(self, x, mask=<span class="kw">None</span>):
+        B, T, D = x.shape  <span class="cm"># batch, seq_len, d_model</span>
+        H = self.num_heads
+
+        <span class="cm"># 1. Linear projections</span>
+        Q = self.W_Q(x)  <span class="cm"># [B, T, D]</span>
+        K = self.W_K(x)
+        V = self.W_V(x)
+
+        <span class="cm"># 2. Split into H heads: [B, T, D] → [B, H, T, d_k]</span>
+        Q = Q.<span class="fn">view</span>(B, T, H, self.d_k).<span class="fn">transpose</span>(<span class="nm">1</span>, <span class="nm">2</span>)
+        K = K.<span class="fn">view</span>(B, T, H, self.d_k).<span class="fn">transpose</span>(<span class="nm">1</span>, <span class="nm">2</span>)
+        V = V.<span class="fn">view</span>(B, T, H, self.d_k).<span class="fn">transpose</span>(<span class="nm">1</span>, <span class="nm">2</span>)
+
+        <span class="cm"># 3. Scaled dot-product attention for ALL heads simultaneously</span>
+        scores  = torch.<span class="fn">matmul</span>(Q, K.<span class="fn">transpose</span>(-<span class="nm">2</span>, -<span class="nm">1</span>)) / math.<span class="fn">sqrt</span>(self.d_k)
+        <span class="kw">if</span> mask <span class="kw">is not None</span>:
+            scores = scores.<span class="fn">masked_fill</span>(mask == <span class="nm">0</span>, -<span class="nm">1e9</span>)
+        weights = F.<span class="fn">softmax</span>(scores, dim=-<span class="nm">1</span>)   <span class="cm"># [B, H, T, T]</span>
+        out     = torch.<span class="fn">matmul</span>(weights, V)     <span class="cm"># [B, H, T, d_k]</span>
+
+        <span class="cm"># 4. Concatenate heads: [B, H, T, d_k] → [B, T, D]</span>
+        out = out.<span class="fn">transpose</span>(<span class="nm">1</span>, <span class="nm">2</span>).<span class="fn">contiguous</span>().<span class="fn">view</span>(B, T, D)
+
+        <span class="cm"># 5. Final linear projection</span>
+        <span class="kw">return</span> self.W_O(out), weights
+
+<span class="cm"># Test it</span>
+mha = <span class="cl">MultiHeadAttention</span>(d_model=<span class="nm">512</span>, num_heads=<span class="nm">8</span>)
+x   = torch.<span class="fn">randn</span>(<span class="nm">2</span>, <span class="nm">10</span>, <span class="nm">512</span>)  <span class="cm"># batch=2, seq_len=10, d_model=512</span>
+
+output, attn_weights = <span class="fn">mha</span>(x)
+<span class="fn">print</span>(<span class="st">"Output shape:"</span>, output.shape)       <span class="cm"># [2, 10, 512]</span>
+<span class="fn">print</span>(<span class="st">"Attention shape:"</span>, attn_weights.shape) <span class="cm"># [2, 8, 10, 10] — 8 heads!</span>
+<span class="fn">print</span>(<span class="st">"Params:"</span>, <span class="fn">sum</span>(p.<span class="fn">numel</span>() <span class="kw">for</span> p <span class="kw">in</span> mha.<span class="fn">parameters</span>()))  <span class="cm"># 1,050,624</span></pre>
+<div class="out">Output shape:    torch.Size([2, 10, 512])
+Attention shape: torch.Size([2, 8, 10, 10])
+Params: 1,050,624</div></div>
+<div class="pn"><a class="pnb" onclick="sp('attention')"><span class="pnl">← Prev</span><span class="pntitle">Attention Math</span></a><a class="pnb r" onclick="sp('tokenization')"><span class="pnl">Next →</span><span class="pntitle">Tokenization</span></a></div>
+</div>
+
+<!-- TOKENIZATION -->
+<div class="pg" id="pg-tokenization">
+<h1>🔤 Tokenization</h1>
+<p>Text must be converted to numbers before any model can process it. Tokenization splits text into sub-word pieces and maps each to an integer ID.</p>
+<div class="cb"><div class="cbh"><span class="lb">python</span><span>tokenizer_demo.py</span><button class="cpb" onclick="cc(this)">Copy</button></div>
+<pre><span class="im">from</span> transformers <span class="im">import</span> <span class="cl">AutoTokenizer</span>
+
+tok = <span class="cl">AutoTokenizer</span>.<span class="fn">from_pretrained</span>(<span class="st">"bert-base-uncased"</span>)
+
+text = <span class="st">"Transformers are amazing!"</span>
+
+<span class="cm"># Method 1: tokenize → get string tokens</span>
+tokens = tok.<span class="fn">tokenize</span>(text)
+<span class="fn">print</span>(<span class="st">"Tokens:"</span>, tokens)
+<span class="cm"># Returns: list of str</span>
+
+<span class="cm"># Method 2: encode → get integer IDs</span>
+ids = tok.<span class="fn">encode</span>(text)
+<span class="fn">print</span>(<span class="st">"IDs:"</span>, ids)
+<span class="cm"># Returns: list of int (includes [CLS]=101 and [SEP]=102)</span>
+
+<span class="cm"># Method 3: full dict with attention_mask (most common)</span>
+encoded = <span class="fn">tok</span>(
+    text,
+    max_length=<span class="nm">128</span>,
+    padding=<span class="st">"max_length"</span>,
+    truncation=<span class="kw">True</span>,
+    return_tensors=<span class="st">"pt"</span>
+)
+<span class="fn">print</span>(<span class="st">"Keys:"</span>,            <span class="fn">list</span>(encoded.keys()))
+<span class="fn">print</span>(<span class="st">"input_ids shape:"</span>,  encoded[<span class="st">"input_ids"</span>].shape)
+<span class="fn">print</span>(<span class="st">"attention_mask:"</span>,   encoded[<span class="st">"attention_mask"</span>][<span class="nm">0</span>, :<span class="nm">10</span>])
+
+<span class="cm"># Decode back to text</span>
+back = tok.<span class="fn">decode</span>(ids, skip_special_tokens=<span class="kw">True</span>)
+<span class="fn">print</span>(<span class="st">"Decoded:"</span>, back)</pre>
+<div class="out">Tokens:          ['transform', '##ers', 'are', 'amazing', '!']
+IDs:             [101, 19081, 2545, 2024, 6429, 999, 102]
+Keys:            ['input_ids', 'token_type_ids', 'attention_mask']
+input_ids shape: torch.Size([1, 128])
+attention_mask:  tensor([1, 1, 1, 1, 1, 1, 1, 0, 0, 0])  ← 1=real, 0=pad
+Decoded:         transformers are amazing!</div></div>
+<div class="pn"><a class="pnb" onclick="sp('multihead')"><span class="pnl">← Prev</span><span class="pntitle">Multi-Head Attention</span></a><a class="pnb r" onclick="sp('embeddings')"><span class="pnl">Next →</span><span class="pntitle">Embeddings</span></a></div>
+</div>
+
+<!-- EMBEDDINGS -->
+<div class="pg" id="pg-embeddings">
+<h1>📐 Embeddings</h1>
+<p>Embeddings are dense float vectors representing the meaning of text. Semantically similar texts → similar vectors → small cosine distance.</p>
+<div class="cb"><div class="cbh"><span class="lb">python</span><span>semantic_similarity.py</span><button class="cpb" onclick="cc(this)">Copy</button></div>
+<pre><span class="im">from</span> transformers <span class="im">import</span> <span class="cl">AutoTokenizer</span>, <span class="cl">AutoModel</span>
+<span class="im">import</span> torch, torch.nn.functional <span class="im">as</span> F
+
+model_name = <span class="st">"sentence-transformers/all-MiniLM-L6-v2"</span>
+tokenizer = <span class="cl">AutoTokenizer</span>.<span class="fn">from_pretrained</span>(model_name)
+model     = <span class="cl">AutoModel</span>.<span class="fn">from_pretrained</span>(model_name)
+
+<span class="kw">def</span> <span class="fn">embed</span>(texts):
+    enc = <span class="fn">tokenizer</span>(texts, padding=<span class="kw">True</span>, truncation=<span class="kw">True</span>, return_tensors=<span class="st">"pt"</span>)
+    <span class="kw">with</span> torch.<span class="fn">no_grad</span>():
+        out = <span class="fn">model</span>(**enc)
+    <span class="cm"># Mean pooling over token dimension</span>
+    emb = out.last_hidden_state.mean(dim=<span class="nm">1</span>)
+    <span class="kw">return</span> F.<span class="fn">normalize</span>(emb, p=<span class="nm">2</span>, dim=<span class="nm">1</span>)  <span class="cm"># L2 normalize</span>
+    <span class="cm"># Returns: Tensor [batch, 384]</span>
+
+<span class="cm"># Compute cosine similarity</span>
+e1 = <span class="fn">embed</span>([<span class="st">"I love playing with dogs"</span>])
+e2 = <span class="fn">embed</span>([<span class="st">"Puppies are my favourite animals"</span>])
+e3 = <span class="fn">embed</span>([<span class="st">"Stock market hit a new high"</span>])
+
+sim12 = (e1 * e2).<span class="fn">sum</span>().<span class="fn">item</span>()
+sim13 = (e1 * e3).<span class="fn">sum</span>().<span class="fn">item</span>()
+<span class="fn">print</span>(f<span class="st">"Dogs ↔ Puppies: {sim12:.3f}"</span>)   <span class="cm"># high ~0.84</span>
+<span class="fn">print</span>(f<span class="st">"Dogs ↔ Stocks:  {sim13:.3f}"</span>)   <span class="cm"># low  ~0.08</span>
+
+<span class="cm"># Semantic search</span>
+queries = <span class="fn">embed</span>([<span class="st">"How to make pizza?"</span>])
+corpus  = <span class="fn">embed</span>([
+    <span class="st">"Pizza dough recipe with yeast"</span>,
+    <span class="st">"Best running shoes for marathons"</span>,
+    <span class="st">"Italian cooking for beginners"</span>,
+])
+scores = (queries @ corpus.T)[<span class="nm">0</span>]
+best   = scores.<span class="fn">argmax</span>().<span class="fn">item</span>()
+<span class="fn">print</span>(f<span class="st">"Most relevant doc: {best}"</span>)  <span class="cm"># 0 or 2</span></pre>
+<div class="out">Dogs ↔ Puppies: 0.837
+Dogs ↔ Stocks:  0.082
+Most relevant doc: 0</div></div>
+<div class="pn"><a class="pnb" onclick="sp('tokenization')"><span class="pnl">← Prev</span><span class="pntitle">Tokenization</span></a><a class="pnb r" onclick="sp('posenc')"><span class="pnl">Next →</span><span class="pntitle">Positional Encoding</span></a></div>
+</div>
+
+<!-- POSITIONAL ENCODING -->
+<div class="pg" id="pg-posenc">
+<h1>📍 Positional Encoding</h1>
+<p>Transformers process all tokens at once — they have no inherent sense of word order. Positional encoding injects position information by adding a unique vector to each embedding.</p>
+<div class="fbox">
+  <div class="formula">PE(pos, 2i) = sin(pos / 10000^(2i/d_model))<br>PE(pos, 2i+1) = cos(pos / 10000^(2i/d_model))</div>
+  <div class="fdesc">Even dimensions use sine, odd use cosine. Each position gets a unique pattern across all dimensions.</div>
+</div>
+<div class="cb"><div class="cbh"><span class="lb">python</span><span>positional_encoding.py</span><button class="cpb" onclick="cc(this)">Copy</button></div>
+<pre><span class="im">import</span> torch
+<span class="im">import</span> torch.nn <span class="im">as</span> nn
+<span class="im">import</span> math
+
+<span class="kw">class</span> <span class="cl">PositionalEncoding</span>(nn.<span class="cl">Module</span>):
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, d_model=<span class="nm">512</span>, max_seq_len=<span class="nm">5000</span>, dropout=<span class="nm">0.1</span>):
+        <span class="fn">super</span>().<span class="fn">__init__</span>()
+        self.dropout = nn.<span class="cl">Dropout</span>(dropout)
+
+        <span class="cm"># Build PE matrix once</span>
+        pe  = torch.<span class="fn">zeros</span>(max_seq_len, d_model)
+        pos = torch.<span class="fn">arange</span>(<span class="nm">0</span>, max_seq_len).<span class="fn">unsqueeze</span>(<span class="nm">1</span>).float()
+        div = torch.<span class="fn">exp</span>(torch.<span class="fn">arange</span>(<span class="nm">0</span>, d_model, <span class="nm">2</span>).float()
+                       * (-math.<span class="fn">log</span>(<span class="nm">10000.0</span>) / d_model))
+
+        pe[:, <span class="nm">0</span>::<span class="nm">2</span>] = torch.<span class="fn">sin</span>(pos * div)  <span class="cm"># even dims</span>
+        pe[:, <span class="nm">1</span>::<span class="nm">2</span>] = torch.<span class="fn">cos</span>(pos * div)  <span class="cm"># odd dims</span>
+        pe = pe.<span class="fn">unsqueeze</span>(<span class="nm">0</span>)              <span class="cm"># [1, max_seq_len, d_model]</span>
+
+        self.<span class="fn">register_buffer</span>(<span class="st">"pe"</span>, pe)   <span class="cm"># not a parameter, but saved with model</span>
+
+    <span class="kw">def</span> <span class="fn">forward</span>(self, x):
+        <span class="cm"># x: [batch, seq_len, d_model]</span>
+        x = x + self.pe[:, :x.size(<span class="nm">1</span>)]  <span class="cm"># add position info</span>
+        <span class="kw">return</span> self.<span class="fn">dropout</span>(x)
+        <span class="cm"># Returns: [batch, seq_len, d_model] — same shape, now position-aware</span>
+
+pe_layer = <span class="cl">PositionalEncoding</span>(d_model=<span class="nm">512</span>)
+x = torch.<span class="fn">randn</span>(<span class="nm">2</span>, <span class="nm">10</span>, <span class="nm">512</span>)
+out = <span class="fn">pe_layer</span>(x)
+<span class="fn">print</span>(<span class="st">"Input shape: "</span>, x.shape)    <span class="cm"># [2, 10, 512]</span>
+<span class="fn">print</span>(<span class="st">"Output shape:"</span>, out.shape)   <span class="cm"># [2, 10, 512] — same</span>
+<span class="fn">print</span>(<span class="st">"Changed?"</span>, not torch.<span class="fn">allclose</span>(x, out))  <span class="cm"># True — positions added</span></pre>
+<div class="out">Input shape:  torch.Size([2, 10, 512])
+Output shape: torch.Size([2, 10, 512])
+Changed? True</div></div>
+<div class="pn"><a class="pnb" onclick="sp('embeddings')"><span class="pnl">← Prev</span><span class="pntitle">Embeddings</span></a><a class="pnb r" onclick="sp('pipeline')"><span class="pnl">Next →</span><span class="pntitle">pipeline()</span></a></div>
+</div>
+<!-- PIPELINE -->
+<div class="pg" id="pg-pipeline">
+<h1>🔁 pipeline() — All Tasks + Returns</h1>
+<p>The <code>pipeline()</code> is the highest-level API. One line of code, any task. Below is every supported task with exact return values documented.</p>
+<table>
+  <tr><th>Task String</th><th>What it Does</th><th>Returns</th></tr>
+  <tr><td><code>"sentiment-analysis"</code></td><td>Positive/Negative</td><td><code>[{'label': str, 'score': float}]</code></td></tr>
+  <tr><td><code>"text-classification"</code></td><td>Any multi-class</td><td><code>[{'label': str, 'score': float}]</code></td></tr>
+  <tr><td><code>"ner"</code></td><td>Named entity recognition</td><td><code>[{'entity': str, 'score': float, 'index': int, 'word': str, 'start': int, 'end': int}]</code></td></tr>
+  <tr><td><code>"question-answering"</code></td><td>Extract answer from context</td><td><code>{'score': float, 'start': int, 'end': int, 'answer': str}</code></td></tr>
+  <tr><td><code>"summarization"</code></td><td>Shorten long text</td><td><code>[{'summary_text': str}]</code></td></tr>
+  <tr><td><code>"translation_en_to_fr"</code></td><td>Translate</td><td><code>[{'translation_text': str}]</code></td></tr>
+  <tr><td><code>"text-generation"</code></td><td>Continue text</td><td><code>[{'generated_text': str}]</code></td></tr>
+  <tr><td><code>"fill-mask"</code></td><td>Predict [MASK]</td><td><code>[{'score': float, 'token': int, 'token_str': str, 'sequence': str}]</code></td></tr>
+  <tr><td><code>"zero-shot-classification"</code></td><td>No training needed</td><td><code>{'sequence': str, 'labels': list, 'scores': list}</code></td></tr>
+  <tr><td><code>"feature-extraction"</code></td><td>Get raw embeddings</td><td><code>[[[float, ...], ...]]</code> shape [1, seq_len, hidden_size]</td></tr>
+</table>
+<div class="cb"><div class="cbh"><span class="lb">python</span><span>all_pipelines.py — every task with return values</span><button class="cpb" onclick="cc(this)">Copy</button></div>
+<pre><span class="im">from</span> transformers <span class="im">import</span> pipeline
+
+<span class="cm"># ─── 1. SENTIMENT ──────────────────────────────────────</span>
+clf = <span class="fn">pipeline</span>(<span class="st">"sentiment-analysis"</span>)
+r = <span class="fn">clf</span>([<span class="st">"I love it!"</span>, <span class="st">"Awful."</span>])
+<span class="cm"># Returns: list of dict, one per input</span>
+<span class="fn">print</span>(r[<span class="nm">0</span>][<span class="st">"label"</span>])  <span class="cm"># "POSITIVE"</span>
+<span class="fn">print</span>(r[<span class="nm">0</span>][<span class="st">"score"</span>])  <span class="cm"># 0.9998 — confidence</span>
+<span class="fn">print</span>(r[<span class="nm">1</span>][<span class="st">"label"</span>])  <span class="cm"># "NEGATIVE"</span>
+
+<span class="cm"># ─── 2. NER ────────────────────────────────────────────</span>
+ner = <span class="fn">pipeline</span>(<span class="st">"ner"</span>, aggregation_strategy=<span class="st">"simple"</span>)
+r = <span class="fn">ner</span>(<span class="st">"Elon Musk founded SpaceX in California."</span>)
+<span class="cm"># Returns: list of entity dicts</span>
+<span class="kw">for</span> e <span class="kw">in</span> r:
+    <span class="fn">print</span>(f<span class="st">"{e['entity_group']:5} {e['word']:15} score={e['score']:.2f}"</span>)
+<span class="cm"># PER   Elon Musk       score=0.99</span>
+<span class="cm"># ORG   SpaceX          score=0.99</span>
+<span class="cm"># LOC   California      score=0.99</span>
+
+<span class="cm"># ─── 3. QUESTION ANSWERING ─────────────────────────────</span>
+qa = <span class="fn">pipeline</span>(<span class="st">"question-answering"</span>)
+r = <span class="fn">qa</span>(
+    question=<span class="st">"When was Python released?"</span>,
+    context=<span class="st">"Python was created by Guido van Rossum and first released in 1991."</span>
+)
+<span class="fn">print</span>(r[<span class="st">"answer"</span>])  <span class="cm"># "1991"</span>
+<span class="fn">print</span>(r[<span class="st">"score"</span>])   <span class="cm"># 0.996 — confidence</span>
+<span class="fn">print</span>(r[<span class="st">"start"</span>])   <span class="cm"># 60 — char position in context</span>
+<span class="fn">print</span>(r[<span class="st">"end"</span>])     <span class="cm"># 64</span>
+
+<span class="cm"># ─── 4. SUMMARIZATION ──────────────────────────────────</span>
+summ = <span class="fn">pipeline</span>(<span class="st">"summarization"</span>, model=<span class="st">"facebook/bart-large-cnn"</span>)
+r = <span class="fn">summ</span>(long_article, max_length=<span class="nm">100</span>, min_length=<span class="nm">20</span>, do_sample=<span class="kw">False</span>)
+<span class="fn">print</span>(r[<span class="nm">0</span>][<span class="st">"summary_text"</span>])  <span class="cm"># The condensed summary string</span>
+
+<span class="cm"># ─── 5. TRANSLATION ────────────────────────────────────</span>
+translator = <span class="fn">pipeline</span>(<span class="st">"translation_en_to_fr"</span>, model=<span class="st">"Helsinki-NLP/opus-mt-en-fr"</span>)
+r = <span class="fn">translator</span>(<span class="st">"Hello, how are you today?"</span>)
+<span class="fn">print</span>(r[<span class="nm">0</span>][<span class="st">"translation_text"</span>])  <span class="cm"># "Bonjour, comment allez-vous ?"</span>
+
+<span class="cm"># ─── 6. TEXT GENERATION ────────────────────────────────</span>
+gen = <span class="fn">pipeline</span>(<span class="st">"text-generation"</span>, model=<span class="st">"gpt2"</span>)
+r = <span class="fn">gen</span>(<span class="st">"The future of AI is"</span>, max_new_tokens=<span class="nm">50</span>, num_return_sequences=<span class="nm">2</span>)
+<span class="kw">for</span> i, seq <span class="kw">in</span> <span class="fn">enumerate</span>(r):
+    <span class="fn">print</span>(f<span class="st">"Version {i+1}:"</span>, seq[<span class="st">"generated_text"</span>][:80])
+
+<span class="cm"># ─── 7. ZERO-SHOT ──────────────────────────────────────</span>
+zs = <span class="fn">pipeline</span>(<span class="st">"zero-shot-classification"</span>)
+r = <span class="fn">zs</span>(
+    <span class="st">"The Fed raised interest rates today"</span>,
+    candidate_labels=[<span class="st">"economics"</span>, <span class="st">"sports"</span>, <span class="st">"technology"</span>]
+)
+<span class="fn">print</span>(r[<span class="st">"labels"</span>])   <span class="cm"># ['economics', 'technology', 'sports'] — sorted by score</span>
+<span class="fn">print</span>(r[<span class="st">"scores"</span>])   <span class="cm"># [0.89, 0.06, 0.04]</span>
+
+<span class="cm"># ─── 8. FILL-MASK ──────────────────────────────────────</span>
+fill = <span class="fn">pipeline</span>(<span class="st">"fill-mask"</span>, model=<span class="st">"bert-base-uncased"</span>)
+r = <span class="fn">fill</span>(<span class="st">"The capital of France is [MASK]."</span>, top_k=<span class="nm">3</span>)
+<span class="kw">for</span> pred <span class="kw">in</span> r:
+    <span class="fn">print</span>(f<span class="st">"{pred['token_str']:12} score={pred['score']:.3f}"</span>)
+<span class="cm"># paris        score=0.873</span>
+<span class="cm"># lyon         score=0.042</span>
+<span class="cm"># nice         score=0.021</span></pre></div>
+<div class="pn"><a class="pnb" onclick="sp('posenc')"><span class="pnl">← Prev</span><span class="pntitle">Positional Encoding</span></a><a class="pnb r" onclick="sp('auto')"><span class="pnl">Next →</span><span class="pntitle">Auto Classes</span></a></div>
+</div>
+
+<!-- AUTO CLASSES -->
+<div class="pg" id="pg-auto">
+<h1>🤖 Auto Classes</h1>
+<p>Auto classes detect which model architecture you're loading and instantiate the right class automatically. You don't need to know if it's BERT or RoBERTa.</p>
+<div class="cb"><div class="cbh"><span class="lb">python</span><span>auto_classes.py</span><button class="cpb" onclick="cc(this)">Copy</button></div>
+<pre><span class="im">from</span> transformers <span class="im">import</span> (
+    <span class="cl">AutoTokenizer</span>,
+    <span class="cl">AutoModel</span>,
+    <span class="cl">AutoModelForSequenceClassification</span>,
+    <span class="cl">AutoModelForTokenClassification</span>,
+    <span class="cl">AutoModelForQuestionAnswering</span>,
+    <span class="cl">AutoModelForCausalLM</span>,
+    <span class="cl">AutoModelForSeq2SeqLM</span>,
+    <span class="cl">AutoModelForMaskedLM</span>,
+)
+<span class="im">import</span> torch, torch.nn.functional <span class="im">as</span> F
+
+model_name = <span class="st">"distilbert-base-uncased-finetuned-sst-2-english"</span>
+
+<span class="cm"># Load tokenizer + model</span>
+tokenizer = <span class="cl">AutoTokenizer</span>.<span class="fn">from_pretrained</span>(model_name)
+model     = <span class="cl">AutoModelForSequenceClassification</span>.<span class="fn">from_pretrained</span>(model_name)
+
+<span class="cm"># Inspect model config</span>
+<span class="fn">print</span>(<span class="st">"Model type:"</span>,  model.config.model_type)          <span class="cm"># "distilbert"</span>
+<span class="fn">print</span>(<span class="st">"Num labels:"</span>, model.config.num_labels)           <span class="cm"># 2</span>
+<span class="fn">print</span>(<span class="st">"Label map:"</span>,  model.config.id2label)             <span class="cm"># {0:'NEGATIVE',1:'POSITIVE'}</span>
+<span class="fn">print</span>(<span class="st">"Parameters:"</span>, f<span class="st">"{model.num_parameters():,}"</span>)    <span class="cm"># 66,955,010</span>
+
+<span class="cm"># Run inference manually</span>
+texts = [<span class="st">"This product is excellent!"</span>, <span class="st">"Worst purchase ever."</span>]
+inputs = <span class="fn">tokenizer</span>(texts, padding=<span class="kw">True</span>, truncation=<span class="kw">True</span>, return_tensors=<span class="st">"pt"</span>)
+
+<span class="kw">with</span> torch.<span class="fn">no_grad</span>():
+    outputs = <span class="fn">model</span>(**inputs)
+    <span class="cm"># outputs.logits shape: [batch_size, num_labels] = [2, 2]</span>
+
+probs = F.<span class="fn">softmax</span>(outputs.logits, dim=-<span class="nm">1</span>)   <span class="cm"># [2, 2]</span>
+preds = torch.<span class="fn">argmax</span>(probs, dim=-<span class="nm">1</span>)         <span class="cm"># [2]</span>
+
+<span class="kw">for</span> text, pred, prob <span class="kw">in</span> <span class="fn">zip</span>(texts, preds, probs):
+    label = model.config.id2label[pred.<span class="fn">item</span>()]
+    conf  = prob.<span class="fn">max</span>().<span class="fn">item</span>()
+    <span class="fn">print</span>(f<span class="st">"{label:10} ({conf:.0%}) → {text}"</span>)
+
+<span class="cm"># outputs object attributes:</span>
+<span class="fn">print</span>(outputs.logits)        <span class="cm"># raw pre-softmax scores</span>
+<span class="cm"># If output_hidden_states=True:</span>
+<span class="cm"># outputs.hidden_states  → tuple of [batch, seq_len, hidden] per layer</span>
+<span class="cm"># outputs.attentions     → tuple of attention matrices per layer</span></pre>
+<div class="out">Model type:  distilbert
+Num labels:  2
+Label map:   {0: 'NEGATIVE', 1: 'POSITIVE'}
+Parameters:  66,955,010
+POSITIVE   (100%) → This product is excellent!
+NEGATIVE   (100%) → Worst purchase ever.</div></div>
+<div class="pn"><a class="pnb" onclick="sp('pipeline')"><span class="pnl">← Prev</span><span class="pntitle">pipeline()</span></a><a class="pnb r" onclick="sp('tokenizer')"><span class="pnl">Next →</span><span class="pntitle">Tokenizer</span></a></div>
+</div>
+
+<!-- TOKENIZER -->
+<div class="pg" id="pg-tokenizer">
+<h1>✂️ Tokenizer</h1>
+<div class="cb"><div class="cbh"><span class="lb">python</span><span>tokenizer_complete.py</span><button class="cpb" onclick="cc(this)">Copy</button></div>
+<pre><span class="im">from</span> transformers <span class="im">import</span> <span class="cl">AutoTokenizer</span>
+tok = <span class="cl">AutoTokenizer</span>.<span class="fn">from_pretrained</span>(<span class="st">"bert-base-uncased"</span>)
+
+<span class="cm"># Special tokens</span>
+<span class="fn">print</span>(tok.cls_token)   <span class="cm"># [CLS] — prepended to every sequence</span>
+<span class="fn">print</span>(tok.sep_token)   <span class="cm"># [SEP] — separates sentence pairs</span>
+<span class="fn">print</span>(tok.pad_token)   <span class="cm"># [PAD] — fills to max_length</span>
+<span class="fn">print</span>(tok.mask_token)  <span class="cm"># [MASK] — masked language modeling</span>
+<span class="fn">print</span>(tok.vocab_size)  <span class="cm"># 30522</span>
+
+<span class="cm"># Sentence pair encoding (for NLI, QA tasks)</span>
+enc = <span class="fn">tok</span>(
+    <span class="st">"What is the capital of France?"</span>,   <span class="cm"># sentence A</span>
+    <span class="st">"France is in Europe."</span>,              <span class="cm"># sentence B</span>
+    return_tensors=<span class="st">"pt"</span>
+)
+<span class="cm"># token_type_ids: 0=sentence A, 1=sentence B</span>
+<span class="fn">print</span>(enc[<span class="st">"token_type_ids"</span>])
+<span class="cm"># tensor([[0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1]])</span>
+
+<span class="cm"># Map words back to tokens</span>
+enc2 = <span class="fn">tok</span>(<span class="st">"Transformers are cool"</span>, return_offsets_mapping=<span class="kw">False</span>)
+<span class="fn">print</span>(enc2.<span class="fn">word_ids</span>())  <span class="cm"># [None,0,0,1,2,None] — 0=word 0, None=special</span>
+
+<span class="cm"># Add custom tokens (e.g. domain-specific)</span>
+num_added = tok.<span class="fn">add_tokens</span>([<span class="st">"[PRODUCT]"</span>, <span class="st">"[BRAND]"</span>, <span class="st">"[PRICE]"</span>])
+<span class="fn">print</span>(f<span class="st">"Added {num_added} tokens"</span>)  <span class="cm"># Added 3 tokens</span>
+<span class="cm"># Then resize model embedding: model.resize_token_embeddings(len(tok))</span>
+
+<span class="cm"># Save/load</span>
+tok.<span class="fn">save_pretrained</span>(<span class="st">"./my-tokenizer"</span>)
+tok2 = <span class="cl">AutoTokenizer</span>.<span class="fn">from_pretrained</span>(<span class="st">"./my-tokenizer"</span>)</pre>
+<div class="out">CLS: [CLS]  SEP: [SEP]  PAD: [PAD]  MASK: [MASK]
+Vocab size: 30522
+Token type IDs: tensor([[0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1]])
+Word IDs: [None, 0, 0, 1, 2, None]
+Added 3 tokens</div></div>
+<div class="pn"><a class="pnb" onclick="sp('auto')"><span class="pnl">← Prev</span><span class="pntitle">Auto Classes</span></a><a class="pnb r" onclick="sp('modelload')"><span class="pnl">Next →</span><span class="pntitle">Loading Models</span></a></div>
+</div>
+
+<!-- MODEL LOADING -->
+<div class="pg" id="pg-modelload">
+<h1>📦 Loading Models</h1>
+<div class="cb"><div class="cbh"><span class="lb">python</span><span>model_loading.py</span><button class="cpb" onclick="cc(this)">Copy</button></div>
+<pre><span class="im">from</span> transformers <span class="im">import</span> <span class="cl">AutoModel</span>, <span class="cl">AutoModelForCausalLM</span>, <span class="cl">BitsAndBytesConfig</span>
+<span class="im">import</span> torch
+
+<span class="cm"># From Hub</span>
+model = <span class="cl">AutoModel</span>.<span class="fn">from_pretrained</span>(<span class="st">"bert-base-uncased"</span>)
+
+<span class="cm"># From local folder</span>
+model = <span class="cl">AutoModel</span>.<span class="fn">from_pretrained</span>(<span class="st">"./my-model"</span>)
+
+<span class="cm"># On GPU</span>
+model = model.<span class="fn">to</span>(<span class="st">"cuda"</span>)
+
+<span class="cm"># FP16 (half memory)</span>
+model = <span class="cl">AutoModel</span>.<span class="fn">from_pretrained</span>(<span class="st">"bert-large-uncased"</span>, torch_dtype=torch.float16)
+
+<span class="cm"># Auto device map (split across GPUs)</span>
+model = <span class="cl">AutoModelForCausalLM</span>.<span class="fn">from_pretrained</span>(
+    <span class="st">"mistralai/Mistral-7B-v0.1"</span>,
+    device_map=<span class="st">"auto"</span>
+)
+
+<span class="cm"># 4-bit quantization (7B model uses only ~4GB RAM!)</span>
+bnb = <span class="cl">BitsAndBytesConfig</span>(load_in_4bit=<span class="kw">True</span>, bnb_4bit_quant_type=<span class="st">"nf4"</span>)
+model = <span class="cl">AutoModelForCausalLM</span>.<span class="fn">from_pretrained</span>(
+    <span class="st">"mistralai/Mistral-7B-v0.1"</span>,
+    quantization_config=bnb, device_map=<span class="st">"auto"</span>
+)
+
+<span class="cm"># Inspect model</span>
+<span class="fn">print</span>(f<span class="st">"Params: {model.num_parameters():,}"</span>)  <span class="cm"># 110,000,000</span>
+<span class="fn">print</span>(model.config.model_type)               <span class="cm"># "bert"</span>
+
+<span class="cm"># Save</span>
+model.<span class="fn">save_pretrained</span>(<span class="st">"./my-bert"</span>)
+tokenizer.<span class="fn">save_pretrained</span>(<span class="st">"./my-bert"</span>)</pre></div>
+<div class="pn"><a class="pnb" onclick="sp('tokenizer')"><span class="pnl">← Prev</span><span class="pntitle">Tokenizer</span></a><a class="pnb r" onclick="sp('sentiment')"><span class="pnl">Next →</span><span class="pntitle">Sentiment Analysis</span></a></div>
+</div>
+<!-- NLP TASKS (condensed) -->
+<div class="pg" id="pg-sentiment">
+<h1>❤️ Sentiment Analysis</h1>
+<div class="cb"><div class="cbh"><span class="lb">python</span><span>sentiment.py</span><button class="cpb" onclick="cc(this)">Copy</button></div>
+<pre><span class="im">from</span> transformers <span class="im">import</span> pipeline
+
+<span class="cm"># Binary (positive/negative)</span>
+clf = <span class="fn">pipeline</span>(<span class="st">"sentiment-analysis"</span>)
+r = <span class="fn">clf</span>([<span class="st">"Best purchase ever!"</span>, <span class="st">"Total waste of money."</span>, <span class="st">"It's okay I guess."</span>])
+<span class="kw">for</span> item <span class="kw">in</span> r:
+    print(f<span class="st">"{item['label']:10} {item['score']:.0%}"</span>)
+<span class="cm"># POSITIVE   100%</span>
+<span class="cm"># NEGATIVE    99%</span>
+<span class="cm"># NEGATIVE    86%  ← "okay" still negative with default model</span>
+
+<span class="cm"># 3-class (positive/neutral/negative)</span>
+clf3 = <span class="fn">pipeline</span>(<span class="st">"sentiment-analysis"</span>,
+    model=<span class="st">"cardiffnlp/twitter-roberta-base-sentiment-latest"</span>)
+print(<span class="fn">clf3</span>(<span class="st">"It's okay I guess."</span>)[<span class="nm">0</span>])
+<span class="cm"># {'label': 'neutral', 'score': 0.81}</span>
+
+<span class="cm"># With manual model for more control</span>
+<span class="im">from</span> transformers <span class="im">import</span> <span class="cl">AutoTokenizer</span>, <span class="cl">AutoModelForSequenceClassification</span>
+<span class="im">import</span> torch
+
+name = <span class="st">"distilbert-base-uncased-finetuned-sst-2-english"</span>
+tok, model = (<span class="cl">AutoTokenizer</span>.<span class="fn">from_pretrained</span>(name),
+              <span class="cl">AutoModelForSequenceClassification</span>.<span class="fn">from_pretrained</span>(name))
+enc = <span class="fn">tok</span>(<span class="st">"I love this!"</span>, return_tensors=<span class="st">"pt"</span>)
+<span class="kw">with</span> torch.<span class="fn">no_grad</span>():
+    logits = <span class="fn">model</span>(**enc).logits
+probs = torch.softmax(logits, dim=<span class="nm">-1</span>)
+print(<span class="st">"NEGATIVE:"</span>, probs[<span class="nm">0</span>,<span class="nm">0</span>].<span class="fn">item</span>())  <span class="cm"># 0.0002</span>
+print(<span class="st">"POSITIVE:"</span>, probs[<span class="nm">0</span>,<span class="nm">1</span>].<span class="fn">item</span>())  <span class="cm"># 0.9998</span></pre>
+<div class="out">POSITIVE   100%
+NEGATIVE    99%
+NEGATIVE    86%
+{'label': 'neutral', 'score': 0.81}
+NEGATIVE: 0.000191
+POSITIVE: 0.999809</div></div>
+<div class="pn"><a class="pnb" onclick="sp('modelload')"><span class="pnl">← Prev</span><span class="pntitle">Loading Models</span></a><a class="pnb r" onclick="sp('ner')"><span class="pnl">Next →</span><span class="pntitle">NER</span></a></div>
+</div>
+
+<div class="pg" id="pg-ner">
+<h1>🏷️ Named Entity Recognition</h1>
+<div class="cb"><div class="cbh"><span class="lb">python</span><span>ner.py</span><button class="cpb" onclick="cc(this)">Copy</button></div>
+<pre><span class="im">from</span> transformers <span class="im">import</span> pipeline
+
+ner = <span class="fn">pipeline</span>(<span class="st">"ner"</span>, aggregation_strategy=<span class="st">"simple"</span>)
+text = <span class="st">"Barack Obama was born on August 4, 1961 in Honolulu, Hawaii."</span>
+entities = <span class="fn">ner</span>(text)
+<span class="kw">for</span> e <span class="kw">in</span> entities:
+    print(f<span class="st">"[{e['entity_group']:5}] {e['word']:20} ({e['score']:.0%}) pos={e['start']}-{e['end']}"</span>)
+<span class="cm"># [PER  ] Barack Obama         (100%) pos=0-12</span>
+<span class="cm"># [LOC  ] Honolulu             (100%) pos=43-51</span>
+<span class="cm"># [LOC  ] Hawaii               (100%) pos=53-59</span>
+<span class="cm"># entity_group: PER=person, ORG=org, LOC=location, MISC=other</span></pre>
+<div class="out">[PER  ] Barack Obama         (100%) pos=0-12
+[LOC  ] Honolulu             (100%) pos=43-51
+[LOC  ] Hawaii               (100%) pos=53-59</div></div>
+<div class="pn"><a class="pnb" onclick="sp('sentiment')"><span class="pnl">← Prev</span><span class="pntitle">Sentiment</span></a><a class="pnb r" onclick="sp('qa')"><span class="pnl">Next →</span><span class="pntitle">Question Answering</span></a></div>
+</div>
+
+<div class="pg" id="pg-qa">
+<h1>❓ Question Answering</h1>
+<div class="cb"><div class="cbh"><span class="lb">python</span><span>qa.py</span><button class="cpb" onclick="cc(this)">Copy</button></div>
+<pre><span class="im">from</span> transformers <span class="im">import</span> pipeline
+
+qa = <span class="fn">pipeline</span>(<span class="st">"question-answering"</span>)
+context = <span class="st">"""Hugging Face was founded in 2016 by Clement Delangue, 
+Julien Chaumond, and Thomas Wolf in New York City."""</span>
+
+questions = [<span class="st">"When was Hugging Face founded?"</span>, <span class="st">"Who founded Hugging Face?"</span>, <span class="st">"Where is Hugging Face?"</span>]
+<span class="kw">for</span> q <span class="kw">in</span> questions:
+    r = <span class="fn">qa</span>(question=q, context=context)
+    print(f<span class="st">"Q: {q}"</span>)
+    print(f<span class="st">"A: {r['answer']}  (confidence: {r['score']:.1%})"</span>)
+    print(f<span class="st">"   span: chars {r['start']}-{r['end']}"</span>)</pre>
+<div class="out">Q: When was Hugging Face founded?
+A: 2016  (confidence: 99.1%)
+   span: chars 26-30
+Q: Who founded Hugging Face?
+A: Clement Delangue, Julien Chaumond, and Thomas Wolf  (confidence: 98.7%)
+Q: Where is Hugging Face?
+A: New York City  (confidence: 99.3%)</div></div>
+<div class="pn"><a class="pnb" onclick="sp('ner')"><span class="pnl">← Prev</span><span class="pntitle">NER</span></a><a class="pnb r" onclick="sp('summarization')"><span class="pnl">Next →</span><span class="pntitle">Summarization</span></a></div>
+</div>
+
+<div class="pg" id="pg-summarization">
+<h1>📝 Summarization</h1>
+<div class="cb"><div class="cbh"><span class="lb">python</span><span>summarization.py</span><button class="cpb" onclick="cc(this)">Copy</button></div>
+<pre><span class="im">from</span> transformers <span class="im">import</span> pipeline
+
+summ = <span class="fn">pipeline</span>(<span class="st">"summarization"</span>, model=<span class="st">"facebook/bart-large-cnn"</span>)
+article = <span class="st">"""The Amazon rainforest produces about 20% of the world's oxygen 
+and is home to over 10% of all species. Scientists warn that deforestation 
+at current rates could cause the forest to reach a tipping point by 2030, 
+after which it could collapse into a savanna-like ecosystem, releasing 
+decades of stored carbon and accelerating global warming dramatically."""</span>
+
+r = <span class="fn">summ</span>(article, max_length=<span class="nm">80</span>, min_length=<span class="nm">20</span>, do_sample=<span class="kw">False</span>)
+print(r[<span class="nm">0</span>][<span class="st">"summary_text"</span>])
+<span class="cm"># Returns: str — the generated summary</span></pre>
+<div class="out">The Amazon rainforest produces 20% of the world's oxygen and hosts 10% of all species. Scientists warn of a tipping point by 2030 that could release stored carbon and accelerate climate change.</div></div>
+<div class="pn"><a class="pnb" onclick="sp('qa')"><span class="pnl">← Prev</span><span class="pntitle">QA</span></a><a class="pnb r" onclick="sp('translation')"><span class="pnl">Next →</span><span class="pntitle">Translation</span></a></div>
+</div>
+
+<div class="pg" id="pg-translation">
+<h1>🌐 Translation</h1>
+<div class="cb"><div class="cbh"><span class="lb">python</span><span>translation.py</span><button class="cpb" onclick="cc(this)">Copy</button></div>
+<pre><span class="im">from</span> transformers <span class="im">import</span> pipeline
+
+<span class="cm"># English → French</span>
+t = <span class="fn">pipeline</span>(<span class="st">"translation_en_to_fr"</span>, model=<span class="st">"Helsinki-NLP/opus-mt-en-fr"</span>)
+print(<span class="fn">t</span>(<span class="st">"Machine learning is transforming technology."</span>)[<span class="nm">0</span>][<span class="st">"translation_text"</span>])
+<span class="cm"># "L'apprentissage automatique transforme la technologie."</span>
+
+<span class="cm"># 200 languages with NLLB</span>
+nllb = <span class="fn">pipeline</span>(<span class="st">"translation"</span>, model=<span class="st">"facebook/nllb-200-distilled-600M"</span>,
+    src_lang=<span class="st">"eng_Latn"</span>, tgt_lang=<span class="st">"hin_Deva"</span>)
+print(<span class="fn">nllb</span>(<span class="st">"Hello, how are you?"</span>)[<span class="nm">0</span>][<span class="st">"translation_text"</span>])
+<span class="cm"># "नमस्ते, आप कैसे हैं?"</span></pre>
+<div class="out">L'apprentissage automatique transforme la technologie.
+नमस्ते, आप कैसे हैं?</div></div>
+<div class="pn"><a class="pnb" onclick="sp('summarization')"><span class="pnl">← Prev</span><span class="pntitle">Summarization</span></a><a class="pnb r" onclick="sp('textgen')"><span class="pnl">Next →</span><span class="pntitle">Text Generation</span></a></div>
+</div>
+
+<div class="pg" id="pg-textgen">
+<h1>✍️ Text Generation</h1>
+<div class="cb"><div class="cbh"><span class="lb">python</span><span>text_generation.py</span><button class="cpb" onclick="cc(this)">Copy</button></div>
+<pre><span class="im">from</span> transformers <span class="im">import</span> pipeline, <span class="cl">GPT2Tokenizer</span>, <span class="cl">GPT2LMHeadModel</span>
+<span class="im">import</span> torch
+
+gen = <span class="fn">pipeline</span>(<span class="st">"text-generation"</span>, model=<span class="st">"gpt2"</span>)
+
+<span class="cm"># Basic generation</span>
+r = <span class="fn">gen</span>(<span class="st">"In the future, artificial intelligence will"</span>,
+    max_new_tokens=<span class="nm">60</span>, do_sample=<span class="kw">True</span>, temperature=<span class="nm">0.8</span>,
+    top_p=<span class="nm">0.95</span>, num_return_sequences=<span class="nm">2</span>,
+    pad_token_id=<span class="nm">50256</span>)
+<span class="kw">for</span> i, seq <span class="kw">in</span> <span class="fn">enumerate</span>(r):
+    print(f<span class="st">"[{i+1}]"</span>, seq[<span class="st">"generated_text"</span>][:100])
+
+<span class="cm"># Manual with model object (more control)</span>
+tokenizer = <span class="cl">GPT2Tokenizer</span>.<span class="fn">from_pretrained</span>(<span class="st">"gpt2"</span>)
+tokenizer.pad_token = tokenizer.eos_token
+model     = <span class="cl">GPT2LMHeadModel</span>.<span class="fn">from_pretrained</span>(<span class="st">"gpt2"</span>)
+
+inputs = <span class="fn">tokenizer</span>(<span class="st">"Once upon a time"</span>, return_tensors=<span class="st">"pt"</span>)
+out = model.<span class="fn">generate</span>(**inputs,
+    max_new_tokens=<span class="nm">80</span>, do_sample=<span class="kw">True</span>, temperature=<span class="nm">0.9</span>,
+    top_k=<span class="nm">50</span>, repetition_penalty=<span class="nm">1.2</span>,
+    pad_token_id=tokenizer.eos_token_id)
+print(<span class="fn">tokenizer</span>.<span class="fn">decode</span>(out[<span class="nm">0</span>], skip_special_tokens=<span class="kw">True</span>))</pre></div>
+<div class="pn"><a class="pnb" onclick="sp('translation')"><span class="pnl">← Prev</span><span class="pntitle">Translation</span></a><a class="pnb r" onclick="sp('fillmask')"><span class="pnl">Next →</span><span class="pntitle">Fill Mask</span></a></div>
+</div>
+
+<div class="pg" id="pg-fillmask">
+<h1>🎭 Fill Mask</h1>
+<div class="cb"><div class="cbh"><span class="lb">python</span><span>fill_mask.py</span><button class="cpb" onclick="cc(this)">Copy</button></div>
+<pre><span class="im">from</span> transformers <span class="im">import</span> pipeline
+
+fill = <span class="fn">pipeline</span>(<span class="st">"fill-mask"</span>, model=<span class="st">"bert-base-uncased"</span>)
+
+probes = [
+    <span class="st">"The capital of France is [MASK]."</span>,
+    <span class="st">"Water freezes at [MASK] degrees Celsius."</span>,
+    <span class="st">"The chemical symbol for gold is [MASK]."</span>,
+]
+<span class="kw">for</span> probe <span class="kw">in</span> probes:
+    top = <span class="fn">fill</span>(probe, top_k=<span class="nm">1</span>)[<span class="nm">0</span>]
+    print(f<span class="st">"{top['token_str']:12} ({top['score']:.0%}) ← {probe}"</span>)
+
+<span class="cm"># Access all return fields</span>
+r = <span class="fn">fill</span>(<span class="st">"She works as a [MASK] in the hospital."</span>, top_k=<span class="nm">5</span>)
+<span class="kw">for</span> pred <span class="kw">in</span> r:
+    print(pred[<span class="st">"token_str"</span>], pred[<span class="st">"score"</span>])   <span class="cm"># str, float</span>
+    print(pred[<span class="st">"token"</span>])                         <span class="cm"># int — token ID</span>
+    print(pred[<span class="st">"sequence"</span>])                      <span class="cm"># str — full sentence</span></pre>
+<div class="out">paris        (87%) ← The capital of France is [MASK].
+zero         (52%) ← Water freezes at [MASK] degrees Celsius.
+au           (78%) ← The chemical symbol for gold is [MASK].</div></div>
+<div class="pn"><a class="pnb" onclick="sp('textgen')"><span class="pnl">← Prev</span><span class="pntitle">Text Generation</span></a><a class="pnb r" onclick="sp('trainer')"><span class="pnl">Next →</span><span class="pntitle">Trainer API</span></a></div>
+</div>
+<!-- TRAINER -->
+<div class="pg" id="pg-trainer">
+<h1>🏋️ Trainer API</h1>
+<p>The <code>Trainer</code> handles the complete training loop — gradient steps, evaluation, checkpointing, logging — so you just define the config and data.</p>
+<div class="cb"><div class="cbh"><span class="lb">python</span><span>trainer_complete.py</span><button class="cpb" onclick="cc(this)">Copy</button></div>
+<pre><span class="im">from</span> transformers <span class="im">import</span> (
+    <span class="cl">AutoTokenizer</span>, <span class="cl">AutoModelForSequenceClassification</span>,
+    <span class="cl">TrainingArguments</span>, <span class="cl">Trainer</span>
+)
+<span class="im">from</span> datasets <span class="im">import</span> load_dataset
+<span class="im">import</span> numpy <span class="im">as</span> np, evaluate
+
+<span class="cm"># 1. Load dataset</span>
+raw = <span class="fn">load_dataset</span>(<span class="st">"imdb"</span>)
+tokenizer = <span class="cl">AutoTokenizer</span>.<span class="fn">from_pretrained</span>(<span class="st">"distilbert-base-uncased"</span>)
+
+<span class="kw">def</span> <span class="fn">tokenize_fn</span>(batch):
+    <span class="kw">return</span> <span class="fn">tokenizer</span>(batch[<span class="st">"text"</span>], truncation=<span class="kw">True</span>, padding=<span class="st">"max_length"</span>, max_length=<span class="nm">256</span>)
+
+dataset = raw.<span class="fn">map</span>(tokenize_fn, batched=<span class="kw">True</span>)
+dataset = dataset.<span class="fn">rename_column</span>(<span class="st">"label"</span>, <span class="st">"labels"</span>)
+dataset.<span class="fn">set_format</span>(<span class="st">"torch"</span>)
+
+<span class="cm"># 2. Load model</span>
+model = <span class="cl">AutoModelForSequenceClassification</span>.<span class="fn">from_pretrained</span>(
+    <span class="st">"distilbert-base-uncased"</span>, num_labels=<span class="nm">2</span>)
+
+<span class="cm"># 3. Training config</span>
+args = <span class="cl">TrainingArguments</span>(
+    output_dir=<span class="st">"./results"</span>,
+    num_train_epochs=<span class="nm">3</span>,
+    per_device_train_batch_size=<span class="nm">16</span>,
+    per_device_eval_batch_size=<span class="nm">64</span>,
+    learning_rate=<span class="nm">2e-5</span>,
+    warmup_ratio=<span class="nm">0.1</span>,
+    weight_decay=<span class="nm">0.01</span>,
+    fp16=<span class="kw">True</span>,
+    eval_strategy=<span class="st">"epoch"</span>,
+    save_strategy=<span class="st">"epoch"</span>,
+    load_best_model_at_end=<span class="kw">True</span>,
+    report_to=<span class="st">"none"</span>
+)
+
+<span class="cm"># 4. Metrics</span>
+acc = evaluate.<span class="fn">load</span>(<span class="st">"accuracy"</span>)
+<span class="kw">def</span> <span class="fn">compute_metrics</span>(eval_pred):
+    logits, labels = eval_pred
+    preds = np.<span class="fn">argmax</span>(logits, axis=-<span class="nm">1</span>)
+    <span class="kw">return</span> acc.<span class="fn">compute</span>(predictions=preds, references=labels)
+
+<span class="cm"># 5. Train!</span>
+trainer = <span class="cl">Trainer</span>(model=model, args=args,
+    train_dataset=dataset[<span class="st">"train"</span>], eval_dataset=dataset[<span class="st">"test"</span>],
+    compute_metrics=compute_metrics)
+
+trainer.<span class="fn">train</span>()    <span class="cm"># 🚀 Start</span>
+result = trainer.<span class="fn">evaluate</span>()
+print(f<span class="st">"Accuracy: {result['eval_accuracy']:.1%}"</span>)  <span class="cm"># ~93%</span>
+trainer.<span class="fn">save_model</span>(<span class="st">"./imdb-distilbert"</span>)</pre>
+<div class="out">Training... epoch 1/3 loss=0.312 eval_acc=0.891
+Training... epoch 2/3 loss=0.198 eval_acc=0.921
+Training... epoch 3/3 loss=0.141 eval_acc=0.934
+Accuracy: 93.4%</div></div>
+<div class="pn"><a class="pnb" onclick="sp('fillmask')"><span class="pnl">← Prev</span><span class="pntitle">Fill Mask</span></a><a class="pnb r" onclick="sp('finetune')"><span class="pnl">Next →</span><span class="pntitle">Fine-Tuning</span></a></div>
+</div>
+
+<!-- FINE-TUNING -->
+<div class="pg" id="pg-finetune">
+<h1>🎯 Fine-Tuning Existing Models</h1>
+<p>Fine-tuning takes a pre-trained model (which already knows language) and adapts it to your specific task using your own labeled data. This is far more efficient than training from scratch.</p>
+<div class="cb"><div class="cbh"><span class="lb">python</span><span>finetune_custom.py — custom dataset</span><button class="cpb" onclick="cc(this)">Copy</button></div>
+<pre><span class="im">from</span> datasets <span class="im">import</span> Dataset
+<span class="im">from</span> transformers <span class="im">import</span> <span class="cl">AutoTokenizer</span>, <span class="cl">AutoModelForSequenceClassification</span>, <span class="cl">Trainer</span>, <span class="cl">TrainingArguments</span>
+
+<span class="cm"># Your own data — replace with real dataset</span>
+data = {
+    <span class="st">"text"</span>: [
+        <span class="st">"Patient has fever of 104°F and severe headache"</span>,
+        <span class="st">"Annual physical exam — all results normal"</span>,
+        <span class="st">"Chest pain radiating to the left arm"</span>,
+        <span class="st">"Follow-up appointment for blood pressure check"</span>,
+        <span class="st">"Severe allergic reaction requiring immediate epinephrine"</span>,
+    ],
+    <span class="st">"label"</span>: [<span class="nm">1</span>, <span class="nm">0</span>, <span class="nm">1</span>, <span class="nm">0</span>, <span class="nm">1</span>]  <span class="cm"># 1=urgent, 0=routine</span>
+}
+
+dataset = Dataset.<span class="fn">from_dict</span>(data).<span class="fn">train_test_split</span>(test_size=<span class="nm">0.2</span>)
+
+tokenizer = <span class="cl">AutoTokenizer</span>.<span class="fn">from_pretrained</span>(<span class="st">"bert-base-uncased"</span>)
+
+<span class="kw">def</span> <span class="fn">tok_fn</span>(batch):
+    enc = <span class="fn">tokenizer</span>(batch[<span class="st">"text"</span>], truncation=<span class="kw">True</span>, padding=<span class="st">"max_length"</span>, max_length=<span class="nm">128</span>)
+    enc[<span class="st">"labels"</span>] = batch[<span class="st">"label"</span>]
+    <span class="kw">return</span> enc
+
+tokenized = dataset.<span class="fn">map</span>(tok_fn, batched=<span class="kw">True</span>)
+tokenized.<span class="fn">set_format</span>(<span class="st">"torch"</span>)
+
+model = <span class="cl">AutoModelForSequenceClassification</span>.<span class="fn">from_pretrained</span>(
+    <span class="st">"bert-base-uncased"</span>,
+    num_labels=<span class="nm">2</span>,
+    id2label={<span class="nm">0</span>: <span class="st">"routine"</span>, <span class="nm">1</span>: <span class="st">"urgent"</span>},
+    label2id={<span class="st">"routine"</span>: <span class="nm">0</span>, <span class="st">"urgent"</span>: <span class="nm">1</span>}
+)
+
+trainer = <span class="cl">Trainer</span>(
+    model=model,
+    args=<span class="cl">TrainingArguments</span>(output_dir=<span class="st">"./medical"</span>, num_train_epochs=<span class="nm">5</span>,
+        per_device_train_batch_size=<span class="nm">8</span>, learning_rate=<span class="nm">3e-5</span>, report_to=<span class="st">"none"</span>),
+    train_dataset=tokenized[<span class="st">"train"</span>],
+    eval_dataset=tokenized[<span class="st">"test"</span>],
+)
+trainer.<span class="fn">train</span>()
+trainer.<span class="fn">save_model</span>(<span class="st">"./medical-bert"</span>)
+tokenizer.<span class="fn">save_pretrained</span>(<span class="st">"./medical-bert"</span>)
+
+<span class="cm"># Use fine-tuned model</span>
+<span class="im">from</span> transformers <span class="im">import</span> pipeline
+clf = <span class="fn">pipeline</span>(<span class="st">"text-classification"</span>, model=<span class="st">"./medical-bert"</span>)
+print(<span class="fn">clf</span>(<span class="st">"Patient reports shortness of breath"</span>))
+<span class="cm"># [{'label': 'urgent', 'score': 0.96}]</span></pre>
+<div class="out">[{'label': 'urgent', 'score': 0.963}]</div></div>
+<div class="pn"><a class="pnb" onclick="sp('trainer')"><span class="pnl">← Prev</span><span class="pntitle">Trainer API</span></a><a class="pnb r" onclick="sp('scratch')"><span class="pnl">Next →</span><span class="pntitle">Build From Scratch</span></a></div>
+</div>
+
+<!-- BUILD FROM SCRATCH -->
+<div class="pg" id="pg-scratch">
+<h1>🏗️ Build a Transformer From Scratch</h1>
+<p>Build a full Transformer encoder in pure PyTorch. This is the best way to truly understand the architecture — every layer, every weight, every forward pass.</p>
+<div class="cb"><div class="cbh"><span class="lb">python</span><span>transformer_from_scratch.py — complete implementation</span><button class="cpb" onclick="cc(this)">Copy</button></div>
+<pre><span class="im">import</span> torch
+<span class="im">import</span> torch.nn <span class="im">as</span> nn
+<span class="im">import</span> torch.nn.functional <span class="im">as</span> F
+<span class="im">import</span> math
+
+<span class="cm"># ─── 1. MULTI-HEAD ATTENTION ──────────────────────────</span>
+<span class="kw">class</span> <span class="cl">MultiHeadAttention</span>(nn.<span class="cl">Module</span>):
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, d_model, num_heads):
+        <span class="fn">super</span>().<span class="fn">__init__</span>()
+        self.d_k = d_model // num_heads
+        self.h   = num_heads
+        self.Wq  = nn.<span class="cl">Linear</span>(d_model, d_model)
+        self.Wk  = nn.<span class="cl">Linear</span>(d_model, d_model)
+        self.Wv  = nn.<span class="cl">Linear</span>(d_model, d_model)
+        self.Wo  = nn.<span class="cl">Linear</span>(d_model, d_model)
+
+    <span class="kw">def</span> <span class="fn">forward</span>(self, x, mask=<span class="kw">None</span>):
+        B, T, D = x.shape
+        Q, K, V = (self.Wq(x).<span class="fn">view</span>(B,T,self.h,self.d_k).<span class="fn">transpose</span>(<span class="nm">1</span>,<span class="nm">2</span>),
+                   self.Wk(x).<span class="fn">view</span>(B,T,self.h,self.d_k).<span class="fn">transpose</span>(<span class="nm">1</span>,<span class="nm">2</span>),
+                   self.Wv(x).<span class="fn">view</span>(B,T,self.h,self.d_k).<span class="fn">transpose</span>(<span class="nm">1</span>,<span class="nm">2</span>))
+        s = torch.<span class="fn">matmul</span>(Q, K.<span class="fn">transpose</span>(-<span class="nm">2</span>,-<span class="nm">1</span>)) / math.<span class="fn">sqrt</span>(self.d_k)
+        <span class="kw">if</span> mask <span class="kw">is not None</span>: s = s.<span class="fn">masked_fill</span>(mask==<span class="nm">0</span>, -<span class="nm">1e9</span>)
+        out = torch.<span class="fn">matmul</span>(F.<span class="fn">softmax</span>(s,dim=-<span class="nm">1</span>), V)
+        out = out.<span class="fn">transpose</span>(<span class="nm">1</span>,<span class="nm">2</span>).<span class="fn">contiguous</span>().<span class="fn">view</span>(B, T, D)
+        <span class="kw">return</span> self.Wo(out)
+
+<span class="cm"># ─── 2. FEED-FORWARD NETWORK ──────────────────────────</span>
+<span class="kw">class</span> <span class="cl">FeedForward</span>(nn.<span class="cl">Module</span>):
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, d_model, d_ff=<span class="nm">2048</span>, dropout=<span class="nm">0.1</span>):
+        <span class="fn">super</span>().<span class="fn">__init__</span>()
+        self.net = nn.<span class="cl">Sequential</span>(
+            nn.<span class="cl">Linear</span>(d_model, d_ff),
+            nn.<span class="cl">ReLU</span>(),
+            nn.<span class="cl">Dropout</span>(dropout),
+            nn.<span class="cl">Linear</span>(d_ff, d_model)
+        )
+    <span class="kw">def</span> <span class="fn">forward</span>(self, x): <span class="kw">return</span> self.net(x)
+
+<span class="cm"># ─── 3. ENCODER LAYER ─────────────────────────────────</span>
+<span class="kw">class</span> <span class="cl">EncoderLayer</span>(nn.<span class="cl">Module</span>):
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, d_model, num_heads, d_ff, dropout=<span class="nm">0.1</span>):
+        <span class="fn">super</span>().<span class="fn">__init__</span>()
+        self.attn  = <span class="cl">MultiHeadAttention</span>(d_model, num_heads)
+        self.ff    = <span class="cl">FeedForward</span>(d_model, d_ff, dropout)
+        self.norm1 = nn.<span class="cl">LayerNorm</span>(d_model)
+        self.norm2 = nn.<span class="cl">LayerNorm</span>(d_model)
+        self.drop  = nn.<span class="cl">Dropout</span>(dropout)
+
+    <span class="kw">def</span> <span class="fn">forward</span>(self, x, mask=<span class="kw">None</span>):
+        <span class="cm"># Residual connection: x + sublayer(norm(x))</span>
+        x = x + self.drop(self.attn(self.norm1(x), mask))  <span class="cm"># pre-norm</span>
+        x = x + self.drop(self.ff  (self.norm2(x)))
+        <span class="kw">return</span> x
+
+<span class="cm"># ─── 4. FULL ENCODER ──────────────────────────────────</span>
+<span class="kw">class</span> <span class="cl">TransformerEncoder</span>(nn.<span class="cl">Module</span>):
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, vocab_size, d_model=<span class="nm">512</span>, num_heads=<span class="nm">8</span>,
+                       num_layers=<span class="nm">6</span>, d_ff=<span class="nm">2048</span>, max_len=<span class="nm">512</span>, dropout=<span class="nm">0.1</span>):
+        <span class="fn">super</span>().<span class="fn">__init__</span>()
+        self.embed = nn.<span class="cl">Embedding</span>(vocab_size, d_model)
+        self.pe    = self.<span class="fn">_build_pe</span>(max_len, d_model)
+        self.layers = nn.<span class="cl">ModuleList</span>([
+            <span class="cl">EncoderLayer</span>(d_model, num_heads, d_ff, dropout)
+            <span class="kw">for</span> _ <span class="kw">in</span> <span class="fn">range</span>(num_layers)
+        ])
+        self.norm  = nn.<span class="cl">LayerNorm</span>(d_model)
+        self.drop  = nn.<span class="cl">Dropout</span>(dropout)
+        self.d_model = d_model
+
+    <span class="kw">def</span> <span class="fn">_build_pe</span>(self, max_len, d_model):
+        pe  = torch.<span class="fn">zeros</span>(max_len, d_model)
+        pos = torch.<span class="fn">arange</span>(<span class="nm">0</span>, max_len).<span class="fn">unsqueeze</span>(<span class="nm">1</span>).float()
+        div = torch.<span class="fn">exp</span>(torch.<span class="fn">arange</span>(<span class="nm">0</span>, d_model, <span class="nm">2</span>).float() * (-math.<span class="fn">log</span>(<span class="nm">10000</span>) / d_model))
+        pe[:, <span class="nm">0</span>::<span class="nm">2</span>] = torch.<span class="fn">sin</span>(pos * div)
+        pe[:, <span class="nm">1</span>::<span class="nm">2</span>] = torch.<span class="fn">cos</span>(pos * div)
+        <span class="kw">return</span> pe.<span class="fn">unsqueeze</span>(<span class="nm">0</span>)  <span class="cm"># [1, max_len, d_model]</span>
+
+    <span class="kw">def</span> <span class="fn">forward</span>(self, x, mask=<span class="kw">None</span>):
+        T = x.size(<span class="nm">1</span>)
+        x = self.drop(self.embed(x) * math.<span class="fn">sqrt</span>(self.d_model)  <span class="cm"># scale embeddings</span>
+                      + self.pe[:, :T].<span class="fn">to</span>(x.device))
+        <span class="kw">for</span> layer <span class="kw">in</span> self.layers:
+            x = <span class="fn">layer</span>(x, mask)
+        <span class="kw">return</span> self.<span class="fn">norm</span>(x)
+        <span class="cm"># Returns: [batch, seq_len, d_model] — contextualized embeddings</span>
+
+<span class="cm"># ─── 5. ADD CLASSIFICATION HEAD ───────────────────────</span>
+<span class="kw">class</span> <span class="cl">TextClassifier</span>(nn.<span class="cl">Module</span>):
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, vocab_size, num_classes, **encoder_kwargs):
+        <span class="fn">super</span>().<span class="fn">__init__</span>()
+        self.encoder = <span class="cl">TransformerEncoder</span>(vocab_size, **encoder_kwargs)
+        self.head    = nn.<span class="cl">Linear</span>(encoder_kwargs.get(<span class="st">"d_model"</span>, <span class="nm">512</span>), num_classes)
+
+    <span class="kw">def</span> <span class="fn">forward</span>(self, x, mask=<span class="kw">None</span>):
+        enc  = self.encoder(x, mask)      <span class="cm"># [B, T, d_model]</span>
+        cls  = enc[:, <span class="nm">0</span>, :]             <span class="cm"># take [CLS] token</span>
+        <span class="kw">return</span> self.head(cls)            <span class="cm"># [B, num_classes]</span>
+
+<span class="cm"># ─── TEST ─────────────────────────────────────────────</span>
+model = <span class="cl">TextClassifier</span>(vocab_size=<span class="nm">30522</span>, num_classes=<span class="nm">2</span>,
+    d_model=<span class="nm">256</span>, num_heads=<span class="nm">8</span>, num_layers=<span class="nm">4</span>, d_ff=<span class="nm">512</span>)
+
+x      = torch.<span class="fn">randint</span>(<span class="nm">0</span>, <span class="nm">30522</span>, (<span class="nm">2</span>, <span class="nm">20</span>))  <span class="cm"># batch=2, seq_len=20</span>
+logits = <span class="fn">model</span>(x)
+print(<span class="st">"Output shape:"</span>,  logits.shape)   <span class="cm"># [2, 2]</span>
+print(<span class="st">"Total params:"</span>, <span class="fn">sum</span>(p.<span class="fn">numel</span>() <span class="kw">for</span> p <span class="kw">in</span> model.<span class="fn">parameters</span>()))</pre>
+<div class="out">Output shape:  torch.Size([2, 2])
+Total params:  12,614,914</div></div>
+<div class="pn"><a class="pnb" onclick="sp('finetune')"><span class="pnl">← Prev</span><span class="pntitle">Fine-Tuning</span></a><a class="pnb r" onclick="sp('datasets')"><span class="pnl">Next →</span><span class="pntitle">Datasets Library</span></a></div>
+</div>
+
+<!-- DATASETS -->
+<div class="pg" id="pg-datasets">
+<h1>🗄️ Datasets Library</h1>
+<div class="cb"><div class="cbh"><span class="lb">python</span><span>datasets_complete.py</span><button class="cpb" onclick="cc(this)">Copy</button></div>
+<pre><span class="im">from</span> datasets <span class="im">import</span> load_dataset, Dataset, DatasetDict
+
+dataset = <span class="fn">load_dataset</span>(<span class="st">"imdb"</span>)
+print(dataset)                     <span class="cm"># DatasetDict({'train':25000,'test':25000})</span>
+print(dataset[<span class="st">"train"</span>][<span class="nm">0</span>])        <span class="cm"># {'text': 'I rented...', 'label': 0}</span>
+print(dataset[<span class="st">"train"</span>].features)  <span class="cm"># {'text': Value('string'), 'label': ClassLabel}</span>
+
+<span class="cm"># From your own CSV</span>
+my_ds = <span class="fn">load_dataset</span>(<span class="st">"csv"</span>, data_files=<span class="st">"data.csv"</span>)
+
+<span class="cm"># From Python dict</span>
+my_ds = Dataset.<span class="fn">from_dict</span>({<span class="st">"text"</span>: [<span class="st">"Hello"</span>, <span class="st">"World"</span>], <span class="st">"label"</span>: [<span class="nm">0</span>, <span class="nm">1</span>]})
+
+<span class="cm"># Map, filter, split</span>
+tokenized = dataset.<span class="fn">map</span>(<span class="kw">lambda</span> b: tokenizer(b[<span class="st">"text"</span>], truncation=<span class="kw">True</span>), batched=<span class="kw">True</span>)
+positive  = dataset[<span class="st">"train"</span>].<span class="fn">filter</span>(<span class="kw">lambda</span> x: x[<span class="st">"label"</span>] == <span class="nm">1</span>)
+splits    = dataset[<span class="st">"train"</span>].<span class="fn">train_test_split</span>(test_size=<span class="nm">0.2</span>)
+small     = dataset[<span class="st">"train"</span>].<span class="fn">select</span>(<span class="fn">range</span>(<span class="nm">1000</span>))  <span class="cm"># first 1000 rows</span>
+shuffled  = dataset[<span class="st">"train"</span>].<span class="fn">shuffle</span>(seed=<span class="nm">42</span>)</pre></div>
+<div class="pn"><a class="pnb" onclick="sp('scratch')"><span class="pnl">← Prev</span><span class="pntitle">Build From Scratch</span></a><a class="pnb r" onclick="sp('bert')"><span class="pnl">Next →</span><span class="pntitle">BERT</span></a></div>
+</div>
+<!-- BERT, GPT, T5, ROBERTA -->
+<div class="pg" id="pg-bert">
+<h1>🔵 BERT</h1>
+<p>BERT (Bidirectional Encoder Representations from Transformers) reads text in both directions simultaneously. Pre-trained on Masked LM + Next Sentence Prediction on 3.3 billion words.</p>
+<div class="cb"><div class="cbh"><span class="lb">python</span><span>bert_usage.py</span><button class="cpb" onclick="cc(this)">Copy</button></div>
+<pre><span class="im">from</span> transformers <span class="im">import</span> <span class="cl">BertTokenizer</span>, <span class="cl">BertForMaskedLM</span>, <span class="cl">BertModel</span>
+<span class="im">import</span> torch
+
+<span class="cm"># ── Masked Language Model ─────────────────────────────</span>
+tok = <span class="cl">BertTokenizer</span>.<span class="fn">from_pretrained</span>(<span class="st">"bert-base-uncased"</span>)
+mlm = <span class="cl">BertForMaskedLM</span>.<span class="fn">from_pretrained</span>(<span class="st">"bert-base-uncased"</span>)
+
+text    = <span class="st">"The capital of France is [MASK]."</span>
+inputs  = <span class="fn">tok</span>(text, return_tensors=<span class="st">"pt"</span>)
+mask_i  = (inputs.input_ids == tok.mask_token_id).<span class="fn">nonzero</span>(as_tuple=<span class="kw">True</span>)[<span class="nm">1</span>]
+
+<span class="kw">with</span> torch.<span class="fn">no_grad</span>():
+    out = <span class="fn">mlm</span>(**inputs)
+    <span class="cm"># out.logits shape: [1, seq_len, vocab_size]</span>
+
+top5 = torch.<span class="fn">topk</span>(out.logits[<span class="nm">0</span>, mask_i], k=<span class="nm">5</span>)
+<span class="kw">for</span> idx, score <span class="kw">in</span> <span class="fn">zip</span>(top5.indices[<span class="nm">0</span>], top5.values[<span class="nm">0</span>]):
+    print(f<span class="st">"{tok.decode([idx]):12} {score:.2f}"</span>)
+
+<span class="cm"># ── Get embeddings ────────────────────────────────────</span>
+bert = <span class="cl">BertModel</span>.<span class="fn">from_pretrained</span>(<span class="st">"bert-base-uncased"</span>)
+enc  = <span class="fn">tok</span>(<span class="st">"Hello world"</span>, return_tensors=<span class="st">"pt"</span>)
+<span class="kw">with</span> torch.<span class="fn">no_grad</span>():
+    out2 = <span class="fn">bert</span>(**enc)
+    <span class="cm"># out2.last_hidden_state: [1, seq_len, 768]</span>
+    <span class="cm"># out2.pooler_output:     [1, 768] — [CLS] token after linear</span>
+cls_emb = out2.last_hidden_state[:, <span class="nm">0</span>, :]  <span class="cm"># [1, 768]</span>
+print(<span class="st">"CLS embedding shape:"</span>, cls_emb.shape)</pre>
+<div class="out">paris        15.31
+lyon          9.22
+nice          8.11
+bordeaux      7.54
+madrid        6.81
+CLS embedding shape: torch.Size([1, 768])</div></div>
+<div class="pn"><a class="pnb" onclick="sp('datasets')"><span class="pnl">← Prev</span><span class="pntitle">Datasets</span></a><a class="pnb r" onclick="sp('gpt')"><span class="pnl">Next →</span><span class="pntitle">GPT-2</span></a></div>
+</div>
+
+<div class="pg" id="pg-gpt">
+<h1>🟠 GPT-2 / GPT Models</h1>
+<p>GPT uses only the decoder stack. It reads left-to-right and was trained to predict the next token — the architecture behind all modern LLMs.</p>
+<div class="cb"><div class="cbh"><span class="lb">python</span><span>gpt2.py</span><button class="cpb" onclick="cc(this)">Copy</button></div>
+<pre><span class="im">from</span> transformers <span class="im">import</span> <span class="cl">GPT2Tokenizer</span>, <span class="cl">GPT2LMHeadModel</span>
+<span class="im">import</span> torch
+
+tok   = <span class="cl">GPT2Tokenizer</span>.<span class="fn">from_pretrained</span>(<span class="st">"gpt2"</span>)
+tok.pad_token = tok.eos_token
+model = <span class="cl">GPT2LMHeadModel</span>.<span class="fn">from_pretrained</span>(<span class="st">"gpt2"</span>)
+
+<span class="cm"># Generate with different decoding strategies</span>
+prompt = <span class="st">"Artificial intelligence will"</span>
+ids    = <span class="fn">tok</span>.<span class="fn">encode</span>(prompt, return_tensors=<span class="st">"pt"</span>)
+
+<span class="cm"># Greedy (deterministic)</span>
+greedy = model.<span class="fn">generate</span>(ids, max_new_tokens=<span class="nm">30</span>)
+
+<span class="cm"># Sampling (creative)</span>
+sampled = model.<span class="fn">generate</span>(ids, max_new_tokens=<span class="nm">60</span>,
+    do_sample=<span class="kw">True</span>, temperature=<span class="nm">0.8</span>, top_p=<span class="nm">0.95</span>,
+    pad_token_id=tok.eos_token_id)
+
+<span class="cm"># Beam search (best quality)</span>
+beamed = model.<span class="fn">generate</span>(ids, max_new_tokens=<span class="nm">40</span>,
+    num_beams=<span class="nm">5</span>, no_repeat_ngram_size=<span class="nm">2</span>, early_stopping=<span class="kw">True</span>)
+
+<span class="kw">for</span> name, out <span class="kw">in</span> [(<span class="st">"greedy"</span>,greedy),(<span class="st">"sampled"</span>,sampled),(<span class="st">"beamed"</span>,beamed)]:
+    print(f<span class="st">"\n[{name}]:"</span>, <span class="fn">tok</span>.<span class="fn">decode</span>(out[<span class="nm">0</span>], skip_special_tokens=<span class="kw">True</span>)[:80])</pre></div>
+<div class="pn"><a class="pnb" onclick="sp('bert')"><span class="pnl">← Prev</span><span class="pntitle">BERT</span></a><a class="pnb r" onclick="sp('t5')"><span class="pnl">Next →</span><span class="pntitle">T5</span></a></div>
+</div>
+
+<div class="pg" id="pg-t5">
+<h1>🟢 T5 — Text-to-Text</h1>
+<p>T5 frames every NLP task as text generation with a task prefix. One model, one format, infinite tasks.</p>
+<div class="cb"><div class="cbh"><span class="lb">python</span><span>t5_tasks.py</span><button class="cpb" onclick="cc(this)">Copy</button></div>
+<pre><span class="im">from</span> transformers <span class="im">import</span> <span class="cl">T5Tokenizer</span>, <span class="cl">T5ForConditionalGeneration</span>
+
+tok   = <span class="cl">T5Tokenizer</span>.<span class="fn">from_pretrained</span>(<span class="st">"t5-small"</span>)
+model = <span class="cl">T5ForConditionalGeneration</span>.<span class="fn">from_pretrained</span>(<span class="st">"t5-small"</span>)
+
+<span class="kw">def</span> <span class="fn">run</span>(text, max_len=<span class="nm">100</span>):
+    ids = <span class="fn">tok</span>(text, return_tensors=<span class="st">"pt"</span>).input_ids
+    out = model.<span class="fn">generate</span>(ids, max_length=max_len)
+    <span class="kw">return</span> <span class="fn">tok</span>.<span class="fn">decode</span>(out[<span class="nm">0</span>], skip_special_tokens=<span class="kw">True</span>)
+
+print(<span class="fn">run</span>(<span class="st">"translate English to German: The sky is blue."</span>))
+<span class="cm"># "Der Himmel ist blau."</span>
+print(<span class="fn">run</span>(<span class="st">"summarize: "</span> + long_article, max_len=<span class="nm">60</span>))
+print(<span class="fn">run</span>(<span class="st">"question: What is 2+2? context: 2+2 equals four."</span>))
+<span class="cm"># "four"</span></pre></div>
+<div class="pn"><a class="pnb" onclick="sp('gpt')"><span class="pnl">← Prev</span><span class="pntitle">GPT-2</span></a><a class="pnb r" onclick="sp('roberta')"><span class="pnl">Next →</span><span class="pntitle">RoBERTa</span></a></div>
+</div>
+
+<div class="pg" id="pg-roberta">
+<h1>🟣 RoBERTa</h1>
+<p>RoBERTa is BERT trained better: 10x more data, longer training, no NSP task, dynamic masking. Uses <code>&lt;mask&gt;</code> not <code>[MASK]</code>.</p>
+<div class="cb"><div class="cbh"><span class="lb">python</span><span>roberta.py</span><button class="cpb" onclick="cc(this)">Copy</button></div>
+<pre><span class="im">from</span> transformers <span class="im">import</span> pipeline
+
+clf = <span class="fn">pipeline</span>(<span class="st">"sentiment-analysis"</span>,
+    model=<span class="st">"cardiffnlp/twitter-roberta-base-sentiment-latest"</span>)
+
+texts = [<span class="st">"AMAZING!!! 🔥🔥🔥"</span>, <span class="st">"Meh, could be better"</span>, <span class="st">"Absolutely terrible"</span>]
+<span class="kw">for</span> t <span class="kw">in</span> texts:
+    r = <span class="fn">clf</span>(t)[<span class="nm">0</span>]
+    print(f<span class="st">"{r['label']:10} {r['score']:.0%} | {t}"</span>)
+<span class="cm"># positive   99% | AMAZING!!! 🔥🔥🔥</span>
+<span class="cm"># neutral    71% | Meh, could be better</span>
+<span class="cm"># negative   97% | Absolutely terrible</span>
+
+<span class="cm"># RoBERTa fill-mask uses &lt;mask&gt; not [MASK]</span>
+fill = <span class="fn">pipeline</span>(<span class="st">"fill-mask"</span>, model=<span class="st">"roberta-base"</span>)
+r = <span class="fn">fill</span>(<span class="st">"Paris is the &lt;mask&gt; of France."</span>)
+print(r[<span class="nm">0</span>][<span class="st">"token_str"</span>])  <span class="cm"># " capital"</span>
+print(r[<span class="nm">0</span>][<span class="st">"score"</span>])       <span class="cm"># 0.952</span></pre>
+<div class="out">positive   99% | AMAZING!!! 🔥🔥🔥
+neutral    71% | Meh, could be better
+negative   97% | Absolutely terrible
+ capital
+0.952</div></div>
+<div class="pn"><a class="pnb" onclick="sp('t5')"><span class="pnl">← Prev</span><span class="pntitle">T5</span></a><a class="pnb r" onclick="sp('reallife')"><span class="pnl">Next →</span><span class="pntitle">Real-Life Usage</span></a></div>
+</div>
+<!-- REAL-LIFE TRANSFORMERS -->
+<div class="pg" id="pg-reallife">
+<h1>🌐 Transformers in the Wild</h1>
+<p>Transformers power almost every modern AI product. Here's how the same model type is used across industries.</p>
+<table>
+  <tr><th>Industry</th><th>Product/Company</th><th>Model Type</th><th>Task</th></tr>
+  <tr><td>Search</td><td>Google Search</td><td>BERT (encoder)</td><td>Understand query intent</td></tr>
+  <tr><td>Chat AI</td><td>ChatGPT, Claude, Gemini</td><td>GPT (decoder)</td><td>Text generation</td></tr>
+  <tr><td>Healthcare</td><td>ClinicalBERT, BioBERT</td><td>BERT fine-tuned</td><td>Medical entity extraction</td></tr>
+  <tr><td>Translation</td><td>DeepL, Google Translate</td><td>Encoder-Decoder</td><td>Seq2seq translation</td></tr>
+  <tr><td>Code</td><td>GitHub Copilot</td><td>GPT (decoder)</td><td>Code generation</td></tr>
+  <tr><td>Finance</td><td>FinBERT</td><td>BERT fine-tuned</td><td>Financial sentiment</td></tr>
+  <tr><td>Legal</td><td>Legal-BERT</td><td>BERT fine-tuned</td><td>Contract analysis</td></tr>
+  <tr><td>Customer service</td><td>Chatbots</td><td>T5/BART fine-tuned</td><td>FAQ answering, routing</td></tr>
+</table>
+<h2>🏗️ Production Pipeline Pattern</h2>
+<div class="cb"><div class="cbh"><span class="lb">python</span><span>production_pipeline.py — real-world inference setup</span><button class="cpb" onclick="cc(this)">Copy</button></div>
+<pre><span class="im">from</span> transformers <span class="im">import</span> pipeline
+<span class="im">import</span> time
+
+<span class="cm"># Load once at server startup — NOT per request!</span>
+classifier = <span class="fn">pipeline</span>(
+    <span class="st">"sentiment-analysis"</span>,
+    model=<span class="st">"distilbert-base-uncased-finetuned-sst-2-english"</span>,
+    device=<span class="nm">0</span>,          <span class="cm"># GPU (use -1 for CPU)</span>
+    batch_size=<span class="nm">32</span>,      <span class="cm"># batch for throughput</span>
+    truncation=<span class="kw">True</span>,
+    max_length=<span class="nm">256</span>
+)
+
+<span class="cm"># Batch inference (production pattern)</span>
+customer_reviews = [<span class="st">"Great product!"</span>, <span class="st">"Terrible service."</span>, <span class="st">"Average quality."</span>] * <span class="nm">100</span>
+
+t0      = time.<span class="fn">time</span>()
+results = <span class="fn">classifier</span>(customer_reviews)  <span class="cm"># processes all 300 at once</span>
+elapsed = time.<span class="fn">time</span>() - t0
+
+positive = <span class="fn">sum</span>(<span class="nm">1</span> <span class="kw">for</span> r <span class="kw">in</span> results <span class="kw">if</span> r[<span class="st">"label"</span>] == <span class="st">"POSITIVE"</span>)
+print(f<span class="st">"Processed {len(results)} reviews in {elapsed:.2f}s"</span>)
+print(f<span class="st">"Positive: {positive/len(results):.0%}"</span>)
+
+<span class="cm"># Flask API example</span>
+<span class="im">from</span> flask <span class="im">import</span> Flask, request, jsonify
+
+app = <span class="fn">Flask</span>(__name__)
+
+<span class="at">@app.route</span>(<span class="st">"/predict"</span>, methods=[<span class="st">"POST"</span>])
+<span class="kw">def</span> <span class="fn">predict</span>():
+    data = request.<span class="fn">json</span>()
+    text = data.<span class="fn">get</span>(<span class="st">"text"</span>, <span class="st">""</span>)
+    <span class="kw">if not</span> text:
+        <span class="kw">return</span> <span class="fn">jsonify</span>({<span class="st">"error"</span>: <span class="st">"No text provided"</span>}), <span class="nm">400</span>
+    result = <span class="fn">classifier</span>(text)[<span class="nm">0</span>]
+    <span class="kw">return</span> <span class="fn">jsonify</span>({
+        <span class="st">"label"</span>: result[<span class="st">"label"</span>],
+        <span class="st">"confidence"</span>: <span class="fn">round</span>(result[<span class="st">"score"</span>], <span class="nm">4</span>),
+        <span class="st">"text"</span>: text[:100]
+    })
+<span class="cm"># curl -X POST http://localhost:5000/predict -H "Content-Type: application/json"</span>
+<span class="cm"># -d '{"text": "This is amazing!"}'</span>
+<span class="cm"># → {"label": "POSITIVE", "confidence": 0.9998, "text": "This is amazing!"}</span></pre></div>
+<div class="pn"><a class="pnb" onclick="sp('roberta')"><span class="pnl">← Prev</span><span class="pntitle">RoBERTa</span></a><a class="pnb r" onclick="sp('chatbot')"><span class="pnl">Next →</span><span class="pntitle">Build AI Chatbot</span></a></div>
+</div>
+<!-- CHATBOT PROJECT PAGE -->
+<div class="pg" id="pg-chatbot">
+<h1>💬 Build an AI Chatbot</h1>
+<div class="htags">
+  <span class="tag t1">Medium Project</span>
+  <span class="tag t2">~200 lines of code</span>
+  <span class="tag t3">Full Stack</span>
+  <span class="tag t4">Deployable</span>
+</div>
+<p>Build a fully working AI chatbot using a Transformer model — with a real chat UI, conversation history, and a backend API. This is a complete medium-level project you can deploy and show in your portfolio.</p>
+
+<div class="project">
+  <div class="project-header">
+    <div class="project-ico">💬</div>
+    <div class="project-meta">
+      <div class="project-title">TransformerChat — AI Chatbot</div>
+      <div class="project-tags">
+        <span class="ptag ptag-b">DialoGPT-medium</span>
+        <span class="ptag ptag-p">Flask backend</span>
+        <span class="ptag ptag-g">HTML/CSS/JS frontend</span>
+      </div>
+    </div>
+  </div>
+  <div class="project-body">
+    <p>The chatbot uses Microsoft's <strong>DialoGPT</strong> — a GPT-2 model fine-tuned on 147M Reddit conversations. It maintains conversation history as context, so it remembers what you said earlier in the chat.</p>
+  </div>
+</div>
+
+<h2>📁 Project Structure</h2>
+<div class="cb"><div class="cbh"><span class="lb">structure</span><span>File layout</span></div>
+<pre>transformerchat/
+├── app.py              ← Flask backend
+├── chatbot.py          ← Model logic
+├── requirements.txt    ← Dependencies
+└── static/
+    └── index.html      ← Chat UI (self-contained)</pre></div>
+
+<h2>Step 1 — Install Dependencies</h2>
+<div class="cb"><div class="cbh"><span class="lb">bash</span><span>requirements.txt</span><button class="cpb" onclick="cc(this)">Copy</button></div>
+<pre>pip install transformers torch flask flask-cors</pre></div>
+
+<h2>Step 2 — The Chatbot Engine (chatbot.py)</h2>
+<div class="cb"><div class="cbh"><span class="lb">python</span><span>chatbot.py — core model logic</span><button class="cpb" onclick="cc(this)">Copy</button></div>
+<pre><span class="im">from</span> transformers <span class="im">import</span> <span class="cl">AutoTokenizer</span>, <span class="cl">AutoModelForCausalLM</span>
+<span class="im">import</span> torch
+
+<span class="kw">class</span> <span class="cl">TransformerChatbot</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, model_name=<span class="st">"microsoft/DialoGPT-medium"</span>):
+        print(<span class="st">"Loading chatbot model..."</span>)
+        self.tokenizer = <span class="cl">AutoTokenizer</span>.<span class="fn">from_pretrained</span>(model_name)
+        self.model     = <span class="cl">AutoModelForCausalLM</span>.<span class="fn">from_pretrained</span>(model_name)
+        self.device    = <span class="st">"cuda"</span> <span class="kw">if</span> torch.cuda.<span class="fn">is_available</span>() <span class="kw">else</span> <span class="st">"cpu"</span>
+        self.model     = self.model.<span class="fn">to</span>(self.device)
+        self.model.<span class="fn">eval</span>()
+        self.history   = <span class="kw">None</span>  <span class="cm"># maintains conversation context</span>
+        print(f<span class="st">"Model ready on {self.device}"</span>)
+
+    <span class="kw">def</span> <span class="fn">respond</span>(self, user_input: str, max_new_tokens=<span class="nm">150</span>) -> str:
+        <span class="st">"""Generate a response given user input + conversation history."""</span>
+        <span class="cm"># Encode user input + EOS token</span>
+        new_ids = self.tokenizer.<span class="fn">encode</span>(
+            user_input + self.tokenizer.eos_token, return_tensors=<span class="st">"pt"</span>
+        ).<span class="fn">to</span>(self.device)
+
+        <span class="cm"># Append to history (so model has full conversation context)</span>
+        bot_input = (torch.<span class="fn">cat</span>([self.history, new_ids], dim=-<span class="nm">1</span>)
+                     <span class="kw">if</span> self.history <span class="kw">is not None</span> <span class="kw">else</span> new_ids)
+
+        <span class="cm"># Limit context to avoid OOM (keep last 1000 tokens)</span>
+        <span class="kw">if</span> bot_input.shape[-<span class="nm">1</span>] > <span class="nm">1000</span>:
+            bot_input = bot_input[:, -<span class="nm">1000</span>:]
+
+        <span class="cm"># Generate response</span>
+        <span class="kw">with</span> torch.<span class="fn">no_grad</span>():
+            output_ids = self.model.<span class="fn">generate</span>(
+                bot_input,
+                max_new_tokens=max_new_tokens,
+                pad_token_id=self.tokenizer.eos_token_id,
+                do_sample=<span class="kw">True</span>,       <span class="cm"># enable randomness</span>
+                temperature=<span class="nm">0.75</span>,     <span class="cm"># controls randomness</span>
+                top_p=<span class="nm">0.9</span>,            <span class="cm"># nucleus sampling</span>
+                top_k=<span class="nm">50</span>,             <span class="cm"># keep top 50 tokens</span>
+                repetition_penalty=<span class="nm">1.1</span>, <span class="cm"># avoid repeating</span>
+                no_repeat_ngram_size=<span class="nm">3</span>
+            )
+
+        <span class="cm"># Save full conversation as new history</span>
+        self.history = output_ids
+
+        <span class="cm"># Decode only the NEW tokens (the bot's response)</span>
+        new_tokens = output_ids[:, bot_input.shape[-<span class="nm">1</span>]:]
+        response   = self.tokenizer.<span class="fn">decode</span>(new_tokens[<span class="nm">0</span>], skip_special_tokens=<span class="kw">True</span>)
+
+        <span class="kw">return</span> response.<span class="fn">strip</span>() <span class="kw">or</span> <span class="st">"Sorry, I didn't understand that. Can you rephrase?"</span>
+
+    <span class="kw">def</span> <span class="fn">reset</span>(self):
+        <span class="st">"""Clear conversation history (start fresh)."""</span>
+        self.history = <span class="kw">None</span>
+
+<span class="cm"># Quick test</span>
+<span class="kw">if</span> __name__ == <span class="st">"__main__"</span>:
+    bot = <span class="cl">TransformerChatbot</span>()
+    <span class="kw">while</span> <span class="kw">True</span>:
+        user = <span class="fn">input</span>(<span class="st">"You: "</span>)
+        <span class="kw">if</span> user.lower() <span class="kw">in</span> [<span class="st">"quit"</span>, <span class="st">"exit"</span>]: <span class="kw">break</span>
+        print(<span class="st">"Bot:"</span>, bot.<span class="fn">respond</span>(user))</pre></div>
+
+<h2>Step 3 — Flask API (app.py)</h2>
+<div class="cb"><div class="cbh"><span class="lb">python</span><span>app.py — REST API</span><button class="cpb" onclick="cc(this)">Copy</button></div>
+<pre><span class="im">from</span> flask <span class="im">import</span> Flask, request, jsonify
+<span class="im">from</span> flask_cors <span class="im">import</span> CORS
+<span class="im">from</span> chatbot <span class="im">import</span> <span class="cl">TransformerChatbot</span>
+
+app = <span class="fn">Flask</span>(__name__)
+<span class="fn">CORS</span>(app)  <span class="cm"># allow frontend to call backend</span>
+
+<span class="cm"># Load model ONCE when server starts</span>
+bot = <span class="cl">TransformerChatbot</span>()
+
+<span class="at">@app.route</span>(<span class="st">"/chat"</span>, methods=[<span class="st">"POST"</span>])
+<span class="kw">def</span> <span class="fn">chat</span>():
+    data    = request.<span class="fn">get_json</span>()
+    message = data.<span class="fn">get</span>(<span class="st">"message"</span>, <span class="st">""</span>).<span class="fn">strip</span>()
+
+    <span class="kw">if not</span> message:
+        <span class="kw">return</span> <span class="fn">jsonify</span>({<span class="st">"error"</span>: <span class="st">"Message cannot be empty"</span>}), <span class="nm">400</span>
+
+    <span class="kw">if</span> <span class="fn">len</span>(message) > <span class="nm">500</span>:
+        <span class="kw">return</span> <span class="fn">jsonify</span>({<span class="st">"error"</span>: <span class="st">"Message too long (max 500 chars)"</span>}), <span class="nm">400</span>
+
+    response = bot.<span class="fn">respond</span>(message)
+    <span class="kw">return</span> <span class="fn">jsonify</span>({<span class="st">"reply"</span>: response, <span class="st">"status"</span>: <span class="st">"ok"</span>})
+
+<span class="at">@app.route</span>(<span class="st">"/reset"</span>, methods=[<span class="st">"POST"</span>])
+<span class="kw">def</span> <span class="fn">reset</span>():
+    bot.<span class="fn">reset</span>()
+    <span class="kw">return</span> <span class="fn">jsonify</span>({<span class="st">"status"</span>: <span class="st">"conversation cleared"</span>})
+
+<span class="at">@app.route</span>(<span class="st">"/health"</span>, methods=[<span class="st">"GET"</span>])
+<span class="kw">def</span> <span class="fn">health</span>():
+    <span class="kw">return</span> <span class="fn">jsonify</span>({<span class="st">"status"</span>: <span class="st">"ok"</span>, <span class="st">"model"</span>: <span class="st">"DialoGPT-medium"</span>})
+
+<span class="kw">if</span> __name__ == <span class="st">"__main__"</span>:
+    app.<span class="fn">run</span>(debug=<span class="kw">False</span>, host=<span class="st">"0.0.0.0"</span>, port=<span class="nm">5000</span>)
+<span class="cm"># Run: python app.py</span>
+<span class="cm"># API: POST http://localhost:5000/chat {"message": "Hello!"}</span></pre></div>
+
+<h2>Step 4 — Chat UI (static/index.html)</h2>
+<div class="cb"><div class="cbh"><span class="lb">html</span><span>static/index.html — complete frontend</span><button class="cpb" onclick="cc(this)">Copy</button></div>
+<pre><span class="cm">&lt;!-- Save as static/index.html and open in browser --&gt;</span>
+&lt;<span class="cl">!DOCTYPE html</span>&gt;
+&lt;<span class="cl">html</span>&gt;
+&lt;<span class="cl">head</span>&gt;
+&lt;<span class="cl">meta</span> charset=<span class="st">"UTF-8"</span>&gt;
+&lt;<span class="cl">title</span>&gt;TransformerChat&lt;/<span class="cl">title</span>&gt;
+&lt;<span class="cl">style</span>&gt;
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: system-ui; background:#0f172a; color:#e2e8f0; height:100vh; display:flex; flex-direction:column; }
+  #header { padding:16px 24px; background:#1e293b; border-bottom:1px solid #334155; display:flex; align-items:center; justify-content:space-between; }
+  #header h1 { font-size:20px; color:#38bdf8; }
+  #status { font-size:12px; color:#64748b; }
+  #messages { flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:12px; }
+  .msg { max-width:75%; padding:12px 16px; border-radius:16px; line-height:1.55; font-size:14px; }
+  .bot  { background:#1e293b; border:1px solid #334155; align-self:flex-start; border-bottom-left-radius:4px; }
+  .user { background:linear-gradient(135deg,#0ea5e9,#6366f1); color:white; align-self:flex-end; border-bottom-right-radius:4px; }
+  .typing-indicator { color:#64748b; font-style:italic; font-size:13px; }
+  #input-area { padding:16px 20px; background:#1e293b; border-top:1px solid #334155; display:flex; gap:10px; }
+  #msg-input { flex:1; background:#0f172a; border:1px solid #334155; border-radius:12px; padding:12px 16px; color:#e2e8f0; font-size:14px; outline:none; resize:none; }
+  #msg-input:focus { border-color:#38bdf8; }
+  #send-btn { background:#38bdf8; color:#000; font-weight:700; border:none; border-radius:12px; padding:12px 22px; cursor:pointer; font-size:14px; transition:opacity .2s; }
+  #send-btn:hover { opacity:.85; }
+  #reset-btn { background:#334155; color:#94a3b8; border:none; border-radius:12px; padding:12px 16px; cursor:pointer; font-size:13px; }
+  #reset-btn:hover { background:#475569; }
+&lt;/<span class="cl">style</span>&gt;
+&lt;/<span class="cl">head</span>&gt;
+&lt;<span class="cl">body</span>&gt;
+&lt;<span class="cl">div</span> id=<span class="st">"header"</span>&gt;
+  &lt;<span class="cl">h1</span>&gt;💬 TransformerChat&lt;/<span class="cl">h1</span>&gt;
+  &lt;<span class="cl">span</span> id=<span class="st">"status"</span>&gt;Powered by DialoGPT&lt;/<span class="cl">span</span>&gt;
+&lt;/<span class="cl">div</span>&gt;
+&lt;<span class="cl">div</span> id=<span class="st">"messages"</span>&gt;
+  &lt;<span class="cl">div</span> class=<span class="st">"msg bot"</span>&gt;Hi! I'm an AI chatbot powered by DialoGPT. How can I help you today?&lt;/<span class="cl">div</span>&gt;
+&lt;/<span class="cl">div</span>&gt;
+&lt;<span class="cl">div</span> id=<span class="st">"input-area"</span>&gt;
+  &lt;<span class="cl">textarea</span> id=<span class="st">"msg-input"</span> placeholder=<span class="st">"Type a message... (Enter to send)"</span> rows=<span class="st">"1"</span>&gt;&lt;/<span class="cl">textarea</span>&gt;
+  &lt;<span class="cl">button</span> id=<span class="st">"reset-btn"</span> onclick=<span class="st">"resetChat()"</span>&gt;🔄 Reset&lt;/<span class="cl">button</span>&gt;
+  &lt;<span class="cl">button</span> id=<span class="st">"send-btn"</span> onclick=<span class="st">"sendMessage()"</span>&gt;Send&lt;/<span class="cl">button</span>&gt;
+&lt;/<span class="cl">div</span>&gt;
+&lt;<span class="cl">script</span>&gt;
+const API = 'http://localhost:5000';
+const msgs = document.getElementById('messages');
+const input = document.getElementById('msg-input');
+
+input.addEventListener('keydown', e =&gt; {
+  if (e.key === 'Enter' &amp;&amp; !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+
+function addMessage(text, type) {
+  const div = document.createElement('div');
+  div.className = `msg ${type}`;
+  div.textContent = text;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  return div;
+}
+
+async function sendMessage() {
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+
+  addMessage(text, 'user');
+  const typing = addMessage('Thinking...', 'bot typing-indicator');
+
+  try {
+    const res = await fetch(`${API}/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text })
+    });
+    const data = await res.json();
+    typing.remove();
+    addMessage(data.reply || data.error, 'bot');
+  } catch (err) {
+    typing.remove();
+    addMessage('Error: Could not connect to server. Make sure app.py is running.', 'bot');
+  }
+}
+
+async function resetChat() {
+  await fetch(`${API}/reset`, { method: 'POST' });
+  msgs.innerHTML = '&lt;div class="msg bot"&gt;Chat cleared! Starting fresh.&lt;/div&gt;';
+}
+&lt;/<span class="cl">script</span>&gt;
+&lt;/<span class="cl">body</span>&gt;&lt;/<span class="cl">html</span>&gt;</pre></div>
+
+<h2>Step 5 — Run It</h2>
+<div class="cb"><div class="cbh"><span class="lb">bash</span><span>Launch the chatbot</span><button class="cpb" onclick="cc(this)">Copy</button></div>
+<pre><span class="cm"># Start the backend</span>
+python app.py
+
+<span class="cm"># Then open static/index.html in your browser</span>
+<span class="cm"># OR run a simple HTTP server:</span>
+python -m http.server 8080 --directory static
+<span class="cm"># Visit: http://localhost:8080</span></pre></div>
+
+<h2>🎮 Try the Demo Here</h2>
+<p>This is a simulated demo — responses are generated by a simple rule-based bot for illustration:</p>
+<div id="chatbot-widget">
+  <div class="chat-header">
+    <div class="chat-dot"></div>
+    <div><div class="chat-title">TransformerChat Demo</div><div class="chat-subtitle">Simulated DialoGPT responses</div></div>
+  </div>
+  <div class="chat-suggestions">
+    <span class="sug" onclick="chatSend('Hello!')">Hello!</span>
+    <span class="sug" onclick="chatSend('What is a transformer?')">What is a transformer?</span>
+    <span class="sug" onclick="chatSend('Tell me something interesting')">Tell me something</span>
+    <span class="sug" onclick="chatSend('How are you today?')">How are you?</span>
+  </div>
+  <div class="chat-messages" id="chat-msgs">
+    <div class="msg bot">👋 Hi! I'm TransformerChat, powered by DialoGPT. Ask me anything!</div>
+  </div>
+  <div class="chat-input-row">
+    <input type="text" class="chat-input" id="chat-in" placeholder="Type a message..." onkeydown="if(event.key==='Enter')chatSend()">
+    <button class="chat-send" onclick="chatSend()">Send →</button>
+  </div>
+</div>
+
+<h2>🚀 Improvements You Can Add</h2>
+<ul>
+  <li><strong>Swap the model</strong> — Replace DialoGPT with <code>mistralai/Mistral-7B-Instruct-v0.2</code> for much better responses</li>
+  <li><strong>System prompt</strong> — Add a persona: "You are a helpful Python tutor..."</li>
+  <li><strong>Streaming</strong> — Use <code>TextIteratorStreamer</code> for word-by-word output like ChatGPT</li>
+  <li><strong>Persist history</strong> — Save conversations to SQLite database</li>
+  <li><strong>Fine-tune</strong> — Train DialoGPT on your own conversation data for a domain-specific bot</li>
+  <li><strong>Deploy</strong> — Run on HuggingFace Spaces (free), Render, or AWS Lambda</li>
+</ul>
+<div class="pn"><a class="pnb" onclick="sp('reallife')"><span class="pnl">← Prev</span><span class="pntitle">Real-Life Usage</span></a><a class="pnb r" onclick="sp('sentiment-app')"><span class="pnl">Next →</span><span class="pntitle">Sentiment Dashboard</span></a></div>
+</div>
+<!-- SENTIMENT APP -->
+<div class="pg" id="pg-sentiment-app">
+<h1>📊 Sentiment Dashboard</h1>
+<p>A complete sentiment analysis web app — analyze a batch of texts, see scores, and visualize results.</p>
+<div class="cb"><div class="cbh"><span class="lb">python</span><span>sentiment_api.py — full project</span><button class="cpb" onclick="cc(this)">Copy</button></div>
+<pre><span class="im">from</span> flask <span class="im">import</span> Flask, request, jsonify, render_template_string
+<span class="im">from</span> transformers <span class="im">import</span> pipeline
+<span class="im">import</span> json
+
+app = Flask(__name__)
+clf = pipeline(<span class="st">"sentiment-analysis"</span>,
+    model=<span class="st">"cardiffnlp/twitter-roberta-base-sentiment-latest"</span>)
+
+TEMPLATE = <span class="st">"""
+&lt;!DOCTYPE html&gt;&lt;html&gt;&lt;head&gt;&lt;title&gt;Sentiment Analyzer&lt;/title&gt;
+&lt;style&gt;
+  body{font-family:system-ui;max-width:800px;margin:0 auto;padding:24px;background:#0f172a;color:#e2e8f0}
+  textarea{width:100%;height:150px;background:#1e293b;color:#e2e8f0;border:1px solid #334155;border-radius:8px;padding:12px;font-size:14px}
+  button{background:#38bdf8;color:#000;font-weight:700;border:none;border-radius:8px;padding:12px 24px;cursor:pointer;margin-top:12px}
+  .result{margin-top:16px;padding:16px;background:#1e293b;border-radius:8px;border-left:4px solid}
+  .positive{border-color:#4ade80}.negative{border-color:#f87171}.neutral{border-color:#fbbf24}
+  .score{font-size:13px;color:#64748b;margin-top:4px}
+&lt;/style&gt;&lt;/head&gt;
+&lt;body&gt;&lt;h1&gt;📊 Sentiment Analyzer&lt;/h1&gt;
+&lt;p&gt;Enter one sentence per line:&lt;/p&gt;
+&lt;textarea id="texts" placeholder="I love this!&#10;Terrible experience.&#10;It's okay I guess."&gt;&lt;/textarea&gt;
+&lt;button onclick="analyze()"&gt;Analyze&lt;/button&gt;
+&lt;div id="results"&gt;&lt;/div&gt;
+&lt;script&gt;
+async function analyze() {
+  const texts = document.getElementById('texts').value.split('\\n').filter(t => t.trim());
+  const res = await fetch('/analyze', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({texts})});
+  const data = await res.json();
+  document.getElementById('results').innerHTML = data.results.map(r =>
+    `&lt;div class="result ${r.label}"&gt;&lt;strong&gt;${r.label.toUpperCase()}&lt;/strong&gt;: ${r.text}&lt;div class="score"&gt;Confidence: ${(r.score*100).toFixed(1)}%&lt;/div&gt;&lt;/div&gt;`
+  ).join('');
+}
+&lt;/script&gt;&lt;/body&gt;&lt;/html&gt;
+"""</span>
+
+@app.route(<span class="st">"/"</span>)
+def index():
+    return render_template_string(TEMPLATE)
+
+@app.route(<span class="st">"/analyze"</span>, methods=[<span class="st">"POST"</span>])
+def analyze():
+    data  = request.get_json()
+    texts = data.get(<span class="st">"texts"</span>, [])[:20]  <span class="cm"># limit 20</span>
+    preds = clf(texts)
+    results = [
+        {<span class="st">"text"</span>: t, <span class="st">"label"</span>: p[<span class="st">"label"</span>], <span class="st">"score"</span>: p[<span class="st">"score"</span>]}
+        <span class="kw">for</span> t, p <span class="kw">in</span> zip(texts, preds)
+    ]
+    return jsonify({<span class="st">"results"</span>: results, <span class="st">"count"</span>: len(results)})
+
+<span class="kw">if</span> __name__ == <span class="st">"__main__"</span>:
+    app.run(debug=<span class="kw">False</span>, port=<span class="nm">5001</span>)
+<span class="cm"># Visit http://localhost:5001</span></pre></div>
+<div class="pn"><a class="pnb" onclick="sp('chatbot')"><span class="pnl">← Prev</span><span class="pntitle">AI Chatbot</span></a><a class="pnb r" onclick="sp('genconfig')"><span class="pnl">Next →</span><span class="pntitle">Generation Config</span></a></div>
+</div>
+
+<!-- GENERATION CONFIG -->
+<div class="pg" id="pg-genconfig">
+<h1>🎲 Generation Config</h1>
+<div class="cb"><div class="cbh"><span class="lb">python</span><span>generation_config.py</span><button class="cpb" onclick="cc(this)">Copy</button></div>
+<pre><span class="im">from</span> transformers <span class="im">import</span> <span class="cl">GenerationConfig</span>
+
+gen_cfg = <span class="cl">GenerationConfig</span>(
+    max_new_tokens=<span class="nm">200</span>,
+    min_new_tokens=<span class="nm">20</span>,
+    do_sample=<span class="kw">True</span>,
+    temperature=<span class="nm">0.7</span>,         <span class="cm"># 0.1=deterministic, 2.0=very random</span>
+    top_p=<span class="nm">0.92</span>,              <span class="cm"># nucleus sampling</span>
+    top_k=<span class="nm">50</span>,                <span class="cm"># top-k sampling</span>
+    repetition_penalty=<span class="nm">1.1</span>,
+    no_repeat_ngram_size=<span class="nm">3</span>,
+)
+<span class="cm"># Greedy: do_sample=False, num_beams=1</span>
+<span class="cm"># Beam:   do_sample=False, num_beams=5</span>
+<span class="cm"># Creative: do_sample=True, temp=0.9, top_p=0.95</span>
+gen_cfg.<span class="fn">save_pretrained</span>(<span class="st">"./my-model"</span>)</pre></div>
+<div class="pn"><a class="pnb" onclick="sp('sentiment-app')"><span class="pnl">← Prev</span><span class="pntitle">Sentiment App</span></a><a class="pnb r" onclick="sp('hub')"><span class="pnl">Next →</span><span class="pntitle">Hugging Face Hub</span></a></div>
+</div>
+
+<!-- HUB -->
+<div class="pg" id="pg-hub">
+<h1>☁️ Hugging Face Hub</h1>
+<div class="cb"><div class="cbh"><span class="lb">python</span><span>hub.py</span><button class="cpb" onclick="cc(this)">Copy</button></div>
+<pre><span class="im">from</span> huggingface_hub <span class="im">import</span> login, <span class="cl">HfApi</span>
+login(token=<span class="st">"hf_your_token"</span>)
+
+<span class="cm"># Push trained model</span>
+model.<span class="fn">push_to_hub</span>(<span class="st">"username/my-model"</span>)
+tokenizer.<span class="fn">push_to_hub</span>(<span class="st">"username/my-model"</span>)
+
+<span class="cm"># Search models</span>
+api = <span class="cl">HfApi</span>()
+models = api.<span class="fn">list_models</span>(filter=<span class="st">"text-classification"</span>, sort=<span class="st">"downloads"</span>, limit=<span class="nm">5</span>)
+<span class="kw">for</span> m <span class="kw">in</span> models: print(m.id)</pre></div>
+<div class="pn"><a class="pnb" onclick="sp('genconfig')"><span class="pnl">← Prev</span><span class="pntitle">Generation Config</span></a><a class="pnb r" onclick="sp('optimize')"><span class="pnl">Next →</span><span class="pntitle">Optimization</span></a></div>
+</div>
+
+<!-- OPTIMIZATION -->
+<div class="pg" id="pg-optimize">
+<h1>🚀 Optimization & Speed</h1>
+<div class="cb"><div class="cbh"><span class="lb">python</span><span>optimization.py</span><button class="cpb" onclick="cc(this)">Copy</button></div>
+<pre><span class="im">import</span> torch
+
+<span class="cm"># 1. FP16 — halve memory, 2x speed</span>
+model = model.<span class="fn">half</span>().<span class="fn">to</span>(<span class="st">"cuda"</span>)
+
+<span class="cm"># 2. Autocast</span>
+<span class="kw">with</span> torch.<span class="fn">autocast</span>(<span class="st">"cuda"</span>):
+    output = <span class="fn">model</span>(**inputs)
+
+<span class="cm"># 3. Batch — always faster than one at a time</span>
+results = <span class="fn">classifier</span>(texts, batch_size=<span class="nm">32</span>)
+
+<span class="cm"># 4. 4-bit quantization (7B → 4GB RAM)</span>
+<span class="im">from</span> transformers <span class="im">import</span> <span class="cl">BitsAndBytesConfig</span>
+bnb = <span class="cl">BitsAndBytesConfig</span>(load_in_4bit=<span class="kw">True</span>)
+model = <span class="cl">AutoModelForCausalLM</span>.<span class="fn">from_pretrained</span>(<span class="st">"mistral-7B"</span>, quantization_config=bnb)</pre></div>
+<table>
+  <tr><th>Technique</th><th>Speedup</th><th>Memory Saved</th><th>Quality Loss</th></tr>
+  <tr><td>FP16</td><td>~2x</td><td>50%</td><td>Negligible</td></tr>
+  <tr><td>8-bit quant</td><td>~1.5x</td><td>75%</td><td>&lt;1%</td></tr>
+  <tr><td>4-bit quant</td><td>~2x</td><td>87.5%</td><td>~2%</td></tr>
+  <tr><td>Batching</td><td>5–20x</td><td>0%</td><td>None</td></tr>
+</table>
+<div class="pn"><a class="pnb" onclick="sp('hub')"><span class="pnl">← Prev</span><span class="pntitle">Hub</span></a><a class="pnb r" onclick="sp('peft')"><span class="pnl">Next →</span><span class="pntitle">PEFT / LoRA</span></a></div>
+</div>
+
+<!-- PEFT -->
+<div class="pg" id="pg-peft">
+<h1>🔩 PEFT / LoRA</h1>
+<p>Train only 0.1% of parameters while achieving 95%+ of full fine-tuning quality.</p>
+<div class="cb"><div class="cbh"><span class="lb">python</span><span>lora_finetune.py</span><button class="cpb" onclick="cc(this)">Copy</button></div>
+<pre><span class="im">from</span> peft <span class="im">import</span> <span class="cl">LoraConfig</span>, <span class="fn">get_peft_model</span>, <span class="cl">TaskType</span>
+<span class="im">from</span> transformers <span class="im">import</span> <span class="cl">AutoModelForSequenceClassification</span>
+
+base = <span class="cl">AutoModelForSequenceClassification</span>.<span class="fn">from_pretrained</span>(<span class="st">"roberta-large"</span>, num_labels=<span class="nm">2</span>)
+cfg  = <span class="cl">LoraConfig</span>(task_type=<span class="cl">TaskType</span>.SEQ_CLS, r=<span class="nm">16</span>, lora_alpha=<span class="nm">32</span>,
+    lora_dropout=<span class="nm">0.1</span>, target_modules=[<span class="st">"query"</span>, <span class="st">"value"</span>])
+model = <span class="fn">get_peft_model</span>(base, cfg)
+model.<span class="fn">print_trainable_parameters</span>()
+<span class="cm"># trainable params: 2,949,888 / 357,201,920 = 0.83%!</span></pre>
+<div class="out">trainable params: 2,949,888 || all params: 357,201,920 || trainable%: 0.8259</div></div>
+<div class="pn"><a class="pnb" onclick="sp('optimize')"><span class="pnl">← Prev</span><span class="pntitle">Optimization</span></a><div></div></div>
+</div>
+
+  </div><!-- /ct -->
+</main>
+<script>
+// ── SPA Navigation ──────────────────────────────────
+function sp(id) {
+  document.querySelectorAll('.pg').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.ni').forEach(n => n.classList.remove('active'));
+  const page = document.getElementById('pg-' + id);
+  if (page) page.classList.add('active');
+  const navItem = document.querySelector(`.ni[onclick*="sp('${id}')"]`);
+  if (navItem) navItem.classList.add('active');
+  const titles = {
+    'intro':'Introduction','install':'Installation','quickstart':'Quick Start',
+    'what':'What is a Transformer?','attention':'Attention — The Math',
+    'multihead':'Multi-Head Attention','tokenization':'Tokenization',
+    'embeddings':'Embeddings','posenc':'Positional Encoding',
+    'pipeline':'pipeline()','auto':'Auto Classes','tokenizer':'Tokenizer',
+    'modelload':'Loading Models','sentiment':'Sentiment Analysis',
+    'ner':'Named Entity Recognition','qa':'Question Answering',
+    'summarization':'Summarization','translation':'Translation',
+    'textgen':'Text Generation','fillmask':'Fill Mask',
+    'trainer':'Trainer API','finetune':'Fine-Tuning','scratch':'Build From Scratch',
+    'datasets':'Datasets','bert':'BERT','gpt':'GPT-2','t5':'T5','roberta':'RoBERTa',
+    'reallife':'Real-Life Usage','chatbot':'AI Chatbot Project',
+    'sentiment-app':'Sentiment Dashboard','genconfig':'Generation Config',
+    'hub':'Hub','optimize':'Optimization','peft':'PEFT / LoRA'
+  };
+  document.getElementById('bcc').textContent = titles[id] || id;
+  window.scrollTo(0, 0);
+}
+
+// ── Search ───────────────────────────────────────────
+function filterNav(q) {
+  const lq = q.toLowerCase();
+  document.querySelectorAll('.ni').forEach(n => {
+    n.style.display = n.textContent.toLowerCase().includes(lq) ? '' : 'none';
+  });
+  document.querySelectorAll('.nt').forEach(s => {
+    const vis = [...s.parentElement.querySelectorAll('.ni')].some(n => n.style.display !== 'none');
+    s.style.display = vis ? '' : 'none';
+  });
+}
+
+// ── Copy Code ────────────────────────────────────────
+function cc(btn) {
+  const pre = btn.closest('.cb').querySelector('pre');
+  const text = pre.innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓ Copied';
+    btn.classList.add('ok');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('ok'); }, 2000);
+  });
+}
+
+// ── Attention Demo ───────────────────────────────────
+const WORDS = ['The','bank','near','the','river'];
+const ATTN = [
+  [0.38,0.12,0.10,0.28,0.12],
+  [0.08,0.22,0.11,0.09,0.50],
+  [0.10,0.18,0.36,0.15,0.21],
+  [0.41,0.10,0.11,0.27,0.11],
+  [0.06,0.48,0.13,0.08,0.25],
+];
+
+function showAttn(el, idx) {
+  document.querySelectorAll('.tok').forEach(t => t.classList.remove('sel'));
+  el.classList.add('sel');
+  const grid = document.getElementById('agrid');
+  const display = document.getElementById('adisplay');
+  grid.classList.add('vis');
+  const weights = ATTN[idx];
+  const max = Math.max(...weights);
+  let html = `<div style="font-size:12px;color:var(--muted);margin-bottom:12px;font-family:'JetBrains Mono',monospace">
+    "${WORDS[idx]}" attends to:
+  </div>`;
+  html += '<div style="display:flex;flex-direction:column;gap:6px">';
+  weights.forEach((w, i) => {
+    const pct = Math.round(w * 100);
+    const intensity = w / max;
+    const r = Math.round(110 * intensity);
+    const g = Math.round(231 * intensity);
+    const b = Math.round(247 * intensity);
+    html += `
+      <div style="display:flex;align-items:center;gap:12px">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);width:52px;text-align:right">${WORDS[i]}</span>
+        <div style="height:24px;border-radius:6px;background:rgba(${r},${g},${b},${0.15 + intensity*0.7});width:${Math.round(w*320)}px;border:1px solid rgba(${r},${g},${b},${0.3 + intensity*0.5});transition:all .3s;display:flex;align-items:center;padding:0 8px">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:rgba(${r},${g},${b},${0.6 + intensity*0.4})">${pct}%</span>
+        </div>
+        ${i === idx ? '<span style="font-size:10px;color:var(--muted)">(self)</span>' : ''}
+        ${w === max && i !== idx ? '<span style="font-size:10px;color:var(--accent)">← highest</span>' : ''}
+      </div>`;
+  });
+  html += '</div>';
+  display.innerHTML = html;
+}
+
+// ── Demo Chatbot ─────────────────────────────────────
+const CHAT_RESPONSES = {
+  'hello': ["Hey there! 👋 How's it going?", "Hi! Nice to meet you.", "Hello! What's on your mind?"],
+  'how are you': ["I'm doing great, thanks for asking!", "Pretty good! Ready to chat.", "All good here. You?"],
+  'what is a transformer': ["A Transformer is a neural network that uses attention mechanisms to process sequences. It's the architecture behind GPT, BERT, and most modern AI.", "Great question! Transformers read all tokens simultaneously and use attention to figure out which words relate to which others — unlike RNNs that read one word at a time."],
+  'tell me something interesting': ["Did you know the original Transformer paper used only 6 encoder layers and 6 decoder layers — yet it outperformed every RNN model of its time?", "Fun fact: BERT was pre-trained on Wikipedia and BookCorpus — 3.3 billion words — for 4 days on 64 TPUs.", "The word 'attention' in machine learning was borrowed from neuroscience — it describes how the brain focuses on relevant parts of a scene."],
+  'default': ["That's interesting! Tell me more.", "I see! What else would you like to talk about?", "Hmm, that's a good point. DialoGPT would give you a better answer on the real server!", "Interesting perspective. In the real project, this would use DialoGPT-medium running locally."]
+};
+
+function getReply(msg) {
+  const low = msg.toLowerCase().trim();
+  for (const key in CHAT_RESPONSES) {
+    if (key !== 'default' && low.includes(key)) {
+      const arr = CHAT_RESPONSES[key];
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+  }
+  const def = CHAT_RESPONSES['default'];
+  return def[Math.floor(Math.random() * def.length)];
+}
+
+function chatSend(text) {
+  const msgs = document.getElementById('chat-msgs');
+  const input = document.getElementById('chat-in');
+  const msg = text || input.value.trim();
+  if (!msg) return;
+  if (input) input.value = '';
+
+  // User bubble
+  const userDiv = document.createElement('div');
+  userDiv.className = 'msg user';
+  userDiv.textContent = msg;
+  msgs.appendChild(userDiv);
+  msgs.scrollTop = msgs.scrollHeight;
+
+  // Typing indicator
+  const typing = document.createElement('div');
+  typing.className = 'msg bot';
+  typing.innerHTML = '<span style="color:var(--muted);font-style:italic">Thinking<span id="dots">...</span></span>';
+  msgs.appendChild(typing);
+  msgs.scrollTop = msgs.scrollHeight;
+
+  let d = 0;
+  const dotInterval = setInterval(() => {
+    const dots = document.getElementById('dots');
+    if (dots) dots.textContent = ['...','.. ','   ','.  '][d++ % 4];
+  }, 300);
+
+  setTimeout(() => {
+    clearInterval(dotInterval);
+    typing.remove();
+    const reply = document.createElement('div');
+    reply.className = 'msg bot';
+    reply.textContent = getReply(msg);
+    msgs.appendChild(reply);
+    msgs.scrollTop = msgs.scrollHeight;
+  }, 800 + Math.random() * 600);
+}
+</script>
+</body>
+</html>
