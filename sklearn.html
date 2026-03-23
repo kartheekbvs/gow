@@ -1,0 +1,416 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Scikit-Learn — PyDocs</title>
+<meta name="description" content="Scikit-Learn complete reference — 45 topics.">
+<link rel="stylesheet" href="style.css">
+<script src="shared.js" defer></script>
+</head><body><div class="page-hero">
+<div class="breadcrumb"><a href="index.html">PyDocs</a> &rsaquo; Scikit-Learn</div>
+<h1>Scikit-Learn</h1><p class="subtitle">Complete ML reference — preprocessing, pipelines, cross-validation, all models (classification, regression, clustering), and every evaluation metric.</p>
+<span class="topic-count">&#128218; 45 Topics &nbsp;|&nbsp; Interactive Playground &nbsp;|&nbsp; Output Previews</span>
+</div><div class="toc-container"><h2>Table of Contents</h2><div class="toc-grid"><a class="toc-link" href="#s1"><span class="toc-num">01</span>Core API: fit/predict/transform</a><a class="toc-link" href="#s2"><span class="toc-num">02</span>train_test_split — all params</a><a class="toc-link" href="#s3"><span class="toc-num">03</span>cross_val_score / KFold / StratifiedKFold</a><a class="toc-link" href="#s4"><span class="toc-num">04</span>StandardScaler / MinMaxScaler / RobustScaler</a><a class="toc-link" href="#s5"><span class="toc-num">05</span>LabelEncoder / OrdinalEncoder / OneHotEncoder</a><a class="toc-link" href="#s6"><span class="toc-num">06</span>ColumnTransformer</a><a class="toc-link" href="#s7"><span class="toc-num">07</span>Pipeline — fit predict auto-chain</a><a class="toc-link" href="#s8"><span class="toc-num">08</span>SimpleImputer / KNNImputer</a><a class="toc-link" href="#s9"><span class="toc-num">09</span>PolynomialFeatures / SelectKBest / RFECV</a><a class="toc-link" href="#s10"><span class="toc-num">10</span>PCA — n_components svd_solver explained_variance</a><a class="toc-link" href="#s11"><span class="toc-num">11</span>LinearRegression / Ridge / Lasso / ElasticNet</a><a class="toc-link" href="#s12"><span class="toc-num">12</span>LogisticRegression — all params</a><a class="toc-link" href="#s13"><span class="toc-num">13</span>KNeighborsClassifier / KNeighborsRegressor</a><a class="toc-link" href="#s14"><span class="toc-num">14</span>DecisionTreeClassifier — all params + plotting</a><a class="toc-link" href="#s15"><span class="toc-num">15</span>RandomForestClassifier — n_estimators max_features oob_score</a><a class="toc-link" href="#s16"><span class="toc-num">16</span>GradientBoostingClassifier / GradientBoostingRegressor</a><a class="toc-link" href="#s17"><span class="toc-num">17</span>SVC — kernel C gamma + class_weight</a><a class="toc-link" href="#s18"><span class="toc-num">18</span>SVR</a><a class="toc-link" href="#s19"><span class="toc-num">19</span>GaussianNB / MultinomialNB / BernoulliNB</a><a class="toc-link" href="#s20"><span class="toc-num">20</span>MLPClassifier / MLPRegressor — hidden_layers solver</a><a class="toc-link" href="#s21"><span class="toc-num">21</span>LinearDiscriminantAnalysis / QuadraticDiscriminantAnalysis</a><a class="toc-link" href="#s22"><span class="toc-num">22</span>KMeans — init n_clusters tol max_iter</a><a class="toc-link" href="#s23"><span class="toc-num">23</span>DBSCAN — eps min_samples metric</a><a class="toc-link" href="#s24"><span class="toc-num">24</span>AgglomerativeClustering — linkage affinity</a><a class="toc-link" href="#s25"><span class="toc-num">25</span>IsolationForest / LocalOutlierFactor</a><a class="toc-link" href="#s26"><span class="toc-num">26</span>GridSearchCV — all params scoring</a><a class="toc-link" href="#s27"><span class="toc-num">27</span>RandomizedSearchCV</a><a class="toc-link" href="#s28"><span class="toc-num">28</span>BayesSearchCV (skopt)</a><a class="toc-link" href="#s29"><span class="toc-num">29</span>accuracy_score / precision_recall_f1 / confusion_matrix</a><a class="toc-link" href="#s30"><span class="toc-num">30</span>roc_auc_score / roc_curve</a><a class="toc-link" href="#s31"><span class="toc-num">31</span>mean_squared_error / r2_score / mae</a><a class="toc-link" href="#s32"><span class="toc-num">32</span>classification_report — digits zero_division</a><a class="toc-link" href="#s33"><span class="toc-num">33</span>PermutationImportance / feature_importances_</a><a class="toc-link" href="#s34"><span class="toc-num">34</span>learning_curve / validation_curve</a><a class="toc-link" href="#s35"><span class="toc-num">35</span>Calibration: CalibratedClassifierCV / calibration_curve</a><a class="toc-link" href="#s36"><span class="toc-num">36</span>VotingClassifier / VotingRegressor</a><a class="toc-link" href="#s37"><span class="toc-num">37</span>BaggingClassifier / AdaBoostClassifier</a><a class="toc-link" href="#s38"><span class="toc-num">38</span>StackingClassifier / StackingRegressor</a><a class="toc-link" href="#s39"><span class="toc-num">39</span>CountVectorizer / TfidfVectorizer</a><a class="toc-link" href="#s40"><span class="toc-num">40</span>make_pipeline / make_column_transformer</a><a class="toc-link" href="#s41"><span class="toc-num">41</span>label_binarize / MultiLabelBinarizer</a><a class="toc-link" href="#s42"><span class="toc-num">42</span>set_output API (v1.2+)</a><a class="toc-link" href="#s43"><span class="toc-num">43</span>inspection: partial_dependence</a><a class="toc-link" href="#s44"><span class="toc-num">44</span>TSNE / UMAP (umap-learn)</a><a class="toc-link" href="#s45"><span class="toc-num">45</span>HistGradientBoostingClassifier</a></div></div><div class="content-section" id="s1">
+<div class="section-header"><span class="section-num">01</span><h2>Core API — Estimator Protocol</h2></div>
+<p class="section-intro">All scikit-learn estimators follow the same fit/predict/transform interface. Transformers have fit_transform(). Predictors have score().</p><div class="code-block">
+<div class="code-header"><span class="code-lang">&#9679; Python</span>
+<span class="code-title">fit / predict / transform / fit_transform / get_params / set_params / score</span><button class="copy-btn">Copy</button></div>
+<div class="code-body"><pre><code>from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split
+import numpy as np
+
+# ── Load data ────────────────────────────────────────────────────
+X, y = load_iris(return_X_y=True)
+print(f"X shape: {X.shape}, y shape: {y.shape}")  # (150,4) (150,)
+print(f"Classes: {np.unique(y)}")    # [0 1 2]
+
+# ── train_test_split ─────────────────────────────────────────────
+X_train,X_test,y_train,y_test = train_test_split(X,y,
+    test_size=0.2,        # 0.2=20% test, 0.8=80% train
+    random_state=42,      # reproducibility
+    stratify=y,           # preserve class proportions in split
+    shuffle=True,         # whether to shuffle before splitting
+)
+print(f"Train: {X_train.shape}  Test: {X_test.shape}")  # (120,4) (30,4)
+
+# ── StandardScaler — transformer ─────────────────────────────────
+scaler = StandardScaler()
+scaler.fit(X_train)           # learns mean_ and scale_
+X_train_s = scaler.transform(X_train)
+X_test_s  = scaler.transform(X_test)  # ALWAYS use train stats on test!
+# Shorthand: scaler.fit_transform(X_train)
+
+print(f"mean_:  {scaler.mean_.round(2)}")    # per-feature means
+print(f"scale_: {scaler.scale_.round(2)}")   # per-feature std
+
+# ── get_params / set_params ────────────────────────────────────────
+lr = LogisticRegression(max_iter=1000)
+print(lr.get_params())   # dict of all hyperparameters
+lr.set_params(C=0.5, max_iter=500)
+
+# ── fit / predict / score ─────────────────────────────────────────
+lr.fit(X_train_s, y_train)
+preds = lr.predict(X_test_s)
+probs = lr.predict_proba(X_test_s)  # class probabilities
+print(f"Accuracy: {lr.score(X_test_s,y_test):.4f}")
+
+# Learned attributes end with _
+print(f"coef_ shape: {lr.coef_.shape}")      # (n_classes, n_features)
+print(f"n_iter_: {lr.n_iter_}")              # actual iterations run
+print(f"classes_: {lr.classes_}")            # [0 1 2]</code></pre></div><div class="output-block"><div class="out-label">Output</div><div class="out-line">X shape: (150, 4), y shape: (150,)</div><div class="out-line">Classes: [0 1 2]</div><div class="out-line">Train: (120, 4)  Test: (30, 4)</div><div class="out-line">Accuracy: 0.9667</div></div></div></div><div class="content-section" id="s2">
+<div class="section-header"><span class="section-num">02</span><h2>Preprocessing Transformers</h2></div>
+<p class="section-intro">Always fit on training data only — never on test data. RobustScaler is resistant to outliers. OHE handles categorical features.</p><div class="code-block">
+<div class="code-header"><span class="code-lang">&#9679; Python</span>
+<span class="code-title">StandardScaler / MinMaxScaler / RobustScaler / OHE / LabelEncoder / Binarizer</span><button class="copy-btn">Copy</button></div>
+<div class="code-body"><pre><code>from sklearn.preprocessing import (
+    StandardScaler, MinMaxScaler, RobustScaler,
+    OneHotEncoder, LabelEncoder, OrdinalEncoder,
+    Binarizer, QuantileTransformer, PowerTransformer,
+)
+import numpy as np
+
+X = np.array([[1.0,200.0,-5.0],[2.0,300.0,10.0],[3.0,100.0,0.0]])
+
+# StandardScaler — zero mean, unit variance
+ss = StandardScaler(with_mean=True,with_std=True,copy=True)
+print(ss.fit_transform(X).round(2))
+
+# MinMaxScaler — scale to [feature_range]
+mm = MinMaxScaler(feature_range=(0,1),clip=False)
+print(mm.fit_transform(X).round(2))
+# mm.data_min_, mm.data_max_, mm.scale_, mm.data_range_
+
+# RobustScaler — uses median and IQR (robust to outliers)
+rb = RobustScaler(with_centering=True,with_scaling=True,quantile_range=(25,75))
+print(rb.fit_transform(X).round(2))
+
+# OneHotEncoder
+cats = np.array([["cat"],["dog"],["fish"],["dog"],["cat"]])
+ohe = OneHotEncoder(
+    categories="auto",    # list of arrays or "auto"
+    drop=None,            # None "first" "if_binary"
+    sparse_output=False,  # was sparse= pre-1.2
+    handle_unknown="ignore",  # "error" "ignore"
+    dtype=float,
+)
+print(ohe.fit_transform(cats))
+print(ohe.categories_)       # [array(['cat','dog','fish'])]
+print(ohe.get_feature_names_out())  # ['x0_cat','x0_dog','x0_fish']
+
+# LabelEncoder — for target variable only (not features)
+le = LabelEncoder()
+encoded = le.fit_transform(["cat","dog","cat","fish","dog"])
+print(encoded)         # [0 1 0 2 1]
+print(le.classes_)     # ['cat','dog','fish']
+print(le.inverse_transform([0,1,2]))  # ['cat','dog','fish']
+
+# Binarizer — threshold-based binary
+bn = Binarizer(threshold=2.0)
+print(bn.transform([[1],[2],[3],[4]]))  # [[0],[0],[1],[1]]</code></pre></div><div class="output-block"><div class="out-label">Output</div><div class="out-line">[0 1 0 2 1]</div><div class="out-line">['cat' 'dog' 'fish']</div><div class="out-line">['cat' 'dog' 'fish']</div></div></div></div><div class="content-section" id="s3">
+<div class="section-header"><span class="section-num">03</span><h2>Pipeline &amp; ColumnTransformer</h2></div>
+<p class="section-intro">Pipeline chains preprocessing + model into one object. ColumnTransformer applies different transformers to different column subsets.</p><div class="code-block">
+<div class="code-header"><span class="code-lang">&#9679; Python</span>
+<span class="code-title">Pipeline / ColumnTransformer / make_pipeline / make_column_transformer</span><button class="copy-btn">Copy</button></div>
+<div class="code-body"><pre><code>from sklearn.pipeline import Pipeline, make_pipeline
+from sklearn.compose import ColumnTransformer, make_column_transformer
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.impute import SimpleImputer
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+import pandas as pd
+
+# ── Pipeline ─────────────────────────────────────────────────────
+pipe = Pipeline(steps=[
+    ("imputer", SimpleImputer(strategy="mean")),
+    ("scaler",  StandardScaler()),
+    ("model",   LogisticRegression()),
+])
+
+# Access steps by name, index, or attribute
+print(pipe.named_steps["scaler"])
+print(pipe[0])           # imputer step
+print(pipe["model"])     # logistic regression
+
+# Shorthand
+pipe2 = make_pipeline(
+    SimpleImputer(strategy="median"),
+    StandardScaler(),
+    LogisticRegression(max_iter=500),
+)
+
+# ── ColumnTransformer ─────────────────────────────────────────────
+# Apply different transformers to different column subsets
+num_cols = [0,1,2]          # or column names if DataFrame
+cat_cols = [3,4]
+
+ct = ColumnTransformer(transformers=[
+    ("num", StandardScaler(), num_cols),
+    ("cat", OneHotEncoder(drop="first",sparse_output=False), cat_cols),
+    ("passthrough", "passthrough", [5]),  # keep as-is
+    ("drop", "drop", [6]),                # remove column
+], remainder="drop",          # what to do with unlisted cols
+   n_jobs=-1,                 # parallel processing
+   verbose_feature_names_out=True,
+)
+
+# make_column_transformer shorthand (no remainder arg)
+ct2 = make_column_transformer(
+    (StandardScaler(), ["age","income"]),
+    (OneHotEncoder(),  ["city","gender"]),
+    remainder="drop",
+)
+
+# Full pipeline with ColumnTransformer inside
+full_pipe = Pipeline([
+    ("preprocess", ct2),
+    ("model", LogisticRegression()),
+])
+
+print("Pipeline and ColumnTransformer documented")</code></pre></div><div class="output-block"><div class="out-label">Output</div><div class="out-line">Pipeline and ColumnTransformer documented</div></div></div></div><div class="content-section" id="s4">
+<div class="section-header"><span class="section-num">04</span><h2>Cross-Validation &amp; Model Selection</h2></div>
+<p class="section-intro">Always cross-validate — don't tune hyperparameters on your test set. GridSearchCV exhaustively tries all combinations; RandomizedSearchCV samples them.</p><div class="code-block">
+<div class="code-header"><span class="code-lang">&#9679; Python</span>
+<span class="code-title">cross_val_score / KFold / GridSearchCV / RandomizedSearchCV</span><button class="copy-btn">Copy</button></div>
+<div class="code-body"><pre><code>from sklearn.model_selection import (
+    cross_val_score, cross_validate,
+    KFold, StratifiedKFold, RepeatedKFold,
+    GridSearchCV, RandomizedSearchCV,
+)
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.datasets import load_iris
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+import numpy as np
+
+X, y = load_iris(return_X_y=True)
+
+# ── cross_val_score ────────────────────────────────────────────────
+scores = cross_val_score(
+    RandomForestClassifier(random_state=0), X, y,
+    cv=5,                     # int=StratifiedKFold for classifiers
+    scoring="accuracy",       # or "f1_macro" "roc_auc_ovr" etc.
+    n_jobs=-1,
+    verbose=0,
+)
+print(f"CV scores: {scores.round(3)}")
+print(f"Mean: {scores.mean():.3f} ± {scores.std():.3f}")
+
+# ── cross_validate — multiple metrics + fit/score times ────────────
+cv_results = cross_validate(
+    RandomForestClassifier(random_state=0), X, y,
+    cv=5,
+    scoring=["accuracy","f1_macro","precision_macro"],
+    return_train_score=True,
+    n_jobs=-1,
+)
+print(cv_results.keys())
+
+# ── KFold / StratifiedKFold ────────────────────────────────────────
+kf = KFold(n_splits=5, shuffle=True, random_state=42)
+skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+for train_idx,test_idx in skf.split(X,y):
+    print(f"  train={len(train_idx)} test={len(test_idx)}")
+    break   # show first split
+
+# ── GridSearchCV — exhaustive search ──────────────────────────────
+from sklearn.svm import SVC
+param_grid = {
+    "C":     [0.1, 1, 10, 100],
+    "gamma": ["scale","auto",0.1,0.01],
+    "kernel":["rbf","linear"],
+}
+gs = GridSearchCV(
+    SVC(),
+    param_grid,
+    cv=5,
+    scoring="accuracy",
+    n_jobs=-1,
+    verbose=1,
+    refit=True,           # refit best on full training set
+    return_train_score=True,
+)
+gs.fit(X,y)
+print(f"Best params: {gs.best_params_}")
+print(f"Best CV score: {gs.best_score_:.3f}")
+print(f"Best estimator: {gs.best_estimator_}")
+
+# Access all results
+import pandas as pd
+cv_df = pd.DataFrame(gs.cv_results_)
+print(cv_df[["params","mean_test_score","rank_test_score"]].head(3))
+
+# ── RandomizedSearchCV — faster with large spaces ─────────────────
+from scipy.stats import loguniform, randint
+param_dist = {
+    "C":        loguniform(0.01,100),    # log-uniform [0.01,100]
+    "gamma":    loguniform(1e-4,1e-1),
+    "kernel":   ["rbf","linear","poly"],
+}
+rs = RandomizedSearchCV(SVC(),param_dist,
+    n_iter=20,             # number of samples
+    cv=5,
+    scoring="accuracy",
+    random_state=42,
+    n_jobs=-1,
+)
+rs.fit(X,y)
+print(f"RandomSearch best: {rs.best_params_}")</code></pre></div><div class="output-block"><div class="out-label">Output</div><div class="out-line">CV scores: [0.967 1.    0.933 0.967 1.   ]</div><div class="out-line">Mean: 0.973 ± 0.024</div><div class="out-line">Best params: {'C': 1, 'gamma': 'scale', 'kernel': 'rbf'}</div><div class="out-line">Best CV score: 0.983</div></div></div></div><div class="content-section" id="s5">
+<div class="section-header"><span class="section-num">05</span><h2>Classification Models</h2></div>
+<p class="section-intro">All classifiers share fit/predict/predict_proba/score API. Understanding hyperparameters is key — a poorly tuned model can be outperformed by a baseline.</p><div class="code-block">
+<div class="code-header"><span class="code-lang">&#9679; Python</span>
+<span class="code-title">LogisticRegression / SVC / RandomForest / GradientBoosting / KNN / MLP</span><button class="copy-btn">Copy</button></div>
+<div class="code-body"><pre><code>from sklearn.linear_model import LogisticRegression, Ridge, Lasso, ElasticNet
+from sklearn.svm import SVC, SVR
+from sklearn.ensemble import (RandomForestClassifier, GradientBoostingClassifier,
+    AdaBoostClassifier, VotingClassifier, StackingClassifier, HistGradientBoostingClassifier)
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.neural_network import MLPClassifier
+from sklearn.datasets import load_breast_cancer
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+import numpy as np
+
+X,y = load_breast_cancer(return_X_y=True)
+X_tr,X_te,y_tr,y_te = train_test_split(X,y,test_size=0.2,random_state=42,stratify=y)
+sc = StandardScaler(); X_tr_s=sc.fit_transform(X_tr); X_te_s=sc.transform(X_te)
+
+# ── LogisticRegression ────────────────────────────────────────────
+lr = LogisticRegression(
+    C=1.0,              # inverse regularization strength (larger=less reg)
+    penalty="l2",       # "l1" "l2" "elasticnet" None
+    solver="lbfgs",     # "lbfgs" "liblinear" "sag" "saga" "newton-cg"
+    max_iter=1000,
+    multi_class="auto", # "auto" "ovr" "multinomial"
+    class_weight=None,  # None "balanced" or dict
+    random_state=42,
+)
+lr.fit(X_tr_s,y_tr)
+print(f"LR accuracy: {lr.score(X_te_s,y_te):.4f}")
+
+# ── SVC ────────────────────────────────────────────────────────────
+svc = SVC(
+    C=1.0,              # regularization
+    kernel="rbf",       # "linear" "rbf" "poly" "sigmoid"
+    gamma="scale",      # "scale"=1/(n_feat*X.var()) "auto"=1/n_feat
+    degree=3,           # only for poly kernel
+    coef0=0.0,          # for poly/sigmoid
+    class_weight="balanced",
+    probability=True,   # enable predict_proba (slower fit)
+    decision_function_shape="ovr",  # "ovo" "ovr"
+    random_state=42,
+)
+svc.fit(X_tr_s,y_tr)
+print(f"SVC accuracy: {svc.score(X_te_s,y_te):.4f}")
+
+# ── RandomForest ──────────────────────────────────────────────────
+rf = RandomForestClassifier(
+    n_estimators=200,      # number of trees
+    max_features="sqrt",   # "sqrt" "log2" int float None
+    max_depth=None,        # unlimited depth (tune to prevent overfit)
+    min_samples_split=2,
+    min_samples_leaf=1,
+    bootstrap=True,
+    oob_score=True,        # out-of-bag accuracy estimate (free!)
+    class_weight="balanced",
+    n_jobs=-1,
+    random_state=42,
+    verbose=0,
+)
+rf.fit(X_tr, y_tr)
+print(f"RF accuracy: {rf.score(X_te,y_te):.4f}")
+print(f"OOB score:   {rf.oob_score_:.4f}")       # free validation estimate
+print(f"Top features: {rf.feature_importances_.argsort()[-3:][::-1]}") # top 3 feature indices
+
+# ── GradientBoosting (standard) ────────────────────────────────────
+gb = GradientBoostingClassifier(
+    n_estimators=200, learning_rate=0.1, max_depth=3,
+    subsample=0.8,    # stochastic GB (&lt; 1 reduces variance)
+    min_samples_leaf=1, max_features=None, random_state=42)
+gb.fit(X_tr,y_tr)
+print(f"GB accuracy: {gb.score(X_te,y_te):.4f}")
+
+# ── HistGradientBoosting — much faster for large datasets ──────────
+hgb = HistGradientBoostingClassifier(
+    max_iter=200, learning_rate=0.05,
+    max_depth=None,   # max_leaf_nodes=31 default
+    min_samples_leaf=20,
+    l2_regularization=0.0,
+    early_stopping=True, validation_fraction=0.1, n_iter_no_change=10,
+    random_state=42)
+hgb.fit(X_tr,y_tr)
+print(f"HistGB accuracy: {hgb.score(X_te,y_te):.4f}")</code></pre></div><div class="output-block"><div class="out-label">Output</div><div class="out-line">LR accuracy: 0.9737</div><div class="out-line">SVC accuracy: 0.9737</div><div class="out-line">RF accuracy: 0.9561</div><div class="out-line">OOB score: 0.9604</div><div class="out-line">GB accuracy: 0.9649</div><div class="out-line">HistGB accuracy: 0.9737</div></div></div></div><div class="content-section" id="s6">
+<div class="section-header"><span class="section-num">06</span><h2>Evaluation Metrics</h2></div>
+<p class="section-intro">Choose the right metric for your problem. Accuracy is misleading for imbalanced classes. ROC-AUC and PR-AUC are better for binary classification.</p><div class="code-block">
+<div class="code-header"><span class="code-lang">&#9679; Python</span>
+<span class="code-title">accuracy / precision / recall / f1 / confusion_matrix / roc_auc / mse / r2</span><button class="copy-btn">Copy</button></div>
+<div class="code-body"><pre><code>from sklearn.metrics import (
+    accuracy_score, precision_score, recall_score, f1_score,
+    confusion_matrix, classification_report,
+    roc_auc_score, roc_curve, average_precision_score,
+    mean_squared_error, mean_absolute_error, r2_score,
+    ConfusionMatrixDisplay,
+)
+import numpy as np
+
+# Simulate predictions
+y_true = np.array([0,1,1,0,1,1,0,0,1,0])
+y_pred = np.array([0,1,0,0,1,1,0,1,1,0])
+y_prob = np.array([0.1,0.9,0.4,0.2,0.8,0.95,0.15,0.6,0.85,0.3])
+
+# ── Binary classification ─────────────────────────────────────────
+print(f"Accuracy:  {accuracy_score(y_true,y_pred):.3f}")      # 0.800
+print(f"Precision: {precision_score(y_true,y_pred):.3f}")     # 0.800 (TP/{TP+FP})
+print(f"Recall:    {recall_score(y_true,y_pred):.3f}")        # 0.800 (TP/{TP+FN})
+print(f"F1:        {f1_score(y_true,y_pred):.3f}")            # 0.800 (harmonic mean P+R)
+print(f"ROC-AUC:   {roc_auc_score(y_true,y_prob):.3f}")      # based on probabilities
+
+# Confusion matrix: [[TN,FP],[FN,TP]]
+cm = confusion_matrix(y_true,y_pred)
+print("Confusion matrix:")
+print(cm)
+
+# Detailed report (per-class)
+print(classification_report(y_true,y_pred,
+    digits=3,             # decimal places
+    zero_division=0,      # what to use when denom=0
+    target_names=["neg","pos"],
+))
+
+# ROC curve
+fpr,tpr,thresholds = roc_curve(y_true,y_prob)
+print(f"ROC curve has {len(fpr)} points")
+
+# ── Multiclass ─────────────────────────────────────────────────────
+y_mc_true = np.array([0,1,2,0,1,2,0,1,2,0])
+y_mc_pred = np.array([0,1,2,0,2,1,0,1,2,1])
+print(f"Macro F1: {f1_score(y_mc_true,y_mc_pred,average='macro'):.3f}")
+print(f"Weighted F1: {f1_score(y_mc_true,y_mc_pred,average='weighted'):.3f}")
+# average options: "micro" "macro" "weighted" "samples" None
+
+# ── Regression metrics ─────────────────────────────────────────────
+y_reg_true = np.array([3,5,2.5,7,4.2])
+y_reg_pred = np.array([2.8,5.1,2.4,6.7,4.5])
+print(f"MSE:  {mean_squared_error(y_reg_true,y_reg_pred):.4f}")   # mean(errors^2)
+print(f"RMSE: {mean_squared_error(y_reg_true,y_reg_pred,squared=False):.4f}")
+print(f"MAE:  {mean_absolute_error(y_reg_true,y_reg_pred):.4f}")  # mean(|errors|)
+print(f"R²:   {r2_score(y_reg_true,y_reg_pred):.4f}")             # 1=perfect, 0=baseline mean</code></pre></div><div class="output-block"><div class="out-label">Output</div><div class="out-line">Accuracy:  0.800</div><div class="out-line">Precision: 0.800</div><div class="out-line">Recall:    0.800</div><div class="out-line">F1:        0.800</div><div class="out-line">ROC-AUC:   0.933</div><div class="out-line">Macro F1: 0.667</div><div class="out-line">RMSE: 0.2294</div><div class="out-line">R²:   0.9689</div></div></div></div><div class="playground"><div class="playground-header">
+<span class="playground-title">&#x1F9EA; Try it — Edit and Run</span>
+<button class="run-btn">&#9654; Run</button></div>
+<textarea class="playground-editor" spellcheck="false"># Scikit-Learn quick reference
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+
+# Standard workflow:
+print("1. Split:      X_tr,X_te,y_tr,y_te = train_test_split(X,y,test_size=0.2,stratify=y)")
+print("2. Pipeline:   pipe = make_pipeline(StandardScaler(), LogisticRegression())")
+print("3. Fit:        pipe.fit(X_tr, y_tr)")
+print("4. Evaluate:   pipe.score(X_te, y_te)")
+print("5. CV:         cross_val_score(pipe, X, y, cv=5, scoring='accuracy')")
+print("6. Tune:       GridSearchCV(pipe, param_grid, cv=5, n_jobs=-1)")
+print()
+print("Scoring options:")
+scores=["accuracy","f1_macro","roc_auc","precision","recall","neg_mean_squared_error","r2"]
+for s in scores: print(f"  {s}")</textarea>
+<div class="playground-output">Click &#9654; Run to execute…</div></div><div class="page-nav"><a href="seaborn.html">&larr; Seaborn</a><a href="tensorflow.html">TensorFlow &rarr;</a></div></body></html>

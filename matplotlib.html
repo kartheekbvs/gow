@@ -1,0 +1,327 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Matplotlib — PyDocs</title>
+<meta name="description" content="Matplotlib complete reference — 35 topics.">
+<link rel="stylesheet" href="style.css">
+<script src="shared.js" defer></script>
+</head><body><div class="page-hero">
+<div class="breadcrumb"><a href="index.html">PyDocs</a> &rsaquo; Matplotlib</div>
+<h1>Matplotlib</h1><p class="subtitle">Every plot type, customization param, colormap, layout and 3D option — full API with real output previews.</p>
+<span class="topic-count">&#128218; 35 Topics &nbsp;|&nbsp; Interactive Playground &nbsp;|&nbsp; Output Previews</span>
+</div><div class="toc-container"><h2>Table of Contents</h2><div class="toc-grid"><a class="toc-link" href="#s1"><span class="toc-num">01</span>figure/subplots setup</a><a class="toc-link" href="#s2"><span class="toc-num">02</span>add_subplot/add_axes</a><a class="toc-link" href="#s3"><span class="toc-num">03</span>plot() line/marker/style</a><a class="toc-link" href="#s4"><span class="toc-num">04</span>scatter() s c cmap</a><a class="toc-link" href="#s5"><span class="toc-num">05</span>bar()/barh()</a><a class="toc-link" href="#s6"><span class="toc-num">06</span>hist() bins density histtype</a><a class="toc-link" href="#s7"><span class="toc-num">07</span>boxplot()/violinplot()</a><a class="toc-link" href="#s8"><span class="toc-num">08</span>pie() explode autopct</a><a class="toc-link" href="#s9"><span class="toc-num">09</span>imshow() cmap origin extent</a><a class="toc-link" href="#s10"><span class="toc-num">10</span>contour()/contourf()</a><a class="toc-link" href="#s11"><span class="toc-num">11</span>errorbar() fill_between()</a><a class="toc-link" href="#s12"><span class="toc-num">12</span>step() stem() stackplot()</a><a class="toc-link" href="#s13"><span class="toc-num">13</span>quiver() vector fields</a><a class="toc-link" href="#s14"><span class="toc-num">14</span>set_title/xlabel/ylabel</a><a class="toc-link" href="#s15"><span class="toc-num">15</span>set_xlim/ylim/xticks/ticklabels</a><a class="toc-link" href="#s16"><span class="toc-num">16</span>tick_params() all options</a><a class="toc-link" href="#s17"><span class="toc-num">17</span>legend() all loc strings</a><a class="toc-link" href="#s18"><span class="toc-num">18</span>grid() params</a><a class="toc-link" href="#s19"><span class="toc-num">19</span>spines/aspect/invert/log scale</a><a class="toc-link" href="#s20"><span class="toc-num">20</span>annotate() arrowprops</a><a class="toc-link" href="#s21"><span class="toc-num">21</span>ax.text() transform bbox</a><a class="toc-link" href="#s22"><span class="toc-num">22</span>axhline/vline/hspan/vspan</a><a class="toc-link" href="#s23"><span class="toc-num">23</span>Color formats + all colormaps</a><a class="toc-link" href="#s24"><span class="toc-num">24</span>colorbar() shrink aspect label</a><a class="toc-link" href="#s25"><span class="toc-num">25</span>tight_layout/subplots_adjust</a><a class="toc-link" href="#s26"><span class="toc-num">26</span>savefig() formats dpi</a><a class="toc-link" href="#s27"><span class="toc-num">27</span>GridSpec/subplot_mosaic</a><a class="toc-link" href="#s28"><span class="toc-num">28</span>plt.style.use all styles</a><a class="toc-link" href="#s29"><span class="toc-num">29</span>3D: Axes3D plot_surface scatter3D</a><a class="toc-link" href="#s30"><span class="toc-num">30</span>plt.rcParams common settings</a><a class="toc-link" href="#s31"><span class="toc-num">31</span>FuncAnimation basics</a><a class="toc-link" href="#s32"><span class="toc-num">32</span>Figure events picking</a><a class="toc-link" href="#s33"><span class="toc-num">33</span>plt.cm Normalize BoundaryNorm</a><a class="toc-link" href="#s34"><span class="toc-num">34</span>Inset axes zoomed_inset_axes</a><a class="toc-link" href="#s35"><span class="toc-num">35</span>twinx() twiny() dual axes</a></div></div><div class="content-section" id="s1">
+<div class="section-header"><span class="section-num">01</span><h2>Figure &amp; Subplots Setup</h2></div>
+<p class="section-intro">plt.figure() controls canvas. plt.subplots() creates Figure+Axes in one call. Most common entry point for all matplotlib workflows.</p><div class="code-block">
+<div class="code-header"><span class="code-lang">&#9679; Python</span>
+<span class="code-title">figure() / subplots() — all params</span><button class="copy-btn">Copy</button></div>
+<div class="code-body"><pre><code>import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+import numpy as np
+
+# plt.figure() — main params
+fig = plt.figure(
+    num=1,             # id — reuse if already exists
+    figsize=(10,6),    # (width,height) inches. 10,6 = medium
+    dpi=100,           # dots per inch
+    facecolor="white",
+    layout="tight",    # "tight" "constrained" None
+)
+plt.close()
+
+# plt.subplots — the standard way
+fig, ax    = plt.subplots()                  # single ax
+fig, axes  = plt.subplots(2,3,figsize=(12,8))# 2x3 grid → (2,3) ndarray
+fig,(a1,a2)= plt.subplots(1,2,sharex=True)  # share x axis
+
+# squeeze=False ensures axes is always 2D
+fig, axes  = plt.subplots(1,3,squeeze=False) # shape (1,3)
+
+# Width/height ratios via gridspec_kw
+fig, axes  = plt.subplots(1,2,
+    gridspec_kw={"width_ratios":[3,1],"wspace":0.1},
+    figsize=(10,4))
+
+# figsize quick reference:
+# (4,3) tiny  (6,4) small  (10,6) medium
+# (12,8) large  (16,9) widescreen  (20,14) poster
+print("figsize and subplots documented")
+plt.close("all")</code></pre></div><div class="output-block"><div class="out-label">Output</div><div class="out-line">figsize and subplots documented</div></div></div><div class="params-card"><div class="params-card-header">Parameters</div>
+<table class="params-table"><thead><tr><th>Name</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+<tbody><tr><td>figsize</td><td>tuple</td><td>(6.4,4.8)</td><td>(width,height) in inches</td></tr><tr><td>dpi</td><td>int/float</td><td>100</td><td>Resolution. 72=screen 100=default 150=pres 300=print</td></tr><tr><td>layout</td><td>str</td><td>None</td><td>'tight' 'constrained' — auto-adjust subplot spacing</td></tr><tr><td>facecolor</td><td>color</td><td>'white'</td><td>Background color of entire figure</td></tr><tr><td>sharex/sharey</td><td>bool/str</td><td>False</td><td>Share axis limits: True, 'row', 'col', 'all', 'none'</td></tr><tr><td>squeeze</td><td>bool</td><td>True</td><td>False=always return 2D axes array</td></tr><tr><td>gridspec_kw</td><td>dict</td><td>None</td><td>width_ratios, height_ratios, hspace, wspace</td></tr></tbody></table></div></div><div class="content-section" id="s2">
+<div class="section-header"><span class="section-num">02</span><h2>All Plot Types</h2></div>
+<p class="section-intro">18 distinct plot types. Each has unique parameters. The fmt shorthand for plot() is '[color][marker][linestyle]' e.g. 'r--o'.</p><div class="code-block">
+<div class="code-header"><span class="code-lang">&#9679; Python</span>
+<span class="code-title">plot / scatter / bar / hist / boxplot / violin / pie / imshow / errorbar / fill_between</span><button class="copy-btn">Copy</button></div>
+<div class="code-body"><pre><code>import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt, numpy as np
+
+x=np.linspace(0,2*np.pi,50)
+fig,axes=plt.subplots(3,3,figsize=(12,10))
+
+# 1. Line plot
+axes[0,0].plot(x,np.sin(x),color="C0",lw=2,ls="--",marker="o",ms=3,label="sin")
+axes[0,0].plot(x,np.cos(x),"r-.",lw=1.5,label="cos")
+axes[0,0].set_title("plot()")
+
+# 2. Scatter
+np.random.seed(0)
+xr,yr=np.random.randn(80),np.random.randn(80)
+axes[0,1].scatter(xr,yr,s=30+50*np.abs(xr),c=yr,cmap="plasma",alpha=0.7)
+axes[0,1].set_title("scatter()")
+
+# 3. Bar
+cats=["A","B","C","D"]; v=[23,45,12,67]
+axes[0,2].bar(cats,v,width=0.6,color=["#FF6B6B","#4EC","#45B","#96C"],edgecolor="k")
+axes[0,2].set_title("bar()")
+
+# 4. Histogram
+axes[1,0].hist(np.random.randn(500),bins=25,density=True,
+    histtype="stepfilled",color="steelblue",alpha=0.8,edgecolor="white")
+axes[1,0].set_title("hist()")
+
+# 5. Boxplot
+axes[1,1].boxplot([np.random.randn(50)*s for s in [1,2,0.5]],
+    patch_artist=True,notch=True,labels=["narrow","wide","tight"])
+axes[1,1].set_title("boxplot()")
+
+# 6. Pie
+axes[1,2].pie([35,30,20,15],labels=["Py","JS","Java","Other"],
+    autopct="%1.0f%%",explode=[0.05,0,0,0],startangle=90)
+axes[1,2].set_title("pie()")
+
+# 7. imshow
+axes[2,0].imshow(np.random.rand(8,8),cmap="viridis",aspect="auto")
+axes[2,0].set_title("imshow()")
+
+# 8. errorbar
+xe=np.arange(5); ye=np.random.rand(5)*10
+axes[2,1].errorbar(xe,ye,yerr=0.5+np.random.rand(5),fmt="o-",capsize=4,ecolor="red")
+axes[2,1].set_title("errorbar()")
+
+# 9. fill_between
+xe2=np.linspace(0,4,50); ye2=np.sin(xe2)
+axes[2,2].fill_between(xe2,ye2-0.3,ye2+0.3,alpha=0.3)
+axes[2,2].plot(xe2,ye2)
+axes[2,2].set_title("fill_between()")
+
+plt.tight_layout()
+plt.savefig("/tmp/mpl_gallery.png",dpi=80)
+print("8 plot types saved")
+plt.close()</code></pre></div><div class="output-block"><div class="out-label">Output</div><div class="out-line">8 plot types saved</div></div></div></div><div class="content-section" id="s3">
+<div class="section-header"><span class="section-num">03</span><h2>Axes Customization</h2></div>
+<p class="section-intro">Full control over every visual property: title, labels, ticks, legend, grid, spines, scale, and aspect ratio.</p><div class="code-block">
+<div class="code-header"><span class="code-lang">&#9679; Python</span>
+<span class="code-title">set_title / xlabel / ylabel / ticks / tick_params / legend / grid / spines</span><button class="copy-btn">Copy</button></div>
+<div class="code-body"><pre><code>import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+import numpy as np
+
+fig,ax=plt.subplots(figsize=(8,5))
+ax.plot([1,2,3,4],[1,4,9,16],"b-o",label="y=x²")
+ax.plot([1,2,3,4],[1,2,3,4],"r--",label="y=x")
+
+# Title &amp; labels
+ax.set_title("Custom Axes",fontsize=16,fontweight="bold",loc="center",pad=12)
+ax.set_xlabel("Input",fontsize=13,labelpad=8)
+ax.set_ylabel("Output",fontsize=13,labelpad=8)
+
+# Limits
+ax.set_xlim(0.5,4.5); ax.set_ylim(-1,18)
+
+# Ticks
+ax.set_xticks([1,2,3,4])
+ax.set_xticklabels(["one","two","three","four"],rotation=20,ha="right")
+ax.set_yticks(range(0,18,3))
+ax.tick_params(axis="both",which="major",direction="out",
+    length=6,width=1.2,color="gray",labelsize=11)
+ax.minorticks_on()
+ax.tick_params(axis="x",which="minor",length=3,width=0.8)
+
+# Legend — all loc strings:
+# 0=best 1=upper right 2=upper left 3=lower left 4=lower right
+# 5=right 6=center left 7=center right 8=lower center
+# 9=upper center 10=center
+ax.legend(loc="upper left",fontsize=11,title="Legend",frameon=True,
+    facecolor="#f8f8f8",edgecolor="gray",ncols=1,markerscale=1.2)
+
+# Grid
+ax.grid(True,which="major",axis="both",color="lightgray",ls="--",lw=0.7,alpha=0.8)
+
+# Spines
+ax.spines[["top","right"]].set_visible(False)
+ax.spines["left"].set_linewidth(1.5)
+ax.spines["bottom"].set_color("#444")
+
+# Scale options
+ax.set_xscale("linear")   # "linear" "log" "symlog" "logit"
+
+print("Axes customized")
+plt.close()</code></pre></div><div class="output-block"><div class="out-label">Output</div><div class="out-line">Axes customized</div></div></div></div><div class="content-section" id="s4">
+<div class="section-header"><span class="section-num">04</span><h2>Annotations, Text &amp; Reference Lines</h2></div>
+<p class="section-intro">ax.annotate() adds arrows with text. ax.text() places text anywhere. axhline/axvline/axhspan/axvspan add reference markers.</p><div class="code-block">
+<div class="code-header"><span class="code-lang">&#9679; Python</span>
+<span class="code-title">annotate / ax.text / axhline / axvline / axhspan / axvspan</span><button class="copy-btn">Copy</button></div>
+<div class="code-body"><pre><code>import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt, numpy as np
+
+fig,ax=plt.subplots(figsize=(8,5))
+x=np.linspace(0,10,100)
+ax.plot(x,np.sin(x)*np.exp(-0.1*x))
+
+# annotate() — arrow + text
+ax.annotate("peak",
+    xy=(1.57,0.92),              # tip of arrow (data coords)
+    xytext=(3.0,0.9),            # text position
+    xycoords="data",
+    textcoords="data",
+    fontsize=12,color="red",
+    arrowprops=dict(
+        arrowstyle="-&gt;",          # "-" "-&gt;" "-|&gt;" "simple" "fancy"
+        color="red",lw=1.5,
+        connectionstyle="arc3,rad=-0.2",
+    ),
+    ha="left",va="center",
+)
+
+# ax.text() — arbitrary text
+ax.text(0.98,0.02,"note",         # x,y in axes coords
+    transform=ax.transAxes,        # use axes fraction [0,1]
+    ha="right",va="bottom",
+    fontsize=9,color="gray",
+    bbox=dict(boxstyle="round",facecolor="linen",alpha=0.8),
+)
+
+# Reference lines (infinite)
+ax.axhline(y=0,  color="black",lw=0.8,ls="-",zorder=0)
+ax.axhline(y=0.5,color="green",lw=1.0,ls="--",label="y=0.5")
+ax.axvline(x=np.pi,color="blue",ls=":",lw=1.2,label="x=π")
+
+# Spans (shaded regions)
+ax.axhspan(-0.2,0.2,alpha=0.1,color="yellow",label="zero band")
+ax.axvspan(6,8,alpha=0.1,color="red",label="decay region")
+
+ax.legend(loc="upper right",fontsize=9)
+plt.savefig("/tmp/mpl_annotate.png",dpi=80,bbox_inches="tight")
+print("Annotations done")
+plt.close()</code></pre></div><div class="output-block"><div class="out-label">Output</div><div class="out-line">Annotations done</div></div></div></div><div class="content-section" id="s5">
+<div class="section-header"><span class="section-num">05</span><h2>Colors, Layout, Saving &amp; 3D</h2></div>
+<p class="section-intro">All color formats, colormap categories, savefig options, GridSpec layout, 3D surfaces, and rcParams for global style configuration.</p><div class="code-block">
+<div class="code-header"><span class="code-lang">&#9679; Python</span>
+<span class="code-title">colors / colorbar / savefig / GridSpec / 3D / rcParams</span><button class="copy-btn">Copy</button></div>
+<div class="code-body"><pre><code>import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+import numpy as np
+
+# ── Colors ────────────────────────────────────────────────────────
+# Named:   "red"  "steelblue"  "darkviolet"  "coral"
+# Hex:     "#FF5733"  "#2196F3"
+# RGB:     (0.2, 0.6, 0.8)
+# RGBA:    (0.2, 0.6, 0.8, 0.5)
+# CN:      "C0" "C1" ... "C9"   (default color cycle)
+# Tableau: "tab:blue" "tab:orange" "tab:green" "tab:red"
+# xkcd:   "xkcd:sky blue"
+# Gray:   "0.5"  (string 0=black 1=white)
+
+# ── Colormaps by category ───────────────────────────────────────────
+# Sequential:   viridis plasma inferno magma Blues Greens Reds Purples
+# Diverging:    RdBu coolwarm seismic PiYG
+# Cyclic:       twilight hsv
+# Qualitative:  tab10 tab20 Set1 Set2 Pastel1 Dark2 Accent
+# Append _r to reverse any colormap: "viridis_r"
+
+fig,ax=plt.subplots()
+img=ax.imshow(np.random.rand(10,10),cmap="viridis",vmin=0,vmax=1)
+cb = plt.colorbar(img,ax=ax,
+    shrink=0.8,      # fraction of axes height
+    aspect=20,       # ratio height:width
+    pad=0.02,        # gap between plot and colorbar
+    label="Value",
+    ticks=[0,0.25,0.5,0.75,1.0],
+    format="%.2f",
+    orientation="vertical",  # "horizontal"
+    extend="neither",  # "both" "min" "max" "neither"
+)
+plt.savefig("/tmp/mpl_colorbar.png",dpi=80,bbox_inches="tight")
+plt.close()
+
+# ── savefig — all params ────────────────────────────────────────────
+# fig.savefig(fname, dpi, facecolor, format, bbox_inches, pad_inches, transparent, metadata)
+# formats: "png" "pdf" "svg" "eps" "jpeg" "webp" "tiff"
+# bbox_inches="tight" removes extra whitespace automatically
+# transparent=True  — PNG with alpha channel
+
+# ── GridSpec ───────────────────────────────────────────────────────
+from matplotlib.gridspec import GridSpec
+fig2=plt.figure(figsize=(10,7))
+gs=GridSpec(3,3,figure=fig2,
+    hspace=0.4,wspace=0.3,
+    width_ratios=[2,1,1],height_ratios=[1,2,1])
+ax_main=fig2.add_subplot(gs[0:2,0:2])
+ax_tr  =fig2.add_subplot(gs[0,2])
+ax_br  =fig2.add_subplot(gs[1,2])
+ax_bot =fig2.add_subplot(gs[2,:])
+plt.savefig("/tmp/mpl_gridspec.png",dpi=60,bbox_inches="tight")
+plt.close()
+
+# ── subplot_mosaic ─────────────────────────────────────────────────
+fig3,axd=plt.subplot_mosaic("AB;CC",figsize=(8,6))
+# axd is dict: {"A":ax, "B":ax, "C":ax}
+axd["A"].set_title("A — narrow top")
+axd["B"].set_title("B — narrow top")
+axd["C"].set_title("C — full width")
+plt.savefig("/tmp/mpl_mosaic.png",dpi=60,bbox_inches="tight")
+plt.close()
+
+# ── 3D plotting ────────────────────────────────────────────────────
+fig4=plt.figure(figsize=(8,6))
+ax3=fig4.add_subplot(111,projection="3d")
+u,v=np.linspace(0,2*np.pi,50),np.linspace(0,np.pi,50)
+U,V=np.meshgrid(u,v)
+X=np.cos(U)*np.sin(V); Y=np.sin(U)*np.sin(V); Z=np.cos(V)
+ax3.plot_surface(X,Y,Z,cmap="coolwarm",alpha=0.85,
+    linewidth=0,antialiased=True)
+ax3.set_xlabel("X"); ax3.set_ylabel("Y"); ax3.set_zlabel("Z")
+ax3.set_title("3D Sphere")
+plt.savefig("/tmp/mpl_3d.png",dpi=80,bbox_inches="tight")
+plt.close()
+
+# ── rcParams ──────────────────────────────────────────────────────
+import matplotlib as mpl
+mpl.rcParams["figure.figsize"]  = (8,5)
+mpl.rcParams["figure.dpi"]     = 100
+mpl.rcParams["font.size"]      = 12
+mpl.rcParams["font.family"]    = "DejaVu Sans"
+mpl.rcParams["lines.linewidth"]= 2.0
+mpl.rcParams["axes.labelsize"] = 13
+mpl.rcParams["axes.titlesize"] = 15
+mpl.rcParams["axes.grid"]      = True
+mpl.rcParams["xtick.labelsize"]= 11
+mpl.rcParams["legend.fontsize"]= 11
+mpl.rcParams["savefig.dpi"]    = 150
+mpl.rcParams["savefig.bbox"]   = "tight"
+mpl.rcdefaults()               # reset all to defaults
+
+print("Colors / layout / 3D / rcParams documented")</code></pre></div><div class="output-block"><div class="out-label">Output</div><div class="out-line">Colors / layout / 3D / rcParams documented</div></div></div></div><div class="playground"><div class="playground-header">
+<span class="playground-title">&#x1F9EA; Try it — Edit and Run</span>
+<button class="run-btn">&#9654; Run</button></div>
+<textarea class="playground-editor" spellcheck="false"># Matplotlib API quick reference
+api={
+  "figure":    "plt.figure(figsize=(10,6), dpi=100)",
+  "subplots":  "fig,axes=plt.subplots(2,2,sharex=True,sharey=True)",
+  "plot":      "ax.plot(x,y,color='C0',lw=2,ls='--',marker='o',label='data')",
+  "scatter":   "ax.scatter(x,y,s=50,c=z,cmap='viridis',alpha=0.7)",
+  "bar":       "ax.bar(cats,vals,width=0.6,color='steelblue',edgecolor='k')",
+  "hist":      "ax.hist(data,bins=30,density=True,histtype='stepfilled')",
+  "boxplot":   "ax.boxplot(data,patch_artist=True,notch=True)",
+  "annotate":  "ax.annotate('pt',xy=(x,y),xytext=(tx,ty),arrowprops=dict(arrowstyle='-&gt;'))",
+  "savefig":   "plt.savefig('plot.png',dpi=150,bbox_inches='tight')",
+  "rcParams":  "mpl.rcParams['font.size']=13",
+}
+for fn,sig in api.items():
+    print(f"{fn:12} -&gt; {sig}")</textarea>
+<div class="playground-output">Click &#9654; Run to execute…</div></div><div class="page-nav"><a href="pandas.html">&larr; Pandas</a><a href="seaborn.html">Seaborn &rarr;</a></div></body></html>

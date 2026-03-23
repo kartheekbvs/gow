@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PyDocs — The Ultimate Python & Data Science Reference</title>
+  <meta name="description" content="The world's most comprehensive Python and Data Science documentation. Covers Python basics, NumPy, Pandas, Matplotlib, Seaborn, Scikit-Learn, TensorFlow and the entire standard library with 250+ topics, 500+ code examples, interactive playground, and real output previews.">
+  <link rel="stylesheet" href="style.css">
+  <script src="shared.js" defer></script>
+</head>
+<body>
+<!-- shared.js injects header + sidebar; this becomes #main-content -->
+
+<div class="page-hero" style="background:linear-gradient(135deg,rgba(88,166,255,0.1),rgba(188,140,255,0.08),rgba(63,185,80,0.06));">
+  <div class="breadcrumb">📚 PyDocs v2.0</div>
+  <h1 style="-webkit-text-fill-color:unset;background:none;color:var(--text-primary);">
+    The Ultimate <span style="background:linear-gradient(135deg,var(--accent-blue),var(--accent-purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Python</span> &amp;<br>
+    <span style="background:linear-gradient(135deg,var(--accent-orange),var(--accent-yellow));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Data Science</span> Reference
+  </h1>
+  <p class="subtitle">250+ topics · 500+ interactive code examples · real output previews · in-browser Python playground. Everything from <code class="inline-code">int</code> to TensorFlow transformers, with every parameter, return value, and attribute documented.</p>
+  <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:1.5rem;">
+    <a href="python-basics.html" style="display:inline-flex;align-items:center;gap:0.5rem;background:var(--accent-blue);color:var(--text-inverse);padding:0.75rem 1.5rem;border-radius:10px;font-weight:700;text-decoration:none;font-size:0.95rem;transition:var(--transition);">🐍 Start with Python</a>
+    <a href="numpy.html" style="display:inline-flex;align-items:center;gap:0.5rem;border:1px solid var(--border-subtle);color:var(--text-primary);padding:0.75rem 1.5rem;border-radius:10px;font-weight:600;text-decoration:none;font-size:0.95rem;transition:var(--transition);">🔢 NumPy Reference</a>
+    <a href="pandas.html" style="display:inline-flex;align-items:center;gap:0.5rem;border:1px solid var(--border-subtle);color:var(--text-primary);padding:0.75rem 1.5rem;border-radius:10px;font-weight:600;text-decoration:none;font-size:0.95rem;transition:var(--transition);">🐼 Pandas Guide</a>
+  </div>
+</div>
+
+<!-- Stats bar -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:1rem;margin-bottom:3rem;">
+  <div style="background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:12px;padding:1.25rem;text-align:center;">
+    <div style="font-size:2rem;font-weight:900;color:var(--accent-blue);font-family:'Outfit',sans-serif;">250+</div>
+    <div style="font-size:0.82rem;color:var(--text-muted);">Topics Covered</div>
+  </div>
+  <div style="background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:12px;padding:1.25rem;text-align:center;">
+    <div style="font-size:2rem;font-weight:900;color:var(--accent-green);font-family:'Outfit',sans-serif;">500+</div>
+    <div style="font-size:0.82rem;color:var(--text-muted);">Code Examples</div>
+  </div>
+  <div style="background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:12px;padding:1.25rem;text-align:center;">
+    <div style="font-size:2rem;font-weight:900;color:var(--accent-purple);font-family:'Outfit',sans-serif;">8</div>
+    <div style="font-size:0.82rem;color:var(--text-muted);">Reference Pages</div>
+  </div>
+  <div style="background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:12px;padding:1.25rem;text-align:center;">
+    <div style="font-size:2rem;font-weight:900;color:var(--accent-yellow);font-family:'Outfit',sans-serif;">▶</div>
+    <div style="font-size:0.82rem;color:var(--text-muted);">Live Playground</div>
+  </div>
+  <div style="background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:12px;padding:1.25rem;text-align:center;">
+    <div style="font-size:2rem;font-weight:900;color:var(--accent-orange);font-family:'Outfit',sans-serif;">📊</div>
+    <div style="font-size:0.82rem;color:var(--text-muted);">Output Previews</div>
+  </div>
+  <div style="background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:12px;padding:1.25rem;text-align:center;">
+    <div style="font-size:2rem;font-weight:900;color:var(--accent-cyan);font-family:'Outfit',sans-serif;">∞</div>
+    <div style="font-size:0.82rem;color:var(--text-muted);">Free Forever</div>
+  </div>
+</div>
+
+<!-- Module cards -->
+<h2 style="font-size:1.5rem;font-weight:800;margin-bottom:1.5rem;color:var(--text-primary);">📚 Browse All Modules</h2>
+<div class="home-grid">
+
+  <a href="python-basics.html" class="home-card" style="--card-accent:var(--accent-blue);">
+    <div class="card-icon">🐍</div>
+    <div class="card-title">Python Basics</div>
+    <div class="card-desc">15 deep-dive topics covering every built-in type, method, and language feature. Variables to decorators, all with examples and return values.</div>
+    <div class="card-meta">
+      <span class="tag tag-blue">15 Topics</span>
+      <span class="tag tag-green">Beginner → Expert</span>
+    </div>
+  </a>
+
+  <a href="numpy.html" class="home-card" style="--card-accent:var(--accent-orange);">
+    <div class="card-icon">🔢</div>
+    <div class="card-title">NumPy</div>
+    <div class="card-desc">40 topics covering all array creation methods, indexing tricks, math ufuncs, linear algebra, broadcasting rules, einsum, masked arrays, and memory layout.</div>
+    <div class="card-meta">
+      <span class="tag tag-orange">40 Topics</span>
+      <span class="tag tag-blue">Scientific Computing</span>
+    </div>
+  </a>
+
+  <a href="pandas.html" class="home-card" style="--card-accent:var(--accent-yellow);">
+    <div class="card-icon">🐼</div>
+    <div class="card-title">Pandas</div>
+    <div class="card-desc">50 topics — every DataFrame and Series method with all parameters, return values, and practical examples. GroupBy, merging, reshaping, datetime, MultiIndex and more.</div>
+    <div class="card-meta">
+      <span class="tag tag-yellow">50 Topics</span>
+      <span class="tag tag-purple">Data Wrangling</span>
+    </div>
+  </a>
+
+  <a href="matplotlib.html" class="home-card" style="--card-accent:var(--accent-green);">
+    <div class="card-icon">📊</div>
+    <div class="card-title">Matplotlib</div>
+    <div class="card-desc">35 topics with every plot type (18 kinds), all customization parameters, color maps, 3D plotting, GridSpec layouts, and visual output SVG previews for each chart.</div>
+    <div class="card-meta">
+      <span class="tag tag-green">35 Topics</span>
+      <span class="tag tag-blue">Visual Outputs</span>
+    </div>
+  </a>
+
+  <a href="seaborn.html" class="home-card" style="--card-accent:var(--accent-purple);">
+    <div class="card-icon">🎨</div>
+    <div class="card-title">Seaborn</div>
+    <div class="card-desc">30 topics covering all plot kinds — distribution, categorical, relational, regression, matrix heatmaps, FacetGrid, PairGrid, and JointGrid with all parameters documented.</div>
+    <div class="card-meta">
+      <span class="tag tag-purple">30 Topics</span>
+      <span class="tag tag-orange">Statistical Viz</span>
+    </div>
+  </a>
+
+  <a href="sklearn.html" class="home-card" style="--card-accent:var(--accent-red);">
+    <div class="card-icon">🤖</div>
+    <div class="card-title">Scikit-Learn</div>
+    <div class="card-desc">45 topics — the universal API, every preprocessor, all classifiers and regressors, SVM, clustering, PCA/t-SNE, cross-validation, GridSearchCV, and the metrics zoo.</div>
+    <div class="card-meta">
+      <span class="tag tag-red">45 Topics</span>
+      <span class="tag tag-green">Machine Learning</span>
+    </div>
+  </a>
+
+  <a href="tensorflow.html" class="home-card" style="--card-accent:var(--accent-cyan);">
+    <div class="card-icon">🧠</div>
+    <div class="card-title">TensorFlow / Keras</div>
+    <div class="card-desc">35 topics covering tensors, all Keras layer types (Dense, Conv2D, LSTM, Attention…), model building APIs, training, callbacks, transfer learning, and tf.data pipelines.</div>
+    <div class="card-meta">
+      <span class="tag tag-blue">35 Topics</span>
+      <span class="tag tag-purple">Deep Learning</span>
+    </div>
+  </a>
+
+  <a href="stdlib.html" class="home-card" style="--card-accent:var(--accent-yellow);">
+    <div class="card-icon">📦</div>
+    <div class="card-title">Python Stdlib</div>
+    <div class="card-desc">25 standard library modules: os, pathlib, json, re, datetime, sys, collections, functools, itertools, threading, multiprocessing, logging, argparse, unittest, and more.</div>
+    <div class="card-meta">
+      <span class="tag tag-yellow">25 Modules</span>
+      <span class="tag tag-green">Batteries Included</span>
+    </div>
+  </a>
+
+</div>
+
+<!-- Try Playground section -->
+<h2 style="font-size:1.5rem;font-weight:800;margin:3rem 0 1.5rem;color:var(--text-primary);">▶ Try the Live Python Playground</h2>
+<div class="playground">
+  <div class="playground-header">
+    <span class="playground-title">🧪 Interactive REPL — Run Python in your browser</span>
+    <button class="run-btn">▶ Run (Ctrl+Enter)</button>
+  </div>
+  <textarea class="playground-editor" spellcheck="false"># Try any Python code here!
+data = [1, 4, 9, 16, 25, 36]
+squares_root = [x**0.5 for x in data]
+
+for n, sq in zip(data, squares_root):
+    print(f"√{n:2d} = {sq:.4f}")
+
+# Dictionaries
+person = {"name": "Ada Lovelace", "born": 1815, "field": "Computing"}
+for k, v in person.items():
+    print(f"  {k}: {v}")</textarea>
+  <div class="playground-output">Click ▶ Run to execute Python in your browser…</div>
+</div>
+
+<!-- Quick Start Guide -->
+<h2 style="font-size:1.5rem;font-weight:800;margin:3rem 0 1.5rem;color:var(--text-primary);">🗺️ How to Use This Reference</h2>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1rem;margin-bottom:3rem;">
+  <div class="callout note" style="flex-direction:column;gap:0.5rem;">
+    <div style="font-size:1.5rem;">🔍</div>
+    <strong style="color:var(--accent-blue);">Search Everywhere</strong>
+    <p style="margin:0;font-size:0.88rem;">Press <code class="inline-code">Ctrl+K</code> to instantly search all 250+ topics across every page.</p>
+  </div>
+  <div class="callout tip" style="flex-direction:column;gap:0.5rem;">
+    <div style="font-size:1.5rem;">📋</div>
+    <strong style="color:var(--accent-green);">Copy Any Code</strong>
+    <p style="margin:0;font-size:0.88rem;">Every code block has a one-click Copy button. All examples are self-contained and runnable.</p>
+  </div>
+  <div class="callout warning" style="flex-direction:column;gap:0.5rem;">
+    <div style="font-size:1.5rem;">▶</div>
+    <strong style="color:var(--accent-orange);">Run in Playground</strong>
+    <p style="margin:0;font-size:0.88rem;">Modify any example in the playground and run it — powered by Skulpt (Python 3 in the browser).</p>
+  </div>
+  <div class="callout important" style="flex-direction:column;gap:0.5rem;">
+    <div style="font-size:1.5rem;">📈</div>
+    <strong style="color:var(--accent-purple);">Track Progress</strong>
+    <p style="margin:0;font-size:0.88rem;">The reading progress bar shows how far through each page you've scrolled.</p>
+  </div>
+</div>
+
+</body>
+</html>

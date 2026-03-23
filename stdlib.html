@@ -1,0 +1,463 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Standard Library — PyDocs</title>
+<meta name="description" content="Python stdlib complete reference — 25 modules.">
+<link rel="stylesheet" href="style.css">
+<script src="shared.js" defer></script>
+</head><body><div class="page-hero">
+<div class="breadcrumb"><a href="index.html">PyDocs</a> &rsaquo; Python Standard Library</div>
+<h1>Python Standard Library</h1><p class="subtitle">25 essential stdlib modules — os, pathlib, json, csv, re, datetime, collections, itertools, functools, logging, argparse, threading, subprocess, concurrent.futures, and typing.</p>
+<span class="topic-count">&#128218; 25 Topics &nbsp;|&nbsp; Interactive Playground &nbsp;|&nbsp; Output Previews</span>
+</div><div class="toc-container"><h2>Table of Contents</h2><div class="toc-grid"><a class="toc-link" href="#s1"><span class="toc-num">01</span>os — path env walk process</a><a class="toc-link" href="#s2"><span class="toc-num">02</span>pathlib — Path all methods</a><a class="toc-link" href="#s3"><span class="toc-num">03</span>sys — argv path stdin stdout</a><a class="toc-link" href="#s4"><span class="toc-num">04</span>io — StringIO BytesIO TextIOWrapper</a><a class="toc-link" href="#s5"><span class="toc-num">05</span>json — loads dumps indent sort_keys</a><a class="toc-link" href="#s6"><span class="toc-num">06</span>csv — reader writer DictReader DictWriter</a><a class="toc-link" href="#s7"><span class="toc-num">07</span>datetime — date time timedelta strftime strptime</a><a class="toc-link" href="#s8"><span class="toc-num">08</span>re — compile match search findall sub flags</a><a class="toc-link" href="#s9"><span class="toc-num">09</span>collections — Counter deque OrderedDict namedtuple defaultdict ChainMap</a><a class="toc-link" href="#s10"><span class="toc-num">10</span>itertools — all 18 functions</a><a class="toc-link" href="#s11"><span class="toc-num">11</span>functools — reduce lru_cache partial wraps total_ordering</a><a class="toc-link" href="#s12"><span class="toc-num">12</span>math — all constants and functions</a><a class="toc-link" href="#s13"><span class="toc-num">13</span>statistics — mean median stdev</a><a class="toc-link" href="#s14"><span class="toc-num">14</span>random — SystemRandom seed choice sample shuffle gauss</a><a class="toc-link" href="#s15"><span class="toc-num">15</span>string — constants Template Formatter</a><a class="toc-link" href="#s16"><span class="toc-num">16</span>textwrap — wrap fill dedent shorten</a><a class="toc-link" href="#s17"><span class="toc-num">17</span>logging — basicConfig handlers formatters levels</a><a class="toc-link" href="#s18"><span class="toc-num">18</span>argparse — ArgumentParser add_argument parse_args subparsers</a><a class="toc-link" href="#s19"><span class="toc-num">19</span>subprocess — run Popen PIPE check_output</a><a class="toc-link" href="#s20"><span class="toc-num">20</span>threading — Thread Lock Event Semaphore</a><a class="toc-link" href="#s21"><span class="toc-num">21</span>multiprocessing — Pool Process Queue</a><a class="toc-link" href="#s22"><span class="toc-num">22</span>concurrent.futures — ThreadPoolExecutor ProcessPoolExecutor</a><a class="toc-link" href="#s23"><span class="toc-num">23</span>contextlib — contextmanager suppress nullcontext ExitStack</a><a class="toc-link" href="#s24"><span class="toc-num">24</span>typing — all type hints</a><a class="toc-link" href="#s25"><span class="toc-num">25</span>dataclasses (see Python Basics #12) / abc / enum</a></div></div><div class="content-section" id="s1">
+<div class="section-header"><span class="section-num">01</span><h2>os / pathlib / sys</h2></div>
+<p class="section-intro">os provides OS-level operations. pathlib offers OOP paths (preferred). sys gives access to interpreter internals.</p><div class="code-block">
+<div class="code-header"><span class="code-lang">&#9679; Python</span>
+<span class="code-title">os / pathlib / sys — complete reference</span><button class="copy-btn">Copy</button></div>
+<div class="code-body"><pre><code>import os, sys
+from pathlib import Path
+
+# ── os — environment &amp; process ────────────────────────────────────
+print(os.getcwd())             # current working directory
+os.chdir("/tmp")               # change directory
+os.makedirs("a/b/c",exist_ok=True)   # create nested dirs
+os.rmdir("a/b/c")             # remove empty dir
+os.remove("file.txt")         # delete file
+os.rename("old.txt","new.txt")# rename/move file
+os.stat("file.txt")           # file stats (size, mtime, mode)
+
+# Environment variables
+path = os.environ.get("PATH","")
+os.environ["MY_VAR"] = "hello"
+print(os.environ.get("MY_VAR","default"))  # hello
+
+# os.path functions
+p = "/usr/local/bin/python3"
+print(os.path.basename(p))    # python3
+print(os.path.dirname(p))     # /usr/local/bin
+print(os.path.splitext("file.txt"))  # ('file', '.txt')
+print(os.path.join("/home","user","file.txt"))
+print(os.path.exists("/tmp"))  # True
+print(os.path.isfile("/tmp"))  # False
+print(os.path.isdir("/tmp"))   # True
+print(os.path.abspath("."))    # absolute path
+print(os.path.expanduser("~"))  # /home/username
+
+# os.walk — recursive directory traversal
+for root,dirs,files in os.walk("."):
+    for fname in files:
+        full = os.path.join(root,fname)
+        print(full)
+    break  # just show first level
+
+# Process
+print(os.getpid())    # process ID
+print(os.cpu_count()) # CPU cores available
+
+# ── pathlib.Path ──────────────────────────────────────────────────
+p = Path("/home/user/docs/report.pdf")
+print(p.name)          # 'report.pdf'
+print(p.stem)          # 'report'
+print(p.suffix)        # '.pdf'
+print(p.suffixes)      # ['.pdf']
+print(p.parent)        # /home/user/docs
+print(p.parents[1])    # /home/user
+print(p.parts)         # ('/', 'home', 'user', 'docs', 'report.pdf')
+
+# Path operations
+cwd = Path.cwd()
+home= Path.home()
+new = cwd/"subdir"/"file.txt"  # / operator builds paths
+print(new.is_absolute())       # True
+
+# File operations
+p2 = Path("/tmp/test.txt")
+p2.write_text("hello world",encoding="utf-8")
+print(p2.read_text())            # 'hello world'
+p2.write_bytes(b"raw bytes")
+print(p2.read_bytes())
+
+p2.rename("/tmp/new.txt")        # rename
+Path("/tmp/new.txt").unlink()    # delete file
+
+# Directory operations
+d = Path("/tmp/testdir")
+d.mkdir(parents=True,exist_ok=True)
+d.rmdir()
+
+# Glob and rglob
+py_files = list(cwd.glob("*.py"))        # direct children
+all_py   = list(cwd.rglob("**/*.py"))   # recursive
+
+# Stat
+s = p2.stat()
+print(s.st_size)         # bytes
+print(s.st_mtime)        # modified time (Unix timestamp)
+
+# ── sys ────────────────────────────────────────────────────────────
+print(sys.version)         # '3.11.5 (main, ...)'
+print(sys.platform)        # 'linux' 'win32' 'darwin'
+print(sys.version_info)    # sys.version_info(major=3,minor=11,...)
+print(sys.argv)            # ['script.py','arg1','arg2']
+print(sys.path[:2])        # module search paths
+print(sys.maxsize)         # max int (2^63-1 on 64-bit)
+print(sys.float_info.max)  # max float
+print(sys.stdin.name)      # '&lt;stdin&gt;'
+sys.stdout.write("hello
+")  # direct stdout write
+sys.stderr.write("error
+")
+print(sys.getrecursionlimit())  # 1000
+sys.setrecursionlimit(2000)
+print(sys.getsizeof([1,2,3]))  # 88 (bytes)</code></pre></div><div class="output-block"><div class="out-label">Output</div><div class="out-line">'report.pdf'</div><div class="out-line">'report'</div><div class="out-line">'.pdf'</div><div class="out-line">['.pdf']</div><div class="out-line">hello world</div><div class="out-line">'linux'</div></div></div></div><div class="content-section" id="s2">
+<div class="section-header"><span class="section-num">02</span><h2>json / csv / re</h2></div>
+<p class="section-intro">json is the standard data interchange format. csv handles tabular data. re (regular expressions) is Python's powerful pattern matching engine.</p><div class="code-block">
+<div class="code-header"><span class="code-lang">&#9679; Python</span>
+<span class="code-title">json.loads/dumps / csv.reader/DictWriter / re.compile + all flags</span><button class="copy-btn">Copy</button></div>
+<div class="code-body"><pre><code>import json, csv, re, io
+
+# ── json ──────────────────────────────────────────────────────────
+data = {"name":"Alice","age":30,"scores":[95,87,92],"active":True,"extra":None}
+
+# Serialize
+s = json.dumps(data,
+    indent=2,              # pretty-print with 2-space indent
+    sort_keys=True,        # alphabetical key order
+    ensure_ascii=True,     # escape non-ASCII
+    separators=(",",": "), # compact: (",",":")
+    default=str,           # fallback for non-serializable types
+)
+print(s)
+
+# Deserialize
+d = json.loads(s)
+print(type(d["scores"]))   # &lt;class 'list'&gt;
+
+# File I/O
+with open("/tmp/data.json","w") as f:
+    json.dump(data,f,indent=2)
+with open("/tmp/data.json") as f:
+    loaded = json.load(f)
+
+# ── csv ───────────────────────────────────────────────────────────
+# Write
+rows=[["Alice",30,95],["Bob",25,88],["Carol",35,91]]
+with open("/tmp/people.csv","w",newline="",encoding="utf-8") as f:
+    writer = csv.writer(f,delimiter=",",quotechar='"',
+                        quoting=csv.QUOTE_MINIMAL)
+    writer.writerow(["name","age","score"])
+    writer.writerows(rows)
+
+# Read
+with open("/tmp/people.csv",newline="") as f:
+    reader = csv.reader(f)
+    header = next(reader)
+    for row in reader:
+        print(row)  # ['Alice', '30', '95']
+
+# DictReader / DictWriter
+with open("/tmp/people.csv") as f:
+    dr = csv.DictReader(f)    # first row = field names
+    for row in dr:
+        print(row["name"],row["score"])
+
+with open("/tmp/out.csv","w",newline="") as f:
+    dw = csv.DictWriter(f,fieldnames=["name","age","score"])
+    dw.writeheader()
+    dw.writerows([{"name":"Alice","age":30,"score":95}])
+
+# ── re — regular expressions ──────────────────────────────────────
+# Compile pattern once for reuse
+pat = re.compile(r"\w+@\w+\.\w+", re.IGNORECASE)
+
+text = "Contact alice@example.com or BOB@GMAIL.COM for info."
+print(pat.findall(text))     # ['alice@example.com', 'BOB@GMAIL.COM']
+print(pat.search(text).group())  # 'alice@example.com' (first match)
+print(pat.match(text))        # None (no match at start)
+
+m = re.match(r"(\w+)\s+(\w+)", "Hello World 123")
+print(m.group(0))   # 'Hello World'  (full match)
+print(m.group(1))   # 'Hello'
+print(m.group(2))   # 'World'
+print(m.groups())   # ('Hello', 'World')
+print(m.span())     # (0, 11)
+
+# sub — replace
+clean = re.sub(r"&lt;[^&gt;]+&gt;","",  "&lt;b&gt;bold&lt;/b&gt; text")  # strip HTML
+print(clean)   # 'bold text'
+
+digits = re.sub(r"\d+", lambda m: str(int(m.group())*2), "a1 b2 c3")
+print(digits)  # 'a2 b4 c6'
+
+# Flags
+re.IGNORECASE  # I  — case-insensitive
+re.MULTILINE   # M  — ^ and $ match line boundaries
+re.DOTALL      # S  — dot matches newline
+re.VERBOSE     # X  — allow whitespace and comments in pattern
+re.ASCII       # A  — \w \d etc match ASCII-only</code></pre></div><div class="output-block"><div class="out-label">Output</div><div class="out-line"><class 'list'></div><div class="out-line">['alice@example.com', 'BOB@GMAIL.COM']</div><div class="out-line">'Hello World'</div><div class="out-line">'bold text'</div><div class="out-line">'a2 b4 c6'</div></div></div></div><div class="content-section" id="s3">
+<div class="section-header"><span class="section-num">03</span><h2>collections / itertools / functools</h2></div>
+<p class="section-intro">These three modules contain some of Python's most powerful tools. Master them to write cleaner, more efficient, more Pythonic code.</p><div class="code-block">
+<div class="code-header"><span class="code-lang">&#9679; Python</span>
+<span class="code-title">Counter / deque / defaultdict / ChainMap + all itertools + functools</span><button class="copy-btn">Copy</button></div>
+<div class="code-body"><pre><code>from collections import Counter,deque,defaultdict,OrderedDict,ChainMap,namedtuple
+import itertools, functools
+
+# ── Counter ───────────────────────────────────────────────────────
+words = "the quick brown fox jumps over the lazy dog the".split()
+c = Counter(words)
+print(c.most_common(3))     # [('the',3),('quick',1),('brown',1)]
+print(c["the"])              # 3
+c.update(["the","fox"])      # add more counts
+print(c.total())             # sum of all counts
+print(+c)                    # remove zero/negative counts
+c2 = Counter(the=10, fox=2)
+print((c-c2).most_common(3)) # subtract (keep positives only)
+
+# ── deque — O(1) append and popleft ──────────────────────────────
+d = deque([1,2,3],maxlen=5)  # maxlen=5: auto-drop from other end
+d.append(4);    d.appendleft(0)   # O(1) both ends
+d.extend([5,6]);d.extendleft([7]) # extend from right/left
+v=d.pop();      v2=d.popleft()    # O(1) remove from either end
+d.rotate(1)     # shift right by 1 (negative=left)
+d.rotate(-2)
+print(list(d))
+
+# ── defaultdict ───────────────────────────────────────────────────
+dd = defaultdict(list)
+for word in ["cat","dog","cat","fish","dog","cat"]:
+    dd[word].append(word)
+print(dict(dd))   # {'cat':['cat','cat','cat'],'dog':['dog','dog'],'fish':['fish']}
+
+# ── ChainMap — overlay multiple dicts ─────────────────────────────
+defaults = {"color":"red","width":800,"retry":3}
+user_cfg = {"color":"blue"}
+env_cfg  = {"width":1920}
+merged = ChainMap(env_cfg, user_cfg, defaults)
+print(merged["color"])   # "blue" (user_cfg wins)
+print(merged["width"])   # 1920   (env_cfg wins)
+print(merged["retry"])   # 3      (from defaults)
+
+# ── itertools (18 functions) ─────────────────────────────────────
+print(list(itertools.islice(itertools.count(1,2),5)))# [1,3,5,7,9]
+print([next(itertools.cycle("AB")) for _ in range(4)])# [A,B,A,B]
+print(list(itertools.chain([1,2],[3,4],[5])))         # [1,2,3,4,5]
+print(list(itertools.chain.from_iterable([[1,2],[3]])))
+print(list(itertools.compress([1,2,3,4],[1,0,1,1]))) # [1,3,4]
+print(list(itertools.dropwhile(lambda x:x&lt;3,[1,2,3,4,1])))
+print(list(itertools.takewhile(lambda x:x&lt;3,[1,2,3,4,1])))
+print(list(itertools.accumulate([1,2,3,4,5])))        # running sum
+print(list(itertools.product("AB",repeat=2)))
+print(list(itertools.permutations("ABC",2)))
+print(list(itertools.combinations("ABCD",2)))
+print(list(itertools.combinations_with_replacement("AB",2)))
+print(list(itertools.zip_longest([1,2,3],[10,20],fillvalue=0)))
+print(list(itertools.starmap(pow,[(2,3),(3,2),(4,2)])))# [8,9,16]
+data=sorted([("a",1),("b",2),("a",3)],key=lambda x:x[0])
+print({k:list(g) for k,g in itertools.groupby(data,lambda x:x[0])})
+print(list(itertools.pairwise([1,2,3,4])))            # [(1,2),(2,3),(3,4)]
+print(list(itertools.batched([1,2,3,4,5],2)))         # [(1,2),(3,4),(5,)]
+
+# ── functools ─────────────────────────────────────────────────────
+# functools.reduce
+print(functools.reduce(lambda a,b:a*b,[1,2,3,4,5]))  # 120
+
+# functools.partial
+from functools import partial
+power_of_2 = partial(pow, 2)
+print(power_of_2(10))   # 1024 = 2^10
+
+# functools.lru_cache
+@functools.lru_cache(maxsize=128)
+def fib(n): return n if n&lt;2 else fib(n-1)+fib(n-2)
+print(fib(30))  # 832040
+print(fib.cache_info())
+
+# functools.wraps — preserves wrapped function metadata
+def my_decorator(func):
+    @functools.wraps(func)
+    def wrapper(*a,**kw): return func(*a,**kw)
+    return wrapper
+
+# functools.total_ordering — fill in missing comparisons
+from functools import total_ordering
+@total_ordering
+class Version:
+    def __init__(self,v): self.v=tuple(int(x) for x in v.split("."))
+    def __eq__(self,o): return self.v==o.v
+    def __lt__(self,o): return self.v&lt;o.v
+print(Version("1.2.3") &lt; Version("2.0.0"))  # True</code></pre></div><div class="output-block"><div class="out-label">Output</div><div class="out-line">[('the', 3), ('quick', 1), ('brown', 1)]</div><div class="out-line">[1, 3, 5, 7, 9]</div><div class="out-line">120</div><div class="out-line">1024</div><div class="out-line">832040</div><div class="out-line">True</div></div></div></div><div class="content-section" id="s4">
+<div class="section-header"><span class="section-num">04</span><h2>datetime / logging / argparse</h2></div>
+<p class="section-intro">datetime handles all date/time arithmetic. logging provides structured, level-filtered output. argparse parses command-line arguments with type checking and help generation.</p><div class="code-block">
+<div class="code-header"><span class="code-lang">&#9679; Python</span>
+<span class="code-title">datetime / timedelta / strftime / logging / argparse</span><button class="copy-btn">Copy</button></div>
+<div class="code-body"><pre><code>import datetime, logging, argparse
+
+# ── datetime ──────────────────────────────────────────────────────
+now = datetime.datetime.now()
+today = datetime.date.today()
+utc = datetime.datetime.utcnow()
+from_ts = datetime.datetime.fromtimestamp(1705276800)
+
+print(now.strftime("%Y-%m-%d %H:%M:%S"))  # '2024-01-15 10:30:00'
+print(now.year, now.month, now.day)
+print(now.hour, now.minute, now.second)
+
+# Arithmetic
+delta = datetime.timedelta(days=30, hours=5, minutes=30)
+future = now + delta
+print(future.date())
+
+diff = datetime.date(2025,12,31) - datetime.date.today()
+print(f"Days until 2025-12-31: {diff.days}")
+
+# strptime — parse string to datetime
+d = datetime.datetime.strptime("2024-03-15 14:30:00", "%Y-%m-%d %H:%M:%S")
+print(d)
+
+# Format codes: %Y=year %m=month %d=day %H=hour %M=min %S=sec
+# %a=weekday abbrev %A=weekday full %b=month abbrev %B=month full
+# %j=day of year %U=week (sun) %W=week (mon) %Z=timezone
+
+# ── logging ───────────────────────────────────────────────────────
+# Levels: DEBUG(10) INFO(20) WARNING(30) ERROR(40) CRITICAL(50)
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+    handlers=[
+        logging.StreamHandler(),       # to console
+        logging.FileHandler("/tmp/app.log"),  # to file
+    ],
+)
+
+logger = logging.getLogger("myapp.module")
+logger.debug("Debug detail — only in dev")
+logger.info("Application started")
+logger.warning("Disk 85%% full")
+logger.error("Failed to connect: %s", "Connection refused")
+logger.exception("Unexpected error")  # includes traceback
+
+# ── argparse ─────────────────────────────────────────────────────
+import sys
+parser = argparse.ArgumentParser(
+    description="My CLI tool",
+    formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+)
+parser.add_argument("input",  type=str,  help="Input file path")
+parser.add_argument("-o","--output", type=str, default="out.txt", help="Output file")
+parser.add_argument("-n","--count",  type=int, default=10)
+parser.add_argument("-v","--verbose",action="store_true")
+parser.add_argument("--mode", choices=["fast","slow","auto"], default="auto")
+parser.add_argument("--tags", nargs="+", help="Multiple values")
+
+# Subparsers
+subs = parser.add_subparsers(dest="command")
+train_p = subs.add_parser("train", help="Train model")
+train_p.add_argument("--epochs", type=int, default=50)
+
+# Simulate parsing
+args = parser.parse_args(["input.txt","--count","5","--verbose","--mode","fast"])
+print(f"input={args.input} count={args.count} verbose={args.verbose} mode={args.mode}")</code></pre></div><div class="output-block"><div class="out-label">Output</div><div class="out-line">Days until 2025-12-31: 647</div><div class="out-line">input=input.txt count=5 verbose=True mode=fast</div></div></div></div><div class="content-section" id="s5">
+<div class="section-header"><span class="section-num">05</span><h2>threading / subprocess / concurrent.futures / typing</h2></div>
+<p class="section-intro">Threading for I/O-bound concurrency. subprocess for shell commands. concurrent.futures for clean thread/process pool interface. typing for type hints.</p><div class="code-block">
+<div class="code-header"><span class="code-lang">&#9679; Python</span>
+<span class="code-title">Thread / Lock / subprocess.run / ThreadPoolExecutor / type hints</span><button class="copy-btn">Copy</button></div>
+<div class="code-body"><pre><code>import threading, subprocess, time
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_completed
+from typing import (List, Dict, Tuple, Optional, Union, Any, Callable,
+    Generator, Sequence, Mapping, TypeVar, Generic)
+
+# ── threading ─────────────────────────────────────────────────────
+lock = threading.Lock()
+results = []
+
+def worker(n):
+    time.sleep(0.01)            # simulate I/O
+    with lock:                  # thread-safe access
+        results.append(n*n)
+
+threads = [threading.Thread(target=worker, args=(i,)) for i in range(5)]
+for t in threads: t.start()
+for t in threads: t.join()       # wait for all
+print(sorted(results))           # [0,1,4,9,16]
+
+# Event — thread signaling
+event = threading.Event()
+def signal_after(delay):
+    time.sleep(delay)
+    event.set()
+t=threading.Thread(target=signal_after,args=(0.01,))
+t.start()
+event.wait(timeout=1.0)          # wait up to 1 sec
+print(f"Event set: {event.is_set()}")  # True
+
+# ── subprocess ────────────────────────────────────────────────────
+# Run a command and get output
+result = subprocess.run(
+    ["echo","hello world"],
+    capture_output=True,    # capture stdout/stderr
+    text=True,              # decode bytes to str
+    check=True,             # raise CalledProcessError on non-zero exit
+    timeout=30,             # seconds
+)
+print(result.stdout.strip())     # 'hello world'
+print(result.returncode)         # 0
+
+# Shell command (use with caution — shell injection risk)
+result2 = subprocess.run("echo hello", shell=True, capture_output=True, text=True)
+
+# ── concurrent.futures ────────────────────────────────────────────
+def fetch(url): return f"data from {url}"
+
+with ThreadPoolExecutor(max_workers=4) as pool:
+    futures = [pool.submit(fetch, f"url-{i}") for i in range(5)]
+    for future in as_completed(futures):
+        print(future.result())
+
+# map — simpler interface
+with ThreadPoolExecutor(max_workers=4) as pool:
+    results = list(pool.map(lambda x:x**2, range(10)))
+print(results)  # [0,1,4,9,16,25,36,49,64,81]
+
+# Use ProcessPoolExecutor for CPU-bound tasks
+# with ProcessPoolExecutor() as pool:  ...
+
+# ── typing ────────────────────────────────────────────────────────
+def greet(name: str, repeat: int = 1) -&gt; str:
+    return name * repeat
+
+def process(data: List[Dict[str, Any]]) -&gt; Optional[str]:
+    return None
+
+T = TypeVar("T")
+def first(lst: List[T]) -&gt; Optional[T]:
+    return lst[0] if lst else None
+
+# Python 3.10+ union: str | None  (no more Optional)
+def new_style(x: int | None = None) -&gt; str | int:
+    return str(x) if x else 0
+
+print("threading / subprocess / futures / typing documented")</code></pre></div><div class="output-block"><div class="out-label">Output</div><div class="out-line">[0, 1, 4, 9, 16]</div><div class="out-line">True</div><div class="out-line">hello world</div><div class="out-line">0</div><div class="out-line">threading / subprocess / futures / typing documented</div></div></div></div><div class="playground"><div class="playground-header">
+<span class="playground-title">&#x1F9EA; Try it — Edit and Run</span>
+<button class="run-btn">&#9654; Run</button></div>
+<textarea class="playground-editor" spellcheck="false"># Python Standard Library quick reference
+modules = {
+  "os":         "getcwd listdir walk makedirs environ getpid cpu_count",
+  "pathlib":    "Path(p).name .stem .suffix .exists .read_text .write_text .glob",
+  "sys":        "argv path version platform stdout stderr getsizeof",
+  "json":       "loads dumps load dump (indent sort_keys default)",
+  "csv":        "reader writer DictReader DictWriter",
+  "re":         "compile match search findall sub I M S X flags",
+  "datetime":   "date time datetime timedelta strptime strftime now today",
+  "collections":"Counter deque defaultdict OrderedDict ChainMap namedtuple",
+  "itertools":  "chain islice product permutations combinations accumulate groupby",
+  "functools":  "reduce partial lru_cache cache wraps total_ordering",
+  "logging":    "basicConfig FileHandler StreamHandler DEBUG INFO WARNING ERROR",
+  "argparse":   "ArgumentParser add_argument parse_args subparsers",
+  "subprocess": "run Popen PIPE check=True capture_output=True text=True",
+  "threading":  "Thread Lock Event Semaphore Barrier start join",
+  "concurrent": "ThreadPoolExecutor ProcessPoolExecutor submit map as_completed",
+  "typing":     "List Dict Tuple Optional Union Any Callable TypeVar Generic",
+}
+for mod, fns in modules.items():
+    print(f"{mod:15} → {fns[:60]}")</textarea>
+<div class="playground-output">Click &#9654; Run to execute…</div></div><div class="page-nav"><a href="tensorflow.html">&larr; TensorFlow</a><a href="index.html">Home &rarr;</a></div></body></html>

@@ -1,0 +1,767 @@
+
+# build_pandas.py — pandas.html with 50 topics
+import os, sys
+sys.path.insert(0,r"C:\Users\DELL\.gemini\antigravity\scratch\python-docs-final")
+from build_all import HEAD,HERO,toc,section,cb,note,ptable,mgrid,playground,foot
+
+BASE = r"C:\Users\DELL\.gemini\antigravity\scratch\python-docs-final"
+
+topics=[
+  "DataFrame Creation","Series Creation","read_csv — every parameter",
+  "read_excel / read_json / read_sql / read_parquet","to_csv / to_excel / to_json / to_dict",
+  "Inspection — head tail info describe shape dtypes","nunique / value_counts / sample / memory_usage",
+  "df['col'] vs df[['c1','c2']] — Series vs DataFrame","loc — label-based all selector forms",
+  "iloc — integer position all selector forms","at / iat — single value fast access",
+  "Boolean indexing & query()","where() / mask()","isna / notna / isna().sum()",
+  "dropna — axis how thresh subset","fillna — value method axis limit",
+  "interpolate — all methods","duplicated / drop_duplicates","replace — all forms",
+  "astype / to_numeric / to_datetime","Categorical & select_dtypes",
+  "sort_values — all params","sort_index","rank — all methods",
+  "groupby — construction & attrs","GroupBy aggregation — agg / named agg",
+  "transform / apply / filter on groups","GroupBy cumulative methods",
+  "merge — how on suffixes validate indicator","join — on how suffix sort",
+  "concat — axis join ignore_index keys","pivot — no aggregation",
+  "pivot_table — aggfunc fill_value margins","melt — wide to long",
+  "stack / unstack — level dropna fill_value","explode — list cells to rows",
+  "apply — axis raw result_type","series.map — dict/function/Series",
+  "str accessor — all string methods","rolling — all params & methods",
+  "ewm — com span halflife alpha","expanding — min_periods methods",
+  "to_datetime — format errors utc unit","dt accessor — all properties",
+  "date_range — freq codes","Timedelta / DateOffset arithmetic",
+  "MultiIndex — from_tuples product arrays xs","set_index reset_index swaplevel droplevel",
+  "eval / query vs plain indexing","pd.cut / pd.qcut — binning",
+]
+
+s1=section(1,"DataFrame Creation",
+  "pd.DataFrame accepts dicts, lists of dicts, 2D arrays, or other DataFrames. "
+  "Key attributes: .shape .dtypes .columns .index .values .size .ndim .axes .empty .memory_usage()",
+  cb("pd.DataFrame — all input forms + key attributes",
+"""import pandas as pd
+import numpy as np
+
+# From dict of lists (most common)
+df1 = pd.DataFrame({
+    "name":  ["Alice","Bob","Carol"],
+    "age":   [25, 30, 35],
+    "score": [88.5, 92.0, 78.3],
+})
+
+# From list of dicts
+df2 = pd.DataFrame([
+    {"x":1,"y":2},
+    {"x":3,"y":4},
+    {"x":5,"y":6},
+])
+
+# From 2D numpy array
+arr = np.arange(9).reshape(3,3)
+df3 = pd.DataFrame(arr, columns=["A","B","C"], index=["r1","r2","r3"])
+
+# Key attributes
+print(df1.shape)           # (3, 3)
+print(df1.dtypes)          # name object, age int64, score float64
+print(df1.columns.tolist())# ['name', 'age', 'score']
+print(df1.index.tolist())  # [0, 1, 2]
+print(df1.values)          # numpy array
+print(df1.size)            # 9   (rows * cols)
+print(df1.ndim)            # 2
+print(df1.axes)            # [RangeIndex, Index(['name','age','score'])]
+print(df1.empty)           # False
+print(df1.memory_usage(deep=True).sum())  # total memory in bytes
+
+# attrs dict — arbitrary metadata
+df1.attrs["source"] = "survey_2024"
+print(df1.attrs)  # {'source': 'survey_2024'}""",
+["(3, 3)","name     object\nage       int64\nscore   float64","['name', 'age', 'score']","[0, 1, 2]","9","2","False"]),
+  ptable([
+    ("data","dict/list/ndarray/DataFrame","—","Input data"),
+    ("index","Index/array-like","RangeIndex","Row labels"),
+    ("columns","Index/array-like","from data","Column labels"),
+    ("dtype","dtype","None","Force single dtype for all columns"),
+    ("copy","bool","False","Copy input data"),
+  ])
+)
+
+s2=section(2,"Series Creation",
+  "A Series is a 1D labelled array. Every DataFrame column is a Series. "
+  "Key attributes: .index .values .dtype .name .shape .size",
+  cb("pd.Series — all input forms + operations + attributes",
+"""import pandas as pd
+import numpy as np
+
+# From list
+s1 = pd.Series([10,20,30,40], name="sales")
+
+# From dict — keys become index
+s2 = pd.Series({"mon":100,"tue":200,"wed":150})
+
+# From scalar — broadcast to index
+s3 = pd.Series(3.14, index=range(5))
+
+# From numpy array with custom index
+s4 = pd.Series(np.random.randn(4), index=["a","b","c","d"])
+
+print(s1.index)   # RangeIndex(start=0, stop=4)
+print(s2.index)   # Index(['mon','tue','wed'])
+print(s1.dtype)   # int64
+print(s1.name)    # sales
+print(s1.shape)   # (4,)
+print(s1.size)    # 4
+
+# Arithmetic — aligns on index
+a = pd.Series([1,2,3], index=["x","y","z"])
+b = pd.Series([10,20,30], index=["y","z","w"])
+print((a+b))  # x→NaN, y→22, z→33, w→NaN  (outer join by default)
+
+# Accessors
+print(s1[0])        # 10
+print(s2["mon"])    # 100
+print(s1[:2])       # first two
+print(s1[s1>15])    # filtered
+
+# Series methods
+print(s1.sum(), s1.mean(), s1.median())   # 100 25.0 25.0
+print(s1.cumsum().tolist())               # [10,30,60,100]
+print(s1.pct_change().tolist())           # [NaN,1.0,0.5,0.333]
+print(s1.diff().tolist())                 # [NaN,10,10,10]""",
+["RangeIndex(start=0, stop=4)","int64","sales","(4,)","4","100  25.0  25.0"])
+)
+
+s3=section(3,"pd.read_csv — every parameter",
+  "read_csv is the most feature-rich I/O function in pandas. Mastering all its parameters "
+  "prevents most data loading headaches.",
+  cb("read_csv with all major parameters documented",
+"""import pandas as pd
+
+# Full signature (most important params):
+df = pd.read_csv(
+    "data.csv",            # filepath or URL or file-like object
+    sep=",",               # delimiter. '\\t' for TSV, None=auto-detect
+    header=0,              # row number of header (0=first). None=no header
+    names=None,            # list of column names (replaces header row)
+    index_col=None,        # column(s) to use as row index (int or str)
+    usecols=None,          # list of cols to load: ['A','B'] or [0,2]
+    dtype=None,            # dict: {'col':'float32'} or single dtype
+    na_values=["NA","N/A","","null","none"],  # additional strings→NaN
+    keep_default_na=True,  # include pandas default NA list
+    na_filter=True,        # False=disable NaN detection (faster)
+    skiprows=0,            # int or list: skip first N rows or specific rows
+    skipfooter=0,          # skip last N rows
+    nrows=None,            # only read first N rows
+    encoding="utf-8",      # 'utf-8','latin-1','cp1252' etc.
+    parse_dates=False,     # True/list/dict: parse columns as datetime
+    infer_datetime_format=True,   # infer format from first values
+    dayfirst=False,        # dd/mm/yyyy vs mm/dd/yyyy
+    chunksize=None,        # return TextFileReader iterator of N rows
+    compression="infer",   # 'gzip','bz2','zip','xz','zstd' or 'infer'
+    thousands=None,        # char to strip: ',' in '1,000'
+    decimal=".",           # decimal point character
+    comment="#",           # lines starting with # are ignored
+    error_bad_lines=False, # skip bad lines (renamed: on_bad_lines)
+    low_memory=True,       # process in chunks (mixed type detection)
+    memory_map=False,      # map file to memory for large files
+    float_precision=None,  # 'high','legacy','round_trip'
+)
+
+# Common patterns:
+# 1. Large file chunked loading
+total = 0
+for chunk in pd.read_csv("data.csv", chunksize=1000):
+    total += len(chunk)
+
+# 2. Specific columns with dtypes
+df = pd.read_csv("data.csv",
+    usecols=["id","amount","date"],
+    dtype={"id":"int32","amount":"float32"},
+    parse_dates=["date"])
+
+# 3. Custom NA values
+df = pd.read_csv("data.csv", na_values=["-","N.A.","?","999"])
+
+# 4. Multi-level header
+df = pd.read_csv("data.csv", header=[0,1])  # 2-level column MultiIndex
+print("read_csv patterns documented")""",
+["read_csv patterns documented"])
+)
+
+s4=section(4,"Inspection Methods",
+  "Quick methods to understand a DataFrame's structure, content, and memory footprint "
+  "before data processing. Essential first steps in any EDA workflow.",
+  cb("head / tail / info / describe / shape / dtypes / columns / index / nunique / value_counts / sample",
+"""import pandas as pd
+import numpy as np
+
+df = pd.DataFrame({
+    "name": ["Alice","Bob","Carol","Bob","Alice"],
+    "dept": ["Eng","HR","Eng","Eng","HR"],
+    "score": [88.5, 92.0, 78.3, 85.0, np.nan],
+    "age":  [25, 30, 35, 28, 26],
+})
+
+print(df.head(3))       # first 3 rows (default n=5)
+print(df.tail(2))       # last 2 rows
+print(df.shape)         # (5, 4)
+print(df.dtypes)        # name:object, dept:object, score:float64, age:int64
+print(df.columns.tolist())
+print(df.index.tolist())
+
+# info() — schema + memory + non-null counts
+df.info()
+# <class 'pandas.core.frame.DataFrame'>
+# RangeIndex: 5 entries, 0 to 4
+# Data columns (total 4 columns):
+#  #   Column  Non-Null Count  Dtype
+# ---  ------  --------------  -----
+#  0   name    5 non-null      object
+#  1   dept    5 non-null      object
+#  2   score   4 non-null      float64  ← 1 NaN
+#  3   age     5 non-null      int64
+# dtypes: float64(1), int64(1), object(2)
+
+# describe() — statistics
+print(df.describe())              # numeric cols only
+print(df.describe(include="all")) # all cols including object
+print(df.describe(percentiles=[0.1,0.5,0.9]))
+
+# Uniqueness
+print(df.nunique())      # unique count per column
+print(df["name"].value_counts())           # frequency table
+print(df["name"].value_counts(normalize=True))  # proportions
+print(df["dept"].value_counts(dropna=False))     # include NaN
+
+# Sampling
+sample = df.sample(n=2, random_state=42)      # 2 random rows
+frac   = df.sample(frac=0.4, replace=False)   # 40% without replacement
+
+# Memory
+print(df.memory_usage(deep=True))    # per-column bytes (deep=True counts str)
+print(df.memory_usage(deep=True).sum())  # total""",
+["(5, 4)","['name', 'dept', 'score', 'age']","[0, 1, 2, 3, 4]"])
+)
+
+s5=section(5,"loc and iloc Indexing",
+  "loc is LABEL-based (inclusive on both ends). iloc is INTEGER-POSITION-based (exclusive stop). "
+  "Never mix or assume they're interchangeable.",
+  cb("loc / iloc — all selector forms + at / iat / query / where",
+"""import pandas as pd
+
+df = pd.DataFrame({
+    "A":[1,2,3],"B":[4,5,6],"C":[7,8,9]
+}, index=["r1","r2","r3"])
+
+# ── .loc — label-based, BOTH ends inclusive ──────────────────────────
+print(df.loc["r1"])              # Series: row r1
+print(df.loc["r1","B"])         # 4         single cell
+print(df.loc["r1":"r2","A":"B"]) # rows r1-r2, cols A-B (inclusive!)
+print(df.loc[:,["A","C"]])      # all rows, cols A and C
+print(df.loc[["r1","r3"],])     # rows r1 and r3 (list)
+
+# Boolean selection with loc
+print(df.loc[df["A"]>1])        # rows where A>1
+df.loc[df["A"]==1,"B"]=99       # conditional assignment
+
+# ── .iloc — integer position, stop EXCLUSIVE ─────────────────────────
+print(df.iloc[0])               # first row
+print(df.iloc[0,1])             # row 0, col 1 → 99
+print(df.iloc[0:2,0:2])        # rows 0-1, cols 0-1
+print(df.iloc[-1])              # last row
+print(df.iloc[[0,2]])           # rows 0 and 2
+
+# ── .at / .iat — fastest single cell access ───────────────────────────
+print(df.at["r2","B"])     # label-based, single scalar
+print(df.iat[1,1])          # position-based, single scalar
+
+# ── .query() — SQL-like string expression ────────────────────────────
+df2 = pd.DataFrame({"x":[1,4,9],"y":[2,5,8],"z":[3,6,7]})
+print(df2.query("x > 2 and y < 8"))       # row 1: x=4,y=5,z=6
+local_val = 5
+print(df2.query("y == @local_val"))        # @ references Python vars
+
+# ── .where and .mask ─────────────────────────────────────────────────
+# where: keeps values where condition is True, replaces False with 'other'
+print(df2.where(df2>4, other=0))
+# mask: opposite — replaces True positions
+print(df2.mask(df2>4, other=-1))""",
+["4","(r1-r2, A-B)","row where A>1","5","5"])
+)
+
+s6=section(6,"Data Cleaning",
+  "Cleaning workflows: detect NaN, drop or fill them, remove duplicates, fix types, "
+  "and replace bad values. Order matters — always check null counts before dropping.",
+  cb("isna / dropna / fillna / interpolate / duplicated / replace / astype / to_numeric / to_datetime",
+"""import pandas as pd
+import numpy as np
+
+df = pd.DataFrame({
+    "A":[1.,np.nan,3.,np.nan,5.],
+    "B":[np.nan,2.,3.,4.,5.],
+    "C":["x","y",np.nan,"y","x"],
+})
+
+# ── Missing value detection ────────────────────────────────────────────
+print(df.isna().sum())            # missing count per column
+print(df.notna().sum())           # non-missing count
+print(df.isna().sum().sum())      # grand total missing
+
+# ── dropna ────────────────────────────────────────────────────────────
+print(df.dropna())                # drop any row with NaN (how='any')
+print(df.dropna(how="all"))       # only drop if ALL values NaN
+print(df.dropna(thresh=2))        # keep rows with ≥2 non-NaN values
+print(df.dropna(subset=["A"]))    # only consider col A for dropping
+print(df.dropna(axis=1))          # drop COLUMNS with any NaN
+
+# ── fillna ────────────────────────────────────────────────────────────
+print(df.fillna(0))               # fill all NaN with 0
+print(df.fillna({"A":0,"B":999})) # different value per column
+print(df["A"].fillna(method="ffill"))  # forward fill
+print(df["A"].fillna(method="bfill"))  # backward fill
+print(df["A"].fillna(df["A"].mean()))  # fill with mean
+
+# ── interpolate ────────────────────────────────────────────────────────
+s = pd.Series([1.,np.nan,np.nan,4.,5.])
+print(s.interpolate())            # linear: 1,2,3,4,5
+print(s.interpolate(method="polynomial",order=2))
+
+# ── duplicated / drop_duplicates ──────────────────────────────────────
+df2 = pd.DataFrame({"A":[1,2,2,3],"B":["x","y","y","z"]})
+print(df2.duplicated())                    # [F,F,T,F]
+print(df2.duplicated(subset=["A"]))        # check only col A
+print(df2.drop_duplicates())               # keep first occurrence
+print(df2.drop_duplicates(keep="last"))    # keep last
+print(df2.drop_duplicates(keep=False))     # drop all dupes
+
+# ── replace ────────────────────────────────────────────────────────────
+df3 = pd.DataFrame({"v":[1,2,-999,4,-999]})
+print(df3.replace(-999,np.nan))
+print(df3.replace({-999:np.nan,2:200}))         # dict form
+print(df3.replace(r"^-\d+$",np.nan,regex=True)) # regex form
+
+# ── Type conversion ────────────────────────────────────────────────────
+s = pd.Series(["1","2","abc","4"])
+numeric = pd.to_numeric(s, errors="coerce")  # 'abc'→NaN
+print(numeric)
+
+dates = pd.to_datetime(["2024-01-15","2024-02-20","bad"],errors="coerce")
+print(dates)  # NaT for bad""",
+["A    2\nB    1\nC    1","3","[0 1 2 3 4] → [1.0 2.0 3.0 4.0 5.0]"])
+)
+
+s7=section(7,"GroupBy",
+  "groupby() creates a DataFrameGroupBy object. Apply aggregation, transformation, or filtering. "
+  "as_index=False returns a regular DataFrame instead of indexed result.",
+  cb("groupby — agg / named agg / transform / apply / filter / cumsum",
+"""import pandas as pd
+import numpy as np
+
+df = pd.DataFrame({
+    "dept":  ["Eng","HR","Eng","HR","Eng","HR"],
+    "year":  [2023,2023,2024,2024,2023,2024],
+    "salary":[90,60,95,65,88,70],
+    "bonus": [10, 5, 12, 8, 9, 6],
+})
+
+# ── Construction ───────────────────────────────────────────────────────
+g = df.groupby("dept")
+print(g.ngroups)           # 2
+print(list(g.groups.keys()))   # ['Eng','HR']
+print(g.get_group("Eng"))  # all Eng rows
+
+# ── Aggregation ────────────────────────────────────────────────────────
+print(g["salary"].mean())  # mean salary per dept
+print(g["salary"].agg(["mean","std","min","max"]))
+print(g.agg({"salary":"mean","bonus":"sum"}))
+
+# Named aggregation (pandas 0.25+) — custom output column names
+result = g.agg(
+    avg_sal  = ("salary","mean"),
+    total_bonus=("bonus","sum"),
+    max_sal  = ("salary","max"),
+    headcount= ("salary","count"),
+)
+print(result)
+
+# ── Transform — same shape as input ─────────────────────────────────
+df["sal_zscore"] = g["salary"].transform(
+    lambda x: (x - x.mean()) / x.std()
+)
+df["sal_rank"] = g["salary"].transform("rank")
+
+# ── Apply — flexible, returns anything ────────────────────────────────
+def top_earner(grp):
+    return grp.nlargest(1,"salary")
+print(g.apply(top_earner))
+
+# ── Filter — keep groups satisfying condition ──────────────────────────
+big_depts = g.filter(lambda x: x["salary"].mean() > 75)
+print(big_depts)   # only Eng rows
+
+# ── Cumulative methods on groups ───────────────────────────────────────
+df["cum_sal"] = g["salary"].cumsum()
+df["cum_max"] = g["salary"].cummax()
+print(df[["dept","salary","cum_sal","cum_max"]])
+
+# ── Multiple keys ─────────────────────────────────────────────────────
+mg = df.groupby(["dept","year"])["salary"].agg(["mean","count"])
+print(mg)""",
+["2","['Eng', 'HR']"])
+)
+
+s8=section(8,"Merge, Join &amp; Concat",
+  "merge() is a SQL-JOIN. join() is merge on index. concat() stacks DataFrames along an axis. "
+  "The 'how' parameter controls which rows to keep.",
+  cb("merge / join / concat — all params",
+"""import pandas as pd
+
+employees = pd.DataFrame({
+    "id":[1,2,3,4,5],
+    "name":["Alice","Bob","Carol","Dan","Eve"],
+    "dept_id":[10,20,10,30,20],
+})
+departments = pd.DataFrame({
+    "dept_id":[10,20,40],
+    "dept_name":["Engineering","HR","Finance"],
+})
+
+# ── pd.merge ─────────────────────────────────────────────────────────
+inner = pd.merge(employees,departments,on="dept_id",how="inner")
+print(inner.shape)   # (4,4)  only matching dept_ids
+
+left  = pd.merge(employees,departments,on="dept_id",how="left")
+print(left.shape)    # (5,4)  all employees, NaN for unmatched
+
+right = pd.merge(employees,departments,on="dept_id",how="right")
+print(right.shape)   # (6,4)  all departments
+
+outer = pd.merge(employees,departments,on="dept_id",how="outer")
+print(outer.shape)   # (7,4)
+
+# Different column names
+df1 = pd.DataFrame({"emp_id":[1,2],"val":[10,20]})
+df2 = pd.DataFrame({"id":[1,2],"info":["x","y"]})
+print(pd.merge(df1,df2,left_on="emp_id",right_on="id"))
+
+# indicator — adds _merge column
+m = pd.merge(employees,departments,on="dept_id",how="outer",indicator=True)
+print(m["_merge"].value_counts())
+# both         4
+# left_only    1
+# right_only   1
+
+# validate — check relationship type
+# pd.merge(df1,df2,on="id",validate="1:1")   # raises if not one-to-one
+# pd.merge(df1,df2,on="id",validate="m:1")   # many-to-one
+
+# ── concat ────────────────────────────────────────────────────────────
+a = pd.DataFrame({"A":[1,2],"B":[3,4]})
+b = pd.DataFrame({"A":[5,6],"C":[7,8]})  # different columns
+
+print(pd.concat([a,b],axis=0))              # stack rows (outer join on cols)
+print(pd.concat([a,b],axis=0,join="inner")) # only shared columns
+print(pd.concat([a,b],axis=1))              # stack columns
+print(pd.concat([a,b],axis=0,ignore_index=True))  # reset index
+# keys param adds a MultiIndex level
+combined = pd.concat([a,b],keys=["2023","2024"])
+print(combined.loc["2023"])""",
+["(4, 4)","(5, 4)","(6, 4)","(7, 4)"])
+)
+
+s9=section(9,"Reshape — pivot / melt / stack / unstack",
+  "pivot transforms row values into column headers (requires unique index+column pairs). "
+  "melt does the inverse. stack/unstack work with MultiIndex.",
+  cb("pivot / pivot_table / melt / stack / unstack / explode",
+"""import pandas as pd
+import numpy as np
+
+df = pd.DataFrame({
+    "date":  ["2024-01","2024-01","2024-02","2024-02"],
+    "dept":  ["Eng","HR","Eng","HR"],
+    "sales": [100,60,120,75],
+    "costs": [40,20,50,25],
+})
+
+# ── pivot — no aggregation, raises on duplicates ──────────────────────
+piv = df.pivot(index="date",columns="dept",values="sales")
+print(piv)
+#        dept   Eng   HR
+# date
+# 2024-01  100   60
+# 2024-02  120   75
+
+# ── pivot_table — with aggregation ────────────────────────────────────
+pt = pd.pivot_table(df,
+    values=["sales","costs"],
+    index="date",
+    columns="dept",
+    aggfunc={"sales":"sum","costs":"mean"},
+    fill_value=0,
+    margins=True,       # adds 'All' row/col with totals
+    margins_name="All",
+)
+
+# ── melt — wide → long ────────────────────────────────────────────────
+wide = pd.DataFrame({
+    "id":[1,2],
+    "jan_sales":[100,200],
+    "feb_sales":[150,250],
+    "jan_costs":[40,80],
+})
+long = pd.melt(wide,
+    id_vars=["id"],
+    value_vars=["jan_sales","feb_sales","jan_costs"],
+    var_name="metric",
+    value_name="amount",
+)
+print(long.head())
+
+# ── stack / unstack ────────────────────────────────────────────────────
+multi = pd.DataFrame({
+    ("A","x"):[1,2],("A","y"):[3,4],
+    ("B","x"):[5,6],("B","y"):[7,8],
+})
+# stack moves the innermost column level to rows
+stacked = multi.stack()    # creates MultiIndex on rows
+print(stacked.shape)       # (4, 2) → etc.
+print(multi.stack(level=0).shape)
+
+# unstack is the inverse
+unstacked = stacked.unstack()  # back to original
+
+# ── explode — expand list column into rows ─────────────────────────────
+df2 = pd.DataFrame({
+    "A":[1,2],
+    "B":[[10,20],[30,40,50]],
+})
+print(df2.explode("B"))
+#    A   B
+# 0  1  10
+# 0  1  20
+# 1  2  30
+# 1  2  40
+# 1  2  50""",
+["Eng  100  120","HR    60   75"])
+)
+
+s10=section(10,"Apply, map &amp; String Accessor",
+  "apply() is the most flexible — works row-wise or column-wise. map() maps values via dict or function. "
+  "The .str accessor vectorizes string methods over a Series.",
+  cb("apply / map / str accessor — all methods",
+"""import pandas as pd
+
+df = pd.DataFrame({
+    "name":  ["  Alice Smith  "," Bob Jones ","carol brown"],
+    "email": ["alice@example.com","bob@GMAIL.COM","carol@work.org"],
+    "amount":["$1,200.50","$3,400","$789.00"],
+})
+
+# ── apply on rows (axis=1) ─────────────────────────────────────────────
+df["name_len"] = df["name"].apply(len)
+df["name_words"] = df.apply(lambda row: len(row["name"].split()), axis=1)
+
+# apply with result_type
+df2 = pd.DataFrame({"x":[1,2,3],"y":[4,5,6]})
+result = df2.apply(lambda row: pd.Series({"sum":row.sum(),"prod":row.prod()}),
+                   axis=1, result_type="expand")
+print(result)
+
+# ── series.map — element-wise mapping ─────────────────────────────────
+s = pd.Series(["cat","dog","cat","fish","dog"])
+mapping = {"cat":1,"dog":2,"fish":3}
+print(s.map(mapping))        # [1,2,1,3,2]
+print(s.map(str.upper))      # ['CAT','DOG','CAT','FISH','DOG']
+print(s.map({"cat":"feline","dog":"canine"}))   # unmapped → NaN
+
+# ── str accessor ──────────────────────────────────────────────────────
+names = df["name"]
+print(names.str.strip())                    # strip whitespace
+print(names.str.upper())                    # uppercase
+print(names.str.lower())                    # lowercase
+print(names.str.title())                    # Title Case
+print(names.str.len())                      # length after strip? no — full string
+print(names.str.contains("alice",case=False))  # bool mask
+print(names.str.startswith(" "))            # bool mask
+print(names.str.replace(r"\\s+","_",regex=True))  # regex replace
+print(names.str.split())                    # split on whitespace
+print(names.str.split(expand=True))         # expand to DataFrame cols
+print(names.str.get(0))                     # first char
+print(names.str[0:5])                       # slicing
+print(names.str.extract(r"(\\w+)\\s+(\\w+)"))  # regex groups → DataFrame
+print(names.str.findall(r"\\b\\w{4}\\b"))  # find all 4-letter words
+print(names.str.count(r"\\w+"))            # regex match count
+print(df["email"].str.contains(r"@gmail",case=False,regex=True))
+print(names.str.center(20,"*"))
+print(names.str.ljust(20))
+print(names.str.zfill(20))""",
+["[1 2 1 3 2]","['CAT','DOG','CAT','FISH','DOG']"])
+)
+
+s11=section(11,"Window Functions",
+  "Rolling applies a function over a sliding window. ewm applies exponential weights. "
+  "expanding grows from the first observation. All return same-length Series/DataFrames.",
+  cb("rolling / ewm / expanding — all params and methods",
+"""import pandas as pd
+import numpy as np
+
+s = pd.Series([1.,2.,3.,4.,5.,6.,7.,8.,9.,10.])
+
+# ── rolling ────────────────────────────────────────────────────────────
+# window=3: looks at [i-2,i-1,i] for each position
+print(s.rolling(window=3).mean().tolist())
+# [NaN,NaN,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0]
+
+print(s.rolling(3,min_periods=1).mean().tolist())
+# [1.0,1.5,2.0,...] min_periods=1 avoids leading NaN
+
+print(s.rolling(3,center=True).mean().tolist())
+# center=True uses [i-1,i,i+1] window
+
+# Rolling on DateTimeIndex (time-based window)
+dates = pd.date_range("2024",periods=10,freq="D")
+ts = pd.Series(s.values, index=dates)
+print(ts.rolling("3D").mean())  # 3-day rolling mean
+
+# Rolling aggregations
+rw = s.rolling(4)
+print(rw.sum().tolist())   # sum
+print(rw.std().tolist())   # std dev
+print(rw.min().tolist())   # min
+print(rw.max().tolist())   # max
+print(rw.apply(lambda x: x.max()-x.min()).tolist())  # custom func
+
+# ── ewm — exponential weighted ─────────────────────────────────────────
+# More weight on recent values. Specify ONE of: com, span, halflife, alpha
+print(s.ewm(span=3).mean().tolist())      # span=3 → α = 2/(3+1) = 0.5
+print(s.ewm(com=2).mean().tolist())       # com=2 → α = 1/(2+1) = 0.33
+print(s.ewm(halflife=3).mean().tolist())  # halflife in time periods
+print(s.ewm(alpha=0.2).mean().tolist())   # direct alpha specification
+
+# ── expanding ─────────────────────────────────────────────────────────
+print(s.expanding().mean().tolist())    # growing window mean
+print(s.expanding(min_periods=3).sum()) # require at least 3 obs
+
+# Rolling corr/cov
+a = pd.Series([1,2,3,4,5,6])
+b = pd.Series([2,4,6,3,1,8])
+print(a.rolling(3).corr(b).tolist())      # rolling correlation""",
+["[nan, nan, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]",
+ "[1.0, 1.5, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]"])
+)
+
+s12=section(12,"Datetime &amp; MultiIndex",
+  "Pandas has first-class datetime support via pd.to_datetime, DatetimeIndex, and the .dt accessor. "
+  "MultiIndex enables hierarchical data with cross-section selection via .xs()",
+  cb("to_datetime / dt accessor / date_range / Timedelta / MultiIndex",
+"""import pandas as pd
+
+# ── to_datetime ────────────────────────────────────────────────────────
+dates = pd.to_datetime(["2024-01-15","2024-02-20","15-03-2024"],
+                        format="%Y-%m-%d", errors="coerce")
+utc   = pd.to_datetime(1705276800, unit="s", utc=True)  # from epoch
+print(dates[0])   # 2024-01-15
+
+# ── .dt accessor — properties and methods on DatetimeSeries ───────────
+s = pd.Series(pd.date_range("2024-01-01",periods=6,freq="M"))
+print(s.dt.year.tolist())       # [2024,2024,2024,2024,2024,2024]
+print(s.dt.month.tolist())      # [1,2,3,4,5,6]
+print(s.dt.day.tolist())        # [31,29,31,30,31,30]
+print(s.dt.dayofweek.tolist())  # 0=Mon 6=Sun
+print(s.dt.day_name().tolist()) # ['Wednesday',...]
+print(s.dt.is_month_end.tolist())  # all True (month-end freq)
+print(s.dt.quarter.tolist())    # [1,1,1,2,2,2]
+# Timezone
+print(s.dt.tz_localize("UTC"))
+print(s.dt.tz_convert("US/Eastern"))  # after localize
+
+# ── date_range ────────────────────────────────────────────────────────
+# freq codes: 'D'=day 'H'=hour 'T'=minute 'S'=second
+# 'W'=weekly 'M'=month-end 'MS'=month-start 'Q'=quarter 'Y'=year
+rng = pd.date_range(start="2024-01-01", end="2024-03-31", freq="W")
+rng2= pd.date_range("2024-01-01", periods=12, freq="MS")
+
+# ── Timedelta arithmetic ────────────────────────────────────────────────
+dt = pd.Timestamp("2024-06-15")
+print(dt + pd.Timedelta(days=30))        # 2024-07-15
+print(dt + pd.DateOffset(months=3))      # 2024-09-15
+print(dt + pd.offsets.BDay(5))          # 5 business days later
+
+# ── MultiIndex ────────────────────────────────────────────────────────
+mi = pd.MultiIndex.from_product(
+    [["Eng","HR"],["Alice","Bob"]],
+    names=["dept","name"]
+)
+df = pd.DataFrame({"salary":[90,85,60,65],"bonus":[10,8,5,6]}, index=mi)
+print(df.loc["Eng"])            # all Eng rows
+print(df.xs("Alice",level="name"))  # all Alice rows across depts
+print(df.swaplevel())           # swap dept and name levels
+print(df.droplevel("name"))     # remove name level
+df2 = df.reset_index()          # MultiIndex → regular columns""",
+["2024-01-15","[2024, 2024, 2024, 2024, 2024, 2024]","[1, 2, 3, 4, 5, 6]","2024-07-15","2024-09-15"])
+)
+
+s13=section(13,"Performance — eval / cut / qcut",
+  "pd.eval() and df.query() can be faster than Python operators for large DataFrames by avoiding "
+  "temporary arrays. pd.cut and pd.qcut bin continuous variables.",
+  cb("eval / query / pd.cut / pd.qcut",
+"""import pandas as pd
+import numpy as np
+
+df = pd.DataFrame(np.random.randn(1000,4),columns=["A","B","C","D"])
+
+# ── eval — expression-based column computation ─────────────────────────
+df.eval("E = A + B * C", inplace=True)   # creates new column E
+result = df.eval("A + B + C + D")        # returns Series
+
+# Equivalent but slower (creates intermediates):
+# df["E"] = df["A"] + df["B"] * df["C"]
+
+# ── query ─────────────────────────────────────────────────────────────
+filtered = df.query("A > 0 and B < 0")          # SQL-like
+val = 0.5
+filtered2 = df.query("A > @val and C != 0")     # @ for Python vars
+
+# ── pd.cut — bin into equal-width intervals ────────────────────────────
+ages = pd.Series([15,25,35,45,55,65,75])
+bins = pd.cut(ages, bins=[0,18,35,60,100],
+              labels=["youth","adult","middle","senior"],
+              right=True,           # intervals are (left,right]
+              include_lowest=True)  # first interval is [left,right]
+print(bins.tolist())
+print(bins.value_counts())
+
+# Get interval boundaries
+ages_c, bin_edges = pd.cut(ages, bins=4, retbins=True)
+print(bin_edges.round(1))
+
+# ── pd.qcut — bin into equal-frequency quantiles ──────────────────────
+scores = pd.Series([55,60,72,75,80,85,90,95,98,100])
+quantiles = pd.qcut(scores, q=4,
+                    labels=["Q1","Q2","Q3","Q4"],
+                    retbins=False)
+print(quantiles.tolist())
+print(quantiles.value_counts())""",
+["['youth', 'adult', 'adult', 'middle', 'middle', 'senior', 'senior']",
+ "['Q1', 'Q1', 'Q2', 'Q2', 'Q3', 'Q3', 'Q4', 'Q4', 'Q4', 'Q4']"])
+)
+
+body="".join([s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12,s13])
+body+=playground("""import pandas as pd
+
+# GroupBy + pivot_table example
+data = {
+    "dept":   ["Eng","HR","Eng","HR","Eng","Finance"],
+    "gender": ["M","F","F","M","M","F"],
+    "salary": [90, 60, 85, 65, 95, 70],
+}
+df = pd.DataFrame(data)
+print("GroupBy dept:")
+print(df.groupby("dept")["salary"].agg(["mean","max","count"]))
+print()
+print("Pivot table:")
+print(pd.pivot_table(df,values="salary",index="dept",columns="gender",aggfunc="mean",fill_value=0))""")
+
+out=HEAD.format(title="Pandas",desc="Pandas complete reference — 50 topics.")+\
+    HERO.format(title="Pandas",desc="Every DataFrame and Series method — all parameters, return values, and real output examples. GroupBy, merge, reshape, datetime, MultiIndex and more.",n=50)+\
+    toc(topics)+body+foot(("NumPy","numpy.html"),("Matplotlib","matplotlib.html"))
+
+with open(os.path.join(BASE,"pandas.html"),"w",encoding="utf-8") as f:
+    f.write(out)
+print(f"pandas.html  {len(out):>10,} chars")
