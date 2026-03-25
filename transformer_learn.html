@@ -1,0 +1,1505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Transformers — Deep Visual Learning</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Instrument+Serif:ital@0;1&family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:    #0a0a0a;
+  --bg2:   #111111;
+  --bg3:   #1a1a1a;
+  --bg4:   #222222;
+  --white: #f0f0f0;
+  --white2:#aaaaaa;
+  --white3:#555555;
+  --border:#2a2a2a;
+  --Q:     #00e676;   /* green */
+  --K:     #448aff;   /* blue  */
+  --V:     #ff4081;   /* pink  */
+  --W:     #ffd740;   /* gold  — learned weight */
+  --out:   #ea80fc;   /* purple — output */
+  --warn:  #ff6d00;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--white);font-family:'Bricolage Grotesque',sans-serif;overflow-x:hidden;}
+::-webkit-scrollbar{width:5px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--white3);border-radius:3px;}
+
+/* ── NAV ── */
+nav{position:fixed;top:0;left:0;right:0;z-index:200;background:rgba(10,10,10,.95);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);height:48px;display:flex;align-items:center;padding:0 16px;gap:4px;overflow-x:auto;}
+nav .logo{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:var(--white);margin-right:12px;white-space:nowrap;}
+nav a{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--white3);text-decoration:none;padding:4px 10px;border-radius:4px;border:1px solid transparent;white-space:nowrap;transition:all .2s;}
+nav a:hover{color:var(--white);border-color:var(--border);}
+
+/* ── HERO ── */
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:80px 24px 60px;border-bottom:1px solid var(--border);}
+.hero-tag{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--white3);letter-spacing:4px;text-transform:uppercase;margin-bottom:20px;}
+.hero h1{font-family:'Instrument Serif',serif;font-size:clamp(3rem,8vw,7rem);line-height:1.05;margin-bottom:20px;color:var(--white);}
+.hero h1 em{font-style:italic;color:var(--white2);}
+.hero-sub{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--white3);line-height:2;max-width:540px;margin-bottom:40px;}
+.color-legend{display:flex;gap:20px;flex-wrap:wrap;justify-content:center;}
+.cl-item{display:flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;font-size:11px;}
+.cl-dot{width:12px;height:12px;border-radius:3px;}
+
+/* ── SECTION ── */
+.section{max-width:1000px;margin:0 auto;padding:80px 24px;}
+.sec-num{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--white3);letter-spacing:3px;margin-bottom:8px;}
+.sec-title{font-family:'Instrument Serif',serif;font-size:clamp(2rem,5vw,3.5rem);line-height:1.1;margin-bottom:16px;}
+.sec-desc{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--white2);line-height:2;max-width:680px;margin-bottom:36px;}
+hr.div{border:none;border-top:1px solid var(--border);margin:80px 0;}
+
+/* ── BOXES ── */
+.box{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:28px;margin-bottom:24px;}
+.box-title{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+
+/* ── STEP BLOCKS ── */
+.step-flow{display:flex;flex-direction:column;gap:0;}
+.step-item{display:flex;gap:20px;position:relative;}
+.step-item+.step-item::before{content:'';position:absolute;left:19px;top:-24px;width:2px;height:24px;background:var(--border);}
+.step-num{width:40px;height:40px;border-radius:8px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;flex-shrink:0;color:var(--white);background:var(--bg3);}
+.step-body{flex:1;padding-bottom:32px;}
+.step-label{font-weight:800;font-size:1rem;margin-bottom:6px;}
+.step-text{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--white2);line-height:1.9;}
+
+/* ── TABLE ── */
+.tbl-wrap{overflow-x:auto;margin:16px 0;}
+table{border-collapse:collapse;font-family:'JetBrains Mono',monospace;font-size:11px;width:100%;}
+th{background:var(--bg3);color:var(--white);padding:10px 14px;text-align:left;border:1px solid var(--border);letter-spacing:1px;}
+td{padding:9px 14px;border:1px solid var(--border);color:var(--white2);vertical-align:middle;}
+tr:hover td{background:var(--bg3);}
+.tok-cell{color:var(--white);font-weight:700;}
+.q-cell{color:var(--Q);}
+.k-cell{color:var(--K);}
+.v-cell{color:var(--V);}
+.w-cell{color:var(--W);}
+.out-cell{color:var(--out);}
+.hi{background:rgba(255,255,255,.05);}
+
+/* ── MATRIX VISUAL ── */
+.mat-wrap{display:inline-block;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin:8px 4px;}
+.mat-title{font-family:'JetBrains Mono',monospace;font-size:10px;text-align:center;padding:6px;border-bottom:1px solid var(--border);letter-spacing:2px;}
+.mat-body{padding:10px;}
+.mat-row{display:flex;gap:4px;margin-bottom:4px;}
+.mat-cell{width:46px;height:28px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;border:1px solid rgba(255,255,255,.07);}
+
+/* ── ATTENTION HEATMAP ── */
+.hm-wrap{overflow-x:auto;}
+.hm-table{border-collapse:separate;border-spacing:3px;font-family:'JetBrains Mono',monospace;font-size:10px;}
+.hm-table th{background:transparent;border:none;padding:4px 6px;color:var(--white2);}
+.hm-cell{width:52px;height:40px;border-radius:5px;text-align:center;font-weight:700;transition:transform .2s;cursor:default;display:flex;align-items:center;justify-content:center;border:none;}
+.hm-cell:hover{transform:scale(1.1);z-index:2;position:relative;}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 22px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;cursor:pointer;border:none;transition:all .25s;letter-spacing:.5px;}
+.btn-w{background:var(--white);color:var(--bg);}
+.btn-w:hover{background:#ccc;}
+.btn-outline{background:transparent;color:var(--white2);border:1px solid var(--border);}
+.btn-outline:hover{border-color:var(--white2);color:var(--white);}
+.btn-Q{background:var(--Q);color:#000;}
+.btn-K{background:var(--K);color:#fff;}
+.btn-V{background:var(--V);color:#fff;}
+.btn-W{background:var(--W);color:#000;}
+
+/* ── INLINE FORMULA ── */
+.formula{font-family:'JetBrains Mono',monospace;font-size:12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:12px 18px;display:inline-block;margin:8px 0;color:var(--white);}
+.formula .fq{color:var(--Q);}
+.formula .fk{color:var(--K);}
+.formula .fv{color:var(--V);}
+.formula .fw{color:var(--W);}
+.formula .fo{color:var(--out);}
+
+/* ── TOKEN PILLS ── */
+.tok-row{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0;}
+.tok{padding:6px 14px;border-radius:20px;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;background:var(--bg3);border:1px solid var(--border);color:var(--white);cursor:default;transition:all .3s;}
+.tok:hover{border-color:var(--white2);transform:translateY(-2px);}
+
+/* ── CALLOUT ── */
+.callout{display:flex;gap:14px;padding:16px 20px;border-radius:8px;margin:16px 0;}
+.callout-icon{font-size:20px;flex-shrink:0;}
+.callout-text{font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.9;color:var(--white2);}
+.callout-text b{color:var(--white);}
+.co-tip{background:rgba(0,230,118,.07);border-left:3px solid var(--Q);}
+.co-warn{background:rgba(255,215,64,.07);border-left:3px solid var(--W);}
+.co-info{background:rgba(68,138,255,.07);border-left:3px solid var(--K);}
+.co-key{background:rgba(255,64,129,.07);border-left:3px solid var(--V);}
+
+/* ── PROGRESS BAR ── */
+.prog-bar{height:3px;background:var(--bg3);border-radius:2px;overflow:hidden;margin:20px 0;}
+.prog-fill{height:100%;background:var(--white);width:0%;transition:width .5s ease;}
+
+/* ── WEIGHT VIZ ── */
+.w-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.w-bar-label{font-family:'JetBrains Mono',monospace;font-size:10px;width:80px;color:var(--white2);}
+.w-bar-bg{flex:1;height:22px;background:var(--bg3);border-radius:4px;overflow:hidden;}
+.w-bar-fill{height:100%;border-radius:4px;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;color:#000;transition:width .6s cubic-bezier(.34,1.56,.64,1);}
+.w-bar-val{font-family:'JetBrains Mono',monospace;font-size:10px;width:55px;text-align:right;color:var(--white2);}
+
+/* ── DECODER MASK ── */
+.mask-tbl{border-collapse:separate;border-spacing:3px;margin:12px 0;}
+.mask-cell{width:54px;height:36px;border-radius:5px;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+.mask-yes{background:rgba(0,230,118,.15);border:1px solid var(--Q);color:var(--Q);}
+.mask-no{background:rgba(255,64,129,.08);border:1px solid #333;color:var(--white3);}
+
+/* ── PIPELINE STEP ── */
+.pipe-step{display:flex;gap:16px;margin-bottom:4px;opacity:0;transform:translateX(-16px);transition:all .5s;}
+.pipe-step.show{opacity:1;transform:none;}
+.pipe-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;border:1px solid var(--border);}
+.pipe-content{flex:1;}
+.pipe-name{font-weight:800;font-size:.9rem;margin-bottom:3px;}
+.pipe-detail{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--white2);line-height:1.8;}
+.pipe-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;}
+.pipe-chip{padding:2px 9px;border-radius:10px;font-family:'JetBrains Mono',monospace;font-size:9px;background:var(--bg3);border:1px solid var(--border);}
+.pipe-conn{width:2px;height:16px;background:var(--border);margin:0 0 4px 21px;}
+
+/* ── CONTRIBUTION TABLE ── */
+.contrib-row{display:flex;gap:0;margin:3px 0;align-items:center;}
+.contrib-tok{font-family:'JetBrains Mono',monospace;font-size:11px;width:90px;color:var(--white2);}
+.contrib-bar-bg{flex:1;height:20px;background:var(--bg3);border-radius:3px;overflow:hidden;position:relative;}
+.contrib-bar{height:100%;border-radius:3px;display:flex;align-items:center;padding:0 8px;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;}
+.contrib-val{width:55px;font-family:'JetBrains Mono',monospace;font-size:10px;text-align:right;margin-left:8px;}
+
+/* ── CANVAS ── */
+canvas{border-radius:8px;display:block;}
+
+/* ── OUTPUT BOX ── */
+.output-box{background:var(--bg2);border:1px solid var(--white3);border-radius:12px;padding:24px;margin-top:20px;display:none;}
+.output-label{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:3px;color:var(--white3);margin-bottom:10px;}
+.output-text{font-family:'Instrument Serif',serif;font-size:1.8rem;color:var(--white);}
+.output-text span{color:var(--Q);}
+
+/* ANIMATIONS */
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:none;}}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+.pulse{animation:pulse 1.5s infinite;}
+
+/* ADVANCED BADGE */
+.adv-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-family:'JetBrains Mono',monospace;font-size:10px;background:var(--bg3);border:1px solid var(--W);color:var(--W);margin-bottom:16px;}
+
+@media(max-width:600px){
+  .sec-title{font-size:2rem;}
+  .hm-cell{width:38px;height:30px;font-size:9px;}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">⚡ TRANSFORMERS</div>
+  <a href="#why">Why</a>
+  <a href="#tokens">Tokens</a>
+  <a href="#embed">Embed</a>
+  <a href="#posenc">Position</a>
+  <a href="#qkv">Q·K·V</a>
+  <a href="#scores">Scores</a>
+  <a href="#softmax">Softmax</a>
+  <a href="#attnv">Attn×V</a>
+  <a href="#multihead">Multi-Head</a>
+  <a href="#weights">Weights</a>
+  <a href="#decoder">Decoder</a>
+  <a href="#pipeline">Pipeline</a>
+</nav>
+
+<!-- ══════════ HERO ══════════ -->
+<div class="hero">
+  <div class="hero-tag">Deep Visual Learning Guide</div>
+  <h1>How<br><em>Transformers</em><br>Actually Work</h1>
+  <div class="hero-sub">
+    Sentence: "I love machine learning because it is magic"<br>
+    From raw text → tokens → embeddings → Q·K·V → attention → output<br>
+    Every number. Every matrix. Every step.
+  </div>
+  <div class="color-legend">
+    <div class="cl-item"><div class="cl-dot" style="background:var(--Q)"></div>Query (Q)</div>
+    <div class="cl-item"><div class="cl-dot" style="background:var(--K)"></div>Key (K)</div>
+    <div class="cl-item"><div class="cl-dot" style="background:var(--V)"></div>Value (V)</div>
+    <div class="cl-item"><div class="cl-dot" style="background:var(--W)"></div>Learned Weights (W)</div>
+    <div class="cl-item"><div class="cl-dot" style="background:var(--out)"></div>Output</div>
+  </div>
+</div>
+
+<!-- ══════════ 0. WHY ══════════ -->
+<div class="section" id="why">
+  <div class="sec-num">CHAPTER 00</div>
+  <div class="sec-title">Why Transformers?</div>
+  <div class="sec-desc">Before transformers, we had RNNs and LSTMs — they read words one by one, like reading a book with one eye closed. Transformers read EVERYTHING at once.</div>
+
+  <div class="box">
+    <div class="box-title" style="color:var(--white3)">THE CORE PROBLEM</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+      <div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--V);margin-bottom:10px;">❌ OLD (RNN / LSTM)</div>
+        <div class="step-flow">
+          <div class="step-item">
+            <div class="step-num" style="border-color:var(--V);color:var(--V)">1</div>
+            <div class="step-body"><div class="step-label">Sequential</div><div class="step-text">Reads word 1 → word 2 → word 3... slow, forgets early words</div></div>
+          </div>
+          <div class="step-item">
+            <div class="step-num" style="border-color:var(--V);color:var(--V)">2</div>
+            <div class="step-body"><div class="step-label">Vanishing Gradient</div><div class="step-text">Long sentences = model forgets the beginning</div></div>
+          </div>
+          <div class="step-item">
+            <div class="step-num" style="border-color:var(--V);color:var(--V)">3</div>
+            <div class="step-body"><div class="step-label">Can't Parallelize</div><div class="step-text">GPU can't speed it up — must wait for each word</div></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--Q);margin-bottom:10px;">✅ NEW (Transformer)</div>
+        <div class="step-flow">
+          <div class="step-item">
+            <div class="step-num" style="border-color:var(--Q);color:var(--Q)">1</div>
+            <div class="step-body"><div class="step-label">Parallel</div><div class="step-text">ALL words processed at the same time — super fast on GPU</div></div>
+          </div>
+          <div class="step-item">
+            <div class="step-num" style="border-color:var(--Q);color:var(--Q)">2</div>
+            <div class="step-body"><div class="step-label">Full Context</div><div class="step-text">Every word looks at every other word — no forgetting</div></div>
+          </div>
+          <div class="step-item">
+            <div class="step-num" style="border-color:var(--Q);color:var(--Q)">3</div>
+            <div class="step-body"><div class="step-label">Scales Massively</div><div class="step-text">GPT, BERT, T5 — all built on this foundation</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout co-tip">
+    <div class="callout-icon">💡</div>
+    <div class="callout-text">
+      <b>Key Insight:</b> "The cat sat on the mat because <b>it</b> was tired" — What is <b>it</b>? The cat or the mat?<br>
+      Transformer looks at ALL words at once and figures out: <b>it = cat</b> (because "tired" connects to living things).
+    </div>
+  </div>
+</div>
+
+<hr class="div">
+
+<!-- ══════════ 1. TOKENIZATION ══════════ -->
+<div class="section" id="tokens">
+  <div class="sec-num">STEP 01</div>
+  <div class="sec-title">Tokenization</div>
+  <div class="sec-desc">Before anything, text must become numbers. We split the sentence into tokens — then each token gets a unique integer ID from the vocabulary.</div>
+
+  <div class="box">
+    <div class="box-title">INPUT SENTENCE</div>
+    <div style="font-family:'Instrument Serif',serif;font-size:1.6rem;margin-bottom:20px;">"I love machine learning because it is magic"</div>
+
+    <div class="step-flow">
+      <div class="step-item">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-label">Split into Tokens</div>
+          <div class="tok-row" id="tok-row">
+            <span class="tok" style="border-color:var(--Q)">I</span>
+            <span class="tok" style="border-color:var(--K)">love</span>
+            <span class="tok" style="border-color:var(--V)">machine</span>
+            <span class="tok" style="border-color:var(--W)">learning</span>
+            <span class="tok" style="border-color:var(--Q)">because</span>
+            <span class="tok" style="border-color:var(--K)">it</span>
+            <span class="tok" style="border-color:var(--V)">is</span>
+            <span class="tok" style="border-color:var(--W)">magic</span>
+          </div>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-label">Assign Vocabulary IDs</div>
+          <div class="tbl-wrap">
+            <table>
+              <tr><th>Token</th><th>Position</th><th>Vocab ID</th><th>Meaning</th></tr>
+              <tr><td class="tok-cell">I</td><td>0</td><td>1042</td><td class="white2">subject pronoun</td></tr>
+              <tr><td class="tok-cell">love</td><td>1</td><td>2293</td><td class="white2">verb — positive emotion</td></tr>
+              <tr><td class="tok-cell">machine</td><td>2</td><td>3698</td><td class="white2">noun</td></tr>
+              <tr><td class="tok-cell">learning</td><td>3</td><td>4892</td><td class="white2">noun / gerund</td></tr>
+              <tr><td class="tok-cell">because</td><td>4</td><td>1194</td><td class="white2">conjunction</td></tr>
+              <tr><td class="tok-cell">it</td><td>5</td><td>980</td><td class="white2">pronoun — refers back</td></tr>
+              <tr><td class="tok-cell">is</td><td>6</td><td>1231</td><td class="white2">verb</td></tr>
+              <tr><td class="tok-cell">magic</td><td>7</td><td>5543</td><td class="white2">noun — 🪄</td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout co-info">
+      <div class="callout-icon">🔢</div>
+      <div class="callout-text"><b>Now we have:</b> [1042, 2293, 3698, 4892, 1194, 980, 1231, 5543]<br>These IDs are used to look up rows in the <b>embedding matrix</b> (next step).</div>
+    </div>
+  </div>
+</div>
+
+<hr class="div">
+
+<!-- ══════════ 2. EMBEDDINGS ══════════ -->
+<div class="section" id="embed">
+  <div class="sec-num">STEP 02</div>
+  <div class="sec-title">Token Embeddings</div>
+  <div class="sec-desc">Each token ID gets mapped to a dense vector of numbers. In real models: 512 or 768 numbers. We use 3 here so you can see every calculation.</div>
+
+  <div class="box">
+    <div class="box-title">EMBEDDING MATRIX LOOKUP (X) — 8 tokens × 3 dims</div>
+    <div class="tbl-wrap">
+      <table>
+        <tr><th>Token</th><th>ID</th><th colspan="3">Embedding X (3 dimensions)</th><th>Intuition</th></tr>
+        <tr><td class="tok-cell">I</td><td>1042</td><td>1</td><td>0</td><td>1</td><td class="white2">subject-like</td></tr>
+        <tr><td class="tok-cell">love</td><td>2293</td><td>1</td><td>1</td><td>0</td><td class="white2">action + emotion</td></tr>
+        <tr><td class="tok-cell">machine</td><td>3698</td><td>0</td><td>1</td><td>1</td><td class="white2">object-like</td></tr>
+        <tr><td class="tok-cell">learning</td><td>4892</td><td>1</td><td>0</td><td>0</td><td class="white2">concept</td></tr>
+        <tr><td class="tok-cell">because</td><td>1194</td><td>0</td><td>1</td><td>0</td><td class="white2">connector</td></tr>
+        <tr><td class="tok-cell">it</td><td>980</td><td>1</td><td>1</td><td>1</td><td class="white2">pronoun — has all dims</td></tr>
+        <tr><td class="tok-cell">is</td><td>1231</td><td>0</td><td>0</td><td>1</td><td class="white2">linking verb</td></tr>
+        <tr><td class="tok-cell">magic</td><td>5543</td><td>1</td><td>0</td><td>1</td><td class="white2">similar to "I" — interesting!</td></tr>
+      </table>
+    </div>
+
+    <div style="margin-top:20px;">
+      <div class="box-title">MATRIX FORM (X)</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:12px;line-height:2;color:var(--white2);">
+        X =<br>
+        &nbsp;&nbsp;[1 0 1]&nbsp;&nbsp;← I<br>
+        &nbsp;&nbsp;[1 1 0]&nbsp;&nbsp;← love<br>
+        &nbsp;&nbsp;[0 1 1]&nbsp;&nbsp;← machine<br>
+        &nbsp;&nbsp;[1 0 0]&nbsp;&nbsp;← learning<br>
+        &nbsp;&nbsp;[0 1 0]&nbsp;&nbsp;← because<br>
+        &nbsp;&nbsp;[1 1 1]&nbsp;&nbsp;← it<br>
+        &nbsp;&nbsp;[0 0 1]&nbsp;&nbsp;← is<br>
+        &nbsp;&nbsp;[1 0 1]&nbsp;&nbsp;← magic<br>
+        <span style="color:var(--white3)">Shape: (8 × 3)</span>
+      </div>
+    </div>
+
+    <div class="callout co-warn">
+      <div class="callout-icon">⚠️</div>
+      <div class="callout-text"><b>"I"</b> and <b>"magic"</b> have the same embedding [1,0,1] — this is just our simple example. In real models, every word gets a unique learned vector with 512+ numbers. These embeddings are <b style="color:var(--W)">learned during training</b> — not hand-crafted!</div>
+    </div>
+  </div>
+
+  <!-- Canvas bar chart -->
+  <div class="box">
+    <div class="box-title">EMBEDDING VISUALIZATION — click a token</div>
+    <div class="tok-row" id="embed-btns">
+      <button class="btn btn-outline" onclick="showEmbedBar('I',[1,0,1])">I</button>
+      <button class="btn btn-outline" onclick="showEmbedBar('love',[1,1,0])">love</button>
+      <button class="btn btn-outline" onclick="showEmbedBar('machine',[0,1,1])">machine</button>
+      <button class="btn btn-outline" onclick="showEmbedBar('learning',[1,0,0])">learning</button>
+      <button class="btn btn-outline" onclick="showEmbedBar('because',[0,1,0])">because</button>
+      <button class="btn btn-outline" onclick="showEmbedBar('it',[1,1,1])">it</button>
+      <button class="btn btn-outline" onclick="showEmbedBar('is',[0,0,1])">is</button>
+      <button class="btn btn-outline" onclick="showEmbedBar('magic',[1,0,1])">magic</button>
+    </div>
+    <canvas id="embed-bar-canvas" height="140" style="width:100%;margin-top:12px;"></canvas>
+    <div id="embed-bar-info" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--white2);margin-top:10px;">↑ Click any token above</div>
+  </div>
+</div>
+
+<hr class="div">
+
+<!-- ══════════ 3. POSITIONAL ENCODING ══════════ -->
+<div class="section" id="posenc">
+  <div class="sec-num">STEP 03</div>
+  <div class="sec-title">Positional Encoding</div>
+  <div class="sec-desc">Transformers process all tokens in parallel — so they lose track of order! We ADD a positional vector to each embedding to preserve word order.</div>
+
+  <div class="box">
+    <div class="box-title">FORMULA</div>
+    <div class="formula">
+      PE(pos, 2i) &nbsp;= <span class="fq">sin</span>(pos / 10000<sup>2i/d</sup>)<br>
+      PE(pos, 2i+1) = <span class="fq">cos</span>(pos / 10000<sup>2i/d</sup>)
+    </div>
+
+    <div class="tbl-wrap" style="margin-top:20px;">
+      <table>
+        <tr><th>Token</th><th>Position</th><th>PE vector (3 dims)</th><th>X + PE (final input)</th></tr>
+        <tr><td class="tok-cell">I</td><td>0</td><td>[0.00, 1.00, 0.00]</td><td style="color:var(--Q)">[1.00, 1.00, 1.00]</td></tr>
+        <tr><td class="tok-cell">love</td><td>1</td><td>[0.84, 0.54, 0.10]</td><td style="color:var(--Q)">[1.84, 1.54, 0.10]</td></tr>
+        <tr><td class="tok-cell">machine</td><td>2</td><td>[0.91, -0.42, 0.20]</td><td style="color:var(--Q)">[0.91, 0.58, 1.20]</td></tr>
+        <tr><td class="tok-cell">learning</td><td>3</td><td>[0.14, -0.99, 0.30]</td><td style="color:var(--Q)">[1.14, -0.99, 0.30]</td></tr>
+        <tr><td class="tok-cell">because</td><td>4</td><td>[-0.76, -0.65, 0.39]</td><td style="color:var(--Q)">[-0.76, 0.35, 0.39]</td></tr>
+        <tr><td class="tok-cell">it</td><td>5</td><td>[-0.96, 0.28, 0.48]</td><td style="color:var(--Q)">[0.04, 1.28, 1.48]</td></tr>
+        <tr><td class="tok-cell">is</td><td>6</td><td>[-0.28, 0.96, 0.56]</td><td style="color:var(--Q)">[-0.28, 0.96, 1.56]</td></tr>
+        <tr><td class="tok-cell">magic</td><td>7</td><td>[0.66, 0.75, 0.64]</td><td style="color:var(--Q)">[1.66, 0.75, 1.64]</td></tr>
+      </table>
+    </div>
+
+    <div class="callout co-tip">
+      <div class="callout-icon">🎯</div>
+      <div class="callout-text"><b>Why sin/cos?</b> Because sin(pos+k) can always be expressed as a linear function of sin(pos) — so the model can learn to attend to relative positions! Also, the values are always between -1 and 1 — stable for training.</div>
+    </div>
+
+    <canvas id="pos-canvas" height="180" style="width:100%;margin-top:16px;"></canvas>
+  </div>
+</div>
+
+<hr class="div">
+
+<!-- ══════════ 4. WEIGHT MATRICES ══════════ -->
+<div class="section" id="qkv">
+  <div class="sec-num">STEP 04</div>
+  <div class="sec-title">Learned Weight Matrices</div>
+  <div class="sec-desc">This is where LEARNING happens. Three weight matrices (W_Q, W_K, W_V) are learned during training. They transform each token's embedding into Q, K, V vectors.</div>
+
+  <div class="callout co-warn">
+    <div class="callout-icon">🧠</div>
+    <div class="callout-text"><b style="color:var(--W)">These are the LEARNED parameters.</b> At the start of training, they are random. Over millions of training steps, backpropagation adjusts them until the model learns language. GPT-3 has 175 BILLION such numbers.</div>
+  </div>
+
+  <div class="box">
+    <div class="box-title" style="color:var(--W)">WEIGHT MATRICES W_Q, W_K, W_V (3×3 each)</div>
+    <div style="display:flex;flex-wrap:wrap;gap:20px;margin-top:8px;">
+      <!-- WQ -->
+      <div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--Q);margin-bottom:8px;letter-spacing:2px;">W_Q (Query Weight)</div>
+        <div id="wq-mat"></div>
+      </div>
+      <!-- WK -->
+      <div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--K);margin-bottom:8px;letter-spacing:2px;">W_K (Key Weight)</div>
+        <div id="wk-mat"></div>
+      </div>
+      <!-- WV -->
+      <div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--V);margin-bottom:8px;letter-spacing:2px;">W_V (Value Weight)</div>
+        <div id="wv-mat"></div>
+      </div>
+    </div>
+
+    <div class="formula" style="margin-top:20px;">
+      <span class="fq">Q</span> = X · <span class="fw">W_Q</span> &nbsp;&nbsp;|&nbsp;&nbsp;
+      <span class="fk">K</span> = X · <span class="fw">W_K</span> &nbsp;&nbsp;|&nbsp;&nbsp;
+      <span class="fv">V</span> = X · <span class="fw">W_V</span>
+    </div>
+  </div>
+
+  <!-- QKV TABLE -->
+  <div class="box">
+    <div class="box-title">Q, K, V FOR ALL 8 TOKENS — computed via X × W</div>
+    <div class="tbl-wrap">
+      <table>
+        <tr>
+          <th>Token</th>
+          <th>Input X</th>
+          <th style="color:var(--Q)">Q = X·W_Q</th>
+          <th style="color:var(--K)">K = X·W_K</th>
+          <th style="color:var(--V)">V = X·W_V</th>
+        </tr>
+        <tr><td class="tok-cell">I</td><td>[1,0,1]</td><td class="q-cell">[2,1,1]</td><td class="k-cell">[2,1,1]</td><td class="v-cell">[1,0,1]</td></tr>
+        <tr><td class="tok-cell">love</td><td>[1,1,0]</td><td class="q-cell">[1,2,2]</td><td class="k-cell">[1,2,1]</td><td class="v-cell">[1,1,0]</td></tr>
+        <tr><td class="tok-cell">machine</td><td>[0,1,1]</td><td class="q-cell">[1,2,1]</td><td class="k-cell">[1,1,2]</td><td class="v-cell">[0,1,1]</td></tr>
+        <tr><td class="tok-cell">learning</td><td>[1,0,0]</td><td class="q-cell">[1,0,1]</td><td class="k-cell">[1,1,0]</td><td class="v-cell">[1,0,0]</td></tr>
+        <tr><td class="tok-cell">because</td><td>[0,1,0]</td><td class="q-cell">[0,1,1]</td><td class="k-cell">[0,1,1]</td><td class="v-cell">[0,1,0]</td></tr>
+        <tr class="hi"><td class="tok-cell">it</td><td>[1,1,1]</td><td class="q-cell">[2,2,2]</td><td class="k-cell">[2,2,2]</td><td class="v-cell">[1,1,1]</td></tr>
+        <tr><td class="tok-cell">is</td><td>[0,0,1]</td><td class="q-cell">[1,1,0]</td><td class="k-cell">[1,0,1]</td><td class="v-cell">[0,0,1]</td></tr>
+        <tr><td class="tok-cell">magic</td><td>[1,0,1]</td><td class="q-cell">[2,1,1]</td><td class="k-cell">[2,1,1]</td><td class="v-cell">[1,0,1]</td></tr>
+      </table>
+    </div>
+
+    <div class="callout co-key">
+      <div class="callout-icon">🔥</div>
+      <div class="callout-text">
+        <b>Notice "it" = [2,2,2]</b> for both Q and K — highest magnitude of all tokens!<br>
+        This is why "it" will score the highest attention — it has the strongest "voice" in this sentence.
+      </div>
+    </div>
+  </div>
+
+  <!-- HOW TO COMPUTE Q for "I" -->
+  <div class="box">
+    <div class="box-title" style="color:var(--Q)">WORKED EXAMPLE — Computing Q for "I"</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:12px;line-height:2.2;color:var(--white2);">
+      X("I") = [1, 0, 1]<br><br>
+
+      <span style="color:var(--W)">W_Q</span> = [[1,0,1],<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[0,1,1],<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[1,1,0]]<br><br>
+
+      <span style="color:var(--Q)">Q("I")</span> = [1,0,1] × W_Q<br>
+      = 1×[1,0,1] + 0×[0,1,1] + 1×[1,1,0]<br>
+      = [1,0,1] + [0,0,0] + [1,1,0]<br>
+      = <span style="color:var(--Q);font-weight:700">[2, 1, 1]</span>
+    </div>
+  </div>
+</div>
+
+<hr class="div">
+
+<!-- ══════════ 5. ATTENTION SCORES ══════════ -->
+<div class="section" id="scores">
+  <div class="sec-num">STEP 05</div>
+  <div class="sec-title">Attention Scores (Q × Kᵀ)</div>
+  <div class="sec-desc">Now every token asks: "How much should I pay attention to every other token?" We compute this using dot products between Q and K vectors.</div>
+
+  <!-- TRANSPOSE -->
+  <div class="box">
+    <div class="box-title" style="color:var(--K)">STEP 5A — Transpose of K (Kᵀ)</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:12px;line-height:2;color:var(--white2);">
+      K (8×3) becomes Kᵀ (3×8) — rows become columns:<br><br>
+      Kᵀ =<br>
+      &nbsp;&nbsp;[<span style="color:var(--K)">2</span> <span style="color:var(--K)">1</span> <span style="color:var(--K)">1</span> <span style="color:var(--K)">1</span> <span style="color:var(--K)">0</span> <span style="color:var(--K)">2</span> <span style="color:var(--K)">1</span> <span style="color:var(--K)">2</span>]  &lt;— K dim 0<br>
+      &nbsp;&nbsp;[<span style="color:var(--K)">1</span> <span style="color:var(--K)">2</span> <span style="color:var(--K)">1</span> <span style="color:var(--K)">1</span> <span style="color:var(--K)">1</span> <span style="color:var(--K)">2</span> <span style="color:var(--K)">0</span> <span style="color:var(--K)">1</span>]  &lt;— K dim 1<br>
+      &nbsp;&nbsp;[<span style="color:var(--K)">1</span> <span style="color:var(--K)">1</span> <span style="color:var(--K)">2</span> <span style="color:var(--K)">0</span> <span style="color:var(--K)">1</span> <span style="color:var(--K)">2</span> <span style="color:var(--K)">1</span> <span style="color:var(--K)">1</span>]  &lt;— K dim 2<br>
+      <span style="color:var(--white3)">Shape: (3×8)</span>
+    </div>
+  </div>
+
+  <div class="box">
+    <div class="box-title" style="color:var(--Q)">STEP 5B — Q × Kᵀ = (8×3)×(3×8) = (8×8) ATTENTION SCORES</div>
+
+    <div class="formula">
+      score(i,j) = <span class="fq">Q[i]</span> · <span class="fk">K[j]</span> &nbsp;&nbsp;(dot product)
+    </div>
+
+    <div style="margin-top:16px;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--white2);margin-bottom:6px;">Worked example — Row "I", Column "it":</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--white);line-height:2;">
+        Q("I") = <span style="color:var(--Q)">[2,1,1]</span> &nbsp; K("it") = <span style="color:var(--K)">[2,2,2]</span><br>
+        score = 2×2 + 1×2 + 1×2 = 4+2+2 = <span style="color:var(--W);font-weight:700">10</span>
+      </div>
+    </div>
+
+    <div style="margin-top:20px;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--white2);margin-bottom:12px;">FULL 8×8 SCORE MATRIX (hover any cell):</div>
+      <div class="hm-wrap" id="score-hm"></div>
+    </div>
+
+    <div class="callout co-info">
+      <div class="callout-icon">📊</div>
+      <div class="callout-text">
+        <b>Read this table:</b> Row = the word asking ("Query"). Column = the word being asked about ("Key").<br>
+        Row "I" → highest score with "it" (10) ✅ — the model is already figuring out relationships!<br>
+        Row "it" → highest score with itself (12) — strong self-attention.
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="div">
+
+<!-- ══════════ 6. SCALE + SOFTMAX ══════════ -->
+<div class="section" id="softmax">
+  <div class="sec-num">STEP 06</div>
+  <div class="sec-title">Scale + Softmax → Attention Weights</div>
+  <div class="sec-desc">Raw scores are too large — we divide by √dk to stabilize gradients, then apply softmax so each row sums to 1 (becomes a probability distribution).</div>
+
+  <div class="box">
+    <div class="box-title">SCALING: divide by √dk = √3 ≈ 1.73</div>
+    <div class="formula">
+      Scaled Score = <span class="fq">Q</span><span class="fk">Kᵀ</span> / √d<sub>k</sub>
+    </div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--white2);margin-top:12px;line-height:2;">
+      Row "I": [6, 5, 5, 3, 2, 10, 3, 6] ÷ 1.73<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;≈ [<span style="color:var(--W)">3.46, 2.89, 2.89, 1.73, 1.15, 5.77, 1.73, 3.46</span>]
+    </div>
+  </div>
+
+  <div class="box">
+    <div class="box-title">SOFTMAX: convert each row into probabilities</div>
+    <div class="formula">
+      softmax(x<sub>i</sub>) = e<sup>x<sub>i</sub></sup> / Σ e<sup>x<sub>j</sub></sup>
+    </div>
+
+    <div style="margin-top:20px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--white2);margin-bottom:14px;">
+      ATTENTION WEIGHT MATRIX (A) — after softmax, each row sums to 1.0:
+    </div>
+    <div class="hm-wrap" id="softmax-hm"></div>
+
+    <div style="margin-top:20px;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--Q);margin-bottom:10px;">ROW "I" — attention distribution (most important!):</div>
+      <div id="attn-contrib-bars"></div>
+    </div>
+
+    <div class="callout co-tip">
+      <div class="callout-icon">🎯</div>
+      <div class="callout-text">
+        <b>"I" pays 50% attention to "it"</b> — this is the model learning that "I" and "it" are related!<br>
+        After training, this becomes even more precise: "it" in "it was tired" → refers to "cat".
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="div">
+
+<!-- ══════════ 7. ATTENTION × VALUE ══════════ -->
+<div class="section" id="attnv">
+  <div class="sec-num">STEP 07</div>
+  <div class="sec-title">Attention × Value → Output</div>
+  <div class="sec-desc">Final step of attention: multiply the attention weights by the Value vectors. This "blends" all words together based on how important they are.</div>
+
+  <div class="box">
+    <div class="box-title" style="color:var(--V)">VALUE MATRIX (V) — what each token shares</div>
+    <div class="tbl-wrap">
+      <table>
+        <tr><th>Token</th><th style="color:var(--V)">V vector</th><th>Think of it as...</th></tr>
+        <tr><td class="tok-cell">I</td><td class="v-cell">[1,0,1]</td><td class="white2">subject info</td></tr>
+        <tr><td class="tok-cell">love</td><td class="v-cell">[1,1,0]</td><td class="white2">emotion + action</td></tr>
+        <tr><td class="tok-cell">machine</td><td class="v-cell">[0,1,1]</td><td class="white2">object info</td></tr>
+        <tr><td class="tok-cell">learning</td><td class="v-cell">[1,0,0]</td><td class="white2">concept signal</td></tr>
+        <tr><td class="tok-cell">because</td><td class="v-cell">[0,1,0]</td><td class="white2">connector signal</td></tr>
+        <tr class="hi"><td class="tok-cell">it</td><td class="v-cell">[1,1,1]</td><td class="white2">pronoun — rich info (all dims)</td></tr>
+        <tr><td class="tok-cell">is</td><td class="v-cell">[0,0,1]</td><td class="white2">existence signal</td></tr>
+        <tr><td class="tok-cell">magic</td><td class="v-cell">[1,0,1]</td><td class="white2">special noun info</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="box">
+    <div class="box-title">COMPUTING OUTPUT FOR "I" — step by step</div>
+    <div class="formula">
+      Output(<span class="fq">I</span>) = Σ attention_weight × <span class="fv">V</span>
+    </div>
+
+    <div style="margin-top:18px;">
+      <div class="tbl-wrap">
+        <table>
+          <tr>
+            <th>Token</th>
+            <th style="color:var(--out)">Weight (attn)</th>
+            <th style="color:var(--V)">V vector</th>
+            <th>weight × V</th>
+            <th>Contribution</th>
+          </tr>
+          <tr><td class="tok-cell">I</td><td class="out-cell">0.14</td><td class="v-cell">[1,0,1]</td><td>[0.14×1, 0.14×0, 0.14×1]</td><td style="color:var(--white)">[0.14, 0.00, 0.14]</td></tr>
+          <tr><td class="tok-cell">love</td><td class="out-cell">0.10</td><td class="v-cell">[1,1,0]</td><td>[0.10×1, 0.10×1, 0.10×0]</td><td style="color:var(--white)">[0.10, 0.10, 0.00]</td></tr>
+          <tr><td class="tok-cell">machine</td><td class="out-cell">0.10</td><td class="v-cell">[0,1,1]</td><td>[0.10×0, 0.10×1, 0.10×1]</td><td style="color:var(--white)">[0.00, 0.10, 0.10]</td></tr>
+          <tr><td class="tok-cell">learning</td><td class="out-cell">0.04</td><td class="v-cell">[1,0,0]</td><td>[0.04×1, 0.04×0, 0.04×0]</td><td style="color:var(--white)">[0.04, 0.00, 0.00]</td></tr>
+          <tr><td class="tok-cell">because</td><td class="out-cell">0.02</td><td class="v-cell">[0,1,0]</td><td>[0.02×0, 0.02×1, 0.02×0]</td><td style="color:var(--white)">[0.00, 0.02, 0.00]</td></tr>
+          <tr class="hi"><td class="tok-cell">it 🔥</td><td class="out-cell" style="font-weight:700">0.50</td><td class="v-cell">[1,1,1]</td><td>[0.50×1, 0.50×1, 0.50×1]</td><td style="color:var(--Q);font-weight:700">[0.50, 0.50, 0.50]</td></tr>
+          <tr><td class="tok-cell">is</td><td class="out-cell">0.04</td><td class="v-cell">[0,0,1]</td><td>[0.04×0, 0.04×0, 0.04×1]</td><td style="color:var(--white)">[0.00, 0.00, 0.04]</td></tr>
+          <tr><td class="tok-cell">magic</td><td class="out-cell">0.14</td><td class="v-cell">[1,0,1]</td><td>[0.14×1, 0.14×0, 0.14×1]</td><td style="color:var(--white)">[0.14, 0.00, 0.14]</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div style="margin-top:20px;padding:20px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--white2);margin-bottom:14px;">SUM ALL DIMENSIONS:</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:12px;line-height:2.2;color:var(--white2);">
+        dim0: 0.14 + 0.10 + 0.00 + 0.04 + 0.00 + <b style="color:var(--Q)">0.50</b> + 0.00 + 0.14 = <b style="color:var(--out)">0.92</b><br>
+        dim1: 0.00 + 0.10 + 0.10 + 0.00 + 0.02 + <b style="color:var(--Q)">0.50</b> + 0.00 + 0.00 = <b style="color:var(--out)">0.72</b><br>
+        dim2: 0.14 + 0.00 + 0.10 + 0.00 + 0.00 + <b style="color:var(--Q)">0.50</b> + 0.04 + 0.14 = <b style="color:var(--out)">0.92</b>
+      </div>
+      <div style="margin-top:16px;padding:14px;background:var(--bg2);border-radius:6px;border:1px solid var(--out);">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--white3);margin-bottom:6px;">RESULT:</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:14px;">
+          "I" before attention: <span style="color:var(--white2)">[1, 0, 1]</span><br>
+          "I" after attention: &nbsp;<span style="color:var(--out);font-weight:700">[0.92, 0.72, 0.92]</span> 🎉
+        </div>
+      </div>
+    </div>
+
+    <div class="callout co-key">
+      <div class="callout-icon">🧠</div>
+      <div class="callout-text">
+        <b>What does [0.92, 0.72, 0.92] ACTUALLY MEAN?</b><br>
+        It is NOT just "I" anymore. It is <b>"I" + context of the whole sentence</b>.<br>
+        It now carries: 50% influence from "it", some from "love", some from "magic".<br>
+        The model now knows: "I" is connected to "it" which is connected to "magic" = the subject loves magic!
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="div">
+
+<!-- ══════════ 8. MULTI-HEAD ══════════ -->
+<div class="section" id="multihead">
+  <div class="adv-badge">⭐ INTERMEDIATE LEVEL</div>
+  <div class="sec-num">STEP 08</div>
+  <div class="sec-title">Multi-Head Attention</div>
+  <div class="sec-desc">Instead of ONE Q·K·V, we run MULTIPLE attention heads in parallel. Each head learns different relationships — grammar, meaning, co-reference, long-range dependencies.</div>
+
+  <div class="box">
+    <div class="box-title">WHY MULTIPLE HEADS?</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-top:8px;">
+      <div style="padding:16px;background:var(--bg3);border-radius:8px;border:1px solid rgba(0,230,118,.2);">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--Q);margin-bottom:8px;letter-spacing:2px;">HEAD 1</div>
+        <div style="font-weight:700;margin-bottom:4px;">Grammar</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--white2);">subject → verb relationships<br>"I" → "love" → "machine"</div>
+      </div>
+      <div style="padding:16px;background:var(--bg3);border-radius:8px;border:1px solid rgba(68,138,255,.2);">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--K);margin-bottom:8px;letter-spacing:2px;">HEAD 2</div>
+        <div style="font-weight:700;margin-bottom:4px;">Co-reference</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--white2);">pronoun → noun links<br>"it" → "machine learning"</div>
+      </div>
+      <div style="padding:16px;background:var(--bg3);border-radius:8px;border:1px solid rgba(255,64,129,.2);">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--V);margin-bottom:8px;letter-spacing:2px;">HEAD 3</div>
+        <div style="font-weight:700;margin-bottom:4px;">Semantics</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--white2);">word meaning clusters<br>"magic" ↔ "love" (positive)</div>
+      </div>
+      <div style="padding:16px;background:var(--bg3);border-radius:8px;border:1px solid rgba(255,215,64,.2);">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--W);margin-bottom:8px;letter-spacing:2px;">HEAD 4</div>
+        <div style="font-weight:700;margin-bottom:4px;">Long-Range</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--white2);">distant word relations<br>"I" ↔ "magic" (ends)</div>
+      </div>
+    </div>
+
+    <div class="formula" style="margin-top:20px;">
+      MultiHead(Q,K,V) = Concat(<span class="fq">head₁</span>, <span class="fk">head₂</span>, <span class="fv">head₃</span>, ...) · <span class="fw">W_O</span>
+    </div>
+
+    <div class="callout co-warn">
+      <div class="callout-icon">⚡</div>
+      <div class="callout-text">
+        In GPT-3: <b>96 attention heads</b>, each with d_k=128. All run in PARALLEL on GPU.<br>
+        Final output = Concatenate all heads → multiply by output weight matrix W_O → one combined vector per token.
+      </div>
+    </div>
+
+    <canvas id="multihead-canvas" height="220" style="width:100%;margin-top:16px;"></canvas>
+  </div>
+</div>
+
+<hr class="div">
+
+<!-- ══════════ 9. WEIGHT UPDATE ══════════ -->
+<div class="section" id="weights">
+  <div class="adv-badge">⭐ INTERMEDIATE LEVEL</div>
+  <div class="sec-num">STEP 09</div>
+  <div class="sec-title">Training: How Weights Update</div>
+  <div class="sec-desc">During training, the model makes predictions, calculates how wrong it was (loss), then uses backpropagation to adjust ALL weight matrices to reduce the error.</div>
+
+  <div class="box">
+    <div class="box-title">TRAINING LOOP</div>
+    <div class="step-flow">
+      <div class="step-item">
+        <div class="step-num" style="border-color:var(--Q);color:var(--Q)">1</div>
+        <div class="step-body">
+          <div class="step-label">Forward Pass</div>
+          <div class="step-text">Input "I love machine learning" → transformer predicts next word → "because" (probability distribution over vocab)</div>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-num" style="border-color:var(--W);color:var(--W)">2</div>
+        <div class="step-body">
+          <div class="step-label">Calculate Loss</div>
+          <div class="step-text">Correct answer: "because" &nbsp; Predicted: "which" &nbsp;→ Cross-entropy loss = how wrong we were</div>
+          <div class="formula" style="margin-top:8px;">Loss = -log(P(correct token))</div>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-num" style="border-color:var(--V);color:var(--V)">3</div>
+        <div class="step-body">
+          <div class="step-label">Backpropagation</div>
+          <div class="step-text">Gradients flow BACKWARDS through all layers — computing ∂Loss/∂W for every single weight</div>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-num" style="border-color:var(--out);color:var(--out)">4</div>
+        <div class="step-body">
+          <div class="step-label">Weight Update (Gradient Descent)</div>
+          <div class="formula">W = W − η · ∇L</div>
+          <div class="step-text" style="margin-top:8px;">η = learning rate (e.g. 0.001) &nbsp;|&nbsp; ∇L = gradient<br>This slightly adjusts W_Q, W_K, W_V, FFN weights toward better predictions.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="box">
+    <div class="box-title" style="color:var(--W)">LIVE WEIGHT UPDATE SIMULATION</div>
+    <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
+      <button class="btn btn-w" onclick="startTraining()">▶ Run Training (50 steps)</button>
+      <button class="btn btn-outline" onclick="resetTraining()">↺ Reset</button>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--white2);align-self:center;">
+        Loss: <span id="loss-val" style="color:var(--V)">—</span> &nbsp;|&nbsp; Epoch: <span id="epoch-val" style="color:var(--Q)">0</span>
+      </span>
+    </div>
+    <div id="weight-bars"></div>
+    <canvas id="loss-canvas" height="140" style="width:100%;margin-top:16px;"></canvas>
+  </div>
+</div>
+
+<hr class="div">
+
+<!-- ══════════ 10. DECODER ══════════ -->
+<div class="section" id="decoder">
+  <div class="adv-badge">⭐⭐ ADVANCED LEVEL</div>
+  <div class="sec-num">STEP 10</div>
+  <div class="sec-title">Decoder — Generating Output</div>
+  <div class="sec-desc">Encoder understood the input. Now the Decoder generates output ONE TOKEN AT A TIME — using masked self-attention (can't see future) + cross-attention to the encoder.</div>
+
+  <div class="box">
+    <div class="box-title">MASKED SELF-ATTENTION — what each word can see</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--white2);margin-bottom:14px;">
+      Decoder can only look at PAST words. Future is MASKED (blocked). This is how GPT generates text.
+    </div>
+    <div id="mask-grid"></div>
+
+    <div class="callout co-key">
+      <div class="callout-icon">🚫</div>
+      <div class="callout-text">
+        <b>Why mask the future?</b> During training, we feed the correct output sequence. If the model could see future words, it would just copy them — no learning! Masking forces it to PREDICT.
+      </div>
+    </div>
+  </div>
+
+  <div class="box">
+    <div class="box-title">GENERATION STEP-BY-STEP (Translation example)</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--white2);margin-bottom:16px;">
+      Task: translate "I love machine learning because it is magic" → Hindi
+    </div>
+
+    <div class="step-flow">
+      <div class="step-item">
+        <div class="step-num" style="border-color:var(--Q);color:var(--Q)">0</div>
+        <div class="step-body">
+          <div class="step-label">Start Token</div>
+          <div class="step-text">Input: &lt;START&gt;<br>Decoder asks encoder: "Give me context of the whole input"<br>Output probabilities → picks: <b style="color:var(--Q)">मैं</b> (0.72)</div>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-num" style="border-color:var(--Q);color:var(--Q)">1</div>
+        <div class="step-body">
+          <div class="step-label">Second Token</div>
+          <div class="step-text">Input: &lt;START&gt; मैं<br>Masked attention: "मैं" can see "&lt;START&gt;" ✅<br>Output → picks: <b style="color:var(--Q)">ML</b> (or मशीन) (0.65)</div>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-num" style="border-color:var(--Q);color:var(--Q)">2</div>
+        <div class="step-body">
+          <div class="step-label">Continue...</div>
+          <div class="step-text">Each step: use all PREVIOUS decoded tokens + FULL encoder output<br>→ पसंद करता हूँ → क्योंकि → यह → जादू है</div>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-num" style="border-color:var(--W);color:var(--W)">&lt;END&gt;</div>
+        <div class="step-body">
+          <div class="step-label">Stop</div>
+          <div class="step-text">When model outputs &lt;END&gt; token, generation stops.<br>Final output: <b style="color:var(--Q)">मैं ML पसंद करता हूँ क्योंकि यह जादू है</b></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Encoder-Decoder cross attention -->
+  <div class="box">
+    <div class="box-title">ENCODER-DECODER CROSS-ATTENTION</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--white2);line-height:2;margin-bottom:12px;">
+      When decoder generates each token, it uses:<br>
+      · <span style="color:var(--Q)">Q</span> from decoder (what are we generating?)<br>
+      · <span style="color:var(--K)">K</span> and <span style="color:var(--V)">V</span> from encoder output (what was the input?)
+    </div>
+    <canvas id="cross-attn-canvas" height="200" style="width:100%;"></canvas>
+  </div>
+</div>
+
+<hr class="div">
+
+<!-- ══════════ 11. FULL PIPELINE ══════════ -->
+<div class="section" id="pipeline">
+  <div class="adv-badge">🚀 FULL SYSTEM</div>
+  <div class="sec-num">FINAL STEP</div>
+  <div class="sec-title">Full Transformer Pipeline</div>
+  <div class="sec-desc">Enter any sentence and watch all 9 steps run in sequence — from raw text to predicted output. Everything we learned, combined.</div>
+
+  <div class="box">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;">
+      <input id="pipe-input" type="text" value="I love machine learning because it is magic"
+        style="flex:1;min-width:240px;background:var(--bg3);border:1px solid var(--border);color:var(--white);padding:12px 16px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:12px;outline:none;" />
+      <button class="btn btn-w" onclick="runPipeline()">🚀 RUN PIPELINE</button>
+      <button class="btn btn-outline" onclick="clearPipeline()">✕ Clear</button>
+    </div>
+    <div class="prog-bar"><div class="prog-fill" id="pipe-prog"></div></div>
+    <div id="pipe-steps"></div>
+    <div class="output-box" id="pipe-output"></div>
+  </div>
+</div>
+
+<div style="text-align:center;padding:60px 24px;border-top:1px solid var(--border);font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--white3);line-height:2;">
+  <div style="font-family:'Instrument Serif',serif;font-size:1.5rem;color:var(--white);margin-bottom:10px;">Attention is All You Need.</div>
+  Built for deep understanding — every number, every step, from first principles
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════════
+const TOKENS = ['I','love','machine','learning','because','it','is','magic'];
+const Q_VECS = [[2,1,1],[1,2,2],[1,2,1],[1,0,1],[0,1,1],[2,2,2],[1,1,0],[2,1,1]];
+const K_VECS = [[2,1,1],[1,2,1],[1,1,2],[1,1,0],[0,1,1],[2,2,2],[1,0,1],[2,1,1]];
+const V_VECS = [[1,0,1],[1,1,0],[0,1,1],[1,0,0],[0,1,0],[1,1,1],[0,0,1],[1,0,1]];
+
+// Raw scores Q × Kᵀ
+const RAW_SCORES = [
+  [6,5,5,3,2,10,3,6],
+  [6,5,7,3,4,10,3,6],
+  [5,6,5,3,3,8,2,5],
+  [3,2,3,1,1,4,2,3],
+  [2,3,3,1,2,4,1,2],
+  [8,8,8,4,4,12,4,8],
+  [3,3,2,2,1,4,1,3],
+  [6,5,5,3,2,10,3,6]
+];
+
+// Softmax
+function softmaxRow(row) {
+  const mx = Math.max(...row);
+  const exps = row.map(x => Math.exp(x - mx));
+  const s = exps.reduce((a,b)=>a+b,0);
+  return exps.map(x => x/s);
+}
+const ATTN_WEIGHTS = RAW_SCORES.map(r => softmaxRow(r.map(v=>v/1.73)));
+
+// ══════════════════════════════════════════════
+// WEIGHT MATRICES RENDER
+// ══════════════════════════════════════════════
+const WQ = [[1,0,1],[0,1,1],[1,1,0]];
+const WK = [[1,1,0],[0,1,1],[1,0,1]];
+const WV = [[1,0,0],[0,1,0],[0,0,1]];
+
+function renderMat(id, mat, color) {
+  const container = document.getElementById(id);
+  if (!container) return;
+  let html = `<div class="mat-wrap"><div class="mat-title" style="color:${color}">${id.toUpperCase()}</div><div class="mat-body">`;
+  mat.forEach(row => {
+    html += '<div class="mat-row">';
+    row.forEach(v => {
+      const opacity = 0.15 + Math.abs(v) * 0.5;
+      html += `<div class="mat-cell" style="background:${color}${Math.round(opacity*255).toString(16).padStart(2,'0')};color:${v>0?color:'#666'}">${v}</div>`;
+    });
+    html += '</div>';
+  });
+  html += '</div></div>';
+  container.innerHTML = html;
+}
+renderMat('wq-mat', WQ, '#00e676');
+renderMat('wk-mat', WK, '#448aff');
+renderMat('wv-mat', WV, '#ff4081');
+
+// ══════════════════════════════════════════════
+// HEATMAPS
+// ══════════════════════════════════════════════
+function buildHeatmap(id, data, showVal, colorFn) {
+  const container = document.getElementById(id);
+  if (!container) return;
+  let html = '<table class="hm-table"><thead><tr><th></th>';
+  TOKENS.forEach(t => html += `<th>${t}</th>`);
+  html += '</tr></thead><tbody>';
+  data.forEach((row, ri) => {
+    html += `<tr><th style="color:var(--white2);padding:4px 8px;text-align:right;">${TOKENS[ri]}</th>`;
+    row.forEach((val, ci) => {
+      const bg = colorFn(val, ri, ci);
+      const tv = typeof val === 'number' ? val.toFixed(2) : val;
+      const textColor = val > (showVal===1?5:0.25) ? '#000' : '#aaa';
+      html += `<td style="padding:2px;border:none;"><div class="hm-cell" style="background:${bg};color:${textColor}">${tv}</div></td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+// Score heatmap — green-tinted
+buildHeatmap('score-hm', RAW_SCORES, 1, (v,ri,ci) => {
+  const t = v/12;
+  return `rgba(0,230,118,${0.05+t*0.8})`;
+});
+
+// Softmax heatmap — blue-tinted
+buildHeatmap('softmax-hm', ATTN_WEIGHTS, 0, (v,ri,ci) => {
+  return `rgba(68,138,255,${0.05+v*0.9})`;
+});
+
+// Contribution bars for "I"
+function buildContribBars() {
+  const weights = ATTN_WEIGHTS[0];
+  const container = document.getElementById('attn-contrib-bars');
+  if (!container) return;
+  let html = '';
+  TOKENS.forEach((tok, i) => {
+    const pct = Math.round(weights[i] * 100);
+    const colorMap = ['#00e676','#ff4081','#448aff','#ffd740','#aaa','#ff4081','#448aff','#00e676'];
+    html += `
+      <div class="contrib-row">
+        <div class="contrib-tok">${tok}</div>
+        <div class="contrib-bar-bg">
+          <div class="contrib-bar" style="width:${pct*2.5}%;background:${colorMap[i]};max-width:100%">
+            ${pct > 5 ? pct+'%' : ''}
+          </div>
+        </div>
+        <div class="contrib-val" style="color:${colorMap[i]}">${weights[i].toFixed(3)}</div>
+      </div>`;
+  });
+  container.innerHTML = html;
+}
+buildContribBars();
+
+// ══════════════════════════════════════════════
+// EMBED BAR CHART
+// ══════════════════════════════════════════════
+function showEmbedBar(word, vec) {
+  const canvas = document.getElementById('embed-bar-canvas');
+  canvas.width = canvas.parentElement.offsetWidth - 56;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#111'; ctx.fillRect(0, 0, W, H);
+
+  const barW = 80, gap = 40;
+  const startX = (W - (vec.length * (barW + gap))) / 2 + gap;
+  const colors = ['#00e676','#448aff','#ff4081'];
+  const labels = ['dim 0','dim 1','dim 2'];
+
+  vec.forEach((v, i) => {
+    const x = startX + i * (barW + gap);
+    const maxH = H - 50;
+    const barH = v * maxH * 0.7;
+    const y = H - 30 - barH;
+
+    // Background
+    ctx.fillStyle = 'rgba(255,255,255,0.04)';
+    ctx.fillRect(x, 30, barW, H - 60);
+
+    // Bar
+    const grd = ctx.createLinearGradient(x, y, x, H-30);
+    grd.addColorStop(0, colors[i]);
+    grd.addColorStop(1, colors[i]+'44');
+    ctx.fillStyle = grd;
+    ctx.beginPath();
+    ctx.roundRect(x, y, barW, barH, [4,4,0,0]);
+    ctx.fill();
+
+    // Value
+    ctx.fillStyle = colors[i];
+    ctx.font = 'bold 16px JetBrains Mono';
+    ctx.textAlign = 'center';
+    ctx.fillText(v, x + barW/2, y - 8);
+
+    // Label
+    ctx.fillStyle = '#666';
+    ctx.font = '10px JetBrains Mono';
+    ctx.fillText(labels[i], x + barW/2, H - 10);
+  });
+
+  // Title
+  ctx.fillStyle = '#f0f0f0';
+  ctx.font = 'bold 13px Bricolage Grotesque';
+  ctx.textAlign = 'left';
+  ctx.fillText(`"${word}" embedding = [${vec.join(', ')}]`, 12, 20);
+
+  document.getElementById('embed-bar-info').textContent =
+    `"${word}" is represented as [${vec.join(', ')}] in this 3-dimensional embedding space.`;
+}
+showEmbedBar('I', [1,0,1]);
+
+// ══════════════════════════════════════════════
+// POSITIONAL ENCODING HEATMAP
+// ══════════════════════════════════════════════
+function drawPosCanvas() {
+  const canvas = document.getElementById('pos-canvas');
+  if (!canvas) return;
+  canvas.width = canvas.parentElement.offsetWidth - 56;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#111'; ctx.fillRect(0, 0, W, H);
+
+  const pad = 50, tokH = (H - pad*2) / 8;
+  const dimW = (W - pad*2) / 32;
+
+  for (let pos = 0; pos < 8; pos++) {
+    for (let i = 0; i < 32; i++) {
+      const val = i % 2 === 0
+        ? Math.sin(pos / Math.pow(10000, 2*i/64))
+        : Math.cos(pos / Math.pow(10000, (2*i)/64));
+      const t = (val + 1) / 2;
+      ctx.fillStyle = `hsl(${180 + t*40}, 70%, ${15+t*55}%)`;
+      ctx.fillRect(pad + i * dimW, pad + pos * tokH, dimW - 1, tokH - 1);
+    }
+    ctx.fillStyle = '#aaa';
+    ctx.font = '10px JetBrains Mono';
+    ctx.textAlign = 'right';
+    ctx.fillText(TOKENS[pos], pad - 6, pad + pos * tokH + tokH/2 + 4);
+  }
+
+  ctx.fillStyle = '#555';
+  ctx.textAlign = 'center';
+  ctx.font = '10px JetBrains Mono';
+  ctx.fillText('← 32 embedding dimensions →', pad + 32*dimW/2, H - 8);
+}
+drawPosCanvas();
+
+// ══════════════════════════════════════════════
+// MULTI-HEAD CANVAS
+// ══════════════════════════════════════════════
+function drawMultiHead() {
+  const canvas = document.getElementById('multihead-canvas');
+  if (!canvas) return;
+  canvas.width = canvas.parentElement.offsetWidth - 56;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#111'; ctx.fillRect(0, 0, W, H);
+
+  const heads = 4;
+  const headColors = ['#00e676','#448aff','#ff4081','#ffd740'];
+  const headLabels = ['Head 1\n(grammar)','Head 2\n(coreref)','Head 3\n(semantic)','Head 4\n(long-range)'];
+  const headW = (W - 100) / heads;
+  const inputY = 30, headY = 80, concatY = 160, outputY = H - 20;
+
+  // Input label
+  ctx.fillStyle = '#aaa'; ctx.font = '11px JetBrains Mono'; ctx.textAlign = 'center';
+  ctx.fillText('Input X (after pos encoding)', W/2, inputY + 8);
+
+  heads_loop: for (let h = 0; h < heads; h++) {
+    const cx = 50 + h * headW + headW/2;
+    const col = headColors[h];
+
+    // Line from input to head
+    ctx.strokeStyle = col + '66'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(W/2, inputY+14); ctx.lineTo(cx, headY-5); ctx.stroke();
+
+    // Head box
+    ctx.fillStyle = col + '18';
+    ctx.strokeStyle = col; ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(cx - headW/2 + 6, headY, headW-12, 55, 6);
+    ctx.fill(); ctx.stroke();
+
+    ctx.fillStyle = col; ctx.font = 'bold 10px Bricolage Grotesque'; ctx.textAlign = 'center';
+    headLabels[h].split('\n').forEach((line, li) => {
+      ctx.fillText(line, cx, headY + 18 + li*14);
+    });
+
+    // Q, K, V labels inside
+    ctx.font = '9px JetBrains Mono';
+    ctx.fillStyle = '#00e676'; ctx.fillText('Q', cx-14, headY+46);
+    ctx.fillStyle = '#448aff'; ctx.fillText('K', cx, headY+46);
+    ctx.fillStyle = '#ff4081'; ctx.fillText('V', cx+14, headY+46);
+
+    // Line to concat
+    ctx.strokeStyle = col + '66';
+    ctx.beginPath(); ctx.moveTo(cx, headY+55); ctx.lineTo(W/2, concatY-5); ctx.stroke();
+  }
+
+  // Concat box
+  ctx.fillStyle = 'rgba(255,215,64,.12)';
+  ctx.strokeStyle = '#ffd740'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.roundRect(W/2-120, concatY, 240, 32, 6); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#ffd740'; ctx.font = 'bold 11px Bricolage Grotesque'; ctx.textAlign = 'center';
+  ctx.fillText('Concat all heads → × W_O', W/2, concatY+20);
+
+  // Arrow to output
+  ctx.strokeStyle = '#aaa'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(W/2, concatY+32); ctx.lineTo(W/2, outputY-8); ctx.stroke();
+  ctx.fillStyle = '#f0f0f0'; ctx.font = 'bold 11px Bricolage Grotesque'; ctx.textAlign = 'center';
+  ctx.fillText('Combined context-aware output', W/2, outputY);
+}
+drawMultiHead();
+
+// ══════════════════════════════════════════════
+// MASK GRID
+// ══════════════════════════════════════════════
+function buildMaskGrid() {
+  const container = document.getElementById('mask-grid');
+  if (!container) return;
+  const shortToks = ['I','love','mach','learn','becz','it','is','magic'];
+  let html = '<div style="overflow-x:auto;"><table class="mask-tbl"><thead><tr><th style="background:transparent;border:none;padding:4px 8px;font-family:JetBrains Mono,monospace;font-size:10px;color:#555;"></th>';
+  shortToks.forEach(t => html += `<th style="background:transparent;border:none;padding:4px 8px;font-family:JetBrains Mono,monospace;font-size:10px;color:#555;">${t}</th>`);
+  html += '</tr></thead><tbody>';
+  shortToks.forEach((rowT, ri) => {
+    html += `<tr><td style="padding:4px 8px;font-family:JetBrains Mono,monospace;font-size:10px;color:#aaa;">${rowT}</td>`;
+    shortToks.forEach((colT, ci) => {
+      if (ci <= ri) {
+        html += `<td style="padding:3px;border:none;"><div style="width:52px;height:32px;border-radius:4px;background:rgba(0,230,118,.12);border:1px solid var(--Q);display:flex;align-items:center;justify-content:center;font-family:JetBrains Mono,monospace;font-size:9px;color:var(--Q)">✓ see</div></td>`;
+      } else {
+        html += `<td style="padding:3px;border:none;"><div style="width:52px;height:32px;border-radius:4px;background:rgba(255,64,129,.05);border:1px solid #222;display:flex;align-items:center;justify-content:center;font-family:JetBrains Mono,monospace;font-size:9px;color:#333">✗ mask</div></td>`;
+      }
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table></div>';
+  container.innerHTML = html;
+}
+buildMaskGrid();
+
+// ══════════════════════════════════════════════
+// CROSS ATTENTION CANVAS
+// ══════════════════════════════════════════════
+function drawCrossAttn() {
+  const canvas = document.getElementById('cross-attn-canvas');
+  if (!canvas) return;
+  canvas.width = canvas.parentElement.offsetWidth - 56;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#111'; ctx.fillRect(0, 0, W, H);
+
+  const encToks = TOKENS;
+  const decToks = ['मैं','ML','पसंद','करता','हूँ'];
+  const encY = 40, decY = H - 40;
+  const encSpacing = W / (encToks.length + 1);
+  const decSpacing = W / (decToks.length + 1);
+
+  // Draw connections (cross-attention pattern)
+  const strength = [
+    [0.1,0.3,0.5,0.4,0.1,0.2,0.1,0.1],
+    [0.1,0.1,0.7,0.6,0.1,0.2,0.1,0.1],
+    [0.2,0.5,0.1,0.1,0.1,0.3,0.2,0.3],
+    [0.1,0.3,0.2,0.2,0.1,0.5,0.3,0.2],
+    [0.2,0.2,0.2,0.2,0.2,0.3,0.2,0.3],
+  ];
+
+  decToks.forEach((dt, di) => {
+    const dx = decSpacing * (di+1);
+    encToks.forEach((et, ei) => {
+      const ex = encSpacing * (ei+1);
+      const s = strength[di] ? strength[di][ei] : 0.1;
+      if (s > 0.2) {
+        ctx.beginPath();
+        ctx.strokeStyle = `rgba(68,138,255,${s * 0.9})`;
+        ctx.lineWidth = s * 3;
+        ctx.moveTo(ex, encY+10); ctx.lineTo(dx, decY-10); ctx.stroke();
+      }
+    });
+  });
+
+  // Encoder tokens (top)
+  encToks.forEach((tok, i) => {
+    const x = encSpacing * (i+1);
+    ctx.fillStyle = 'rgba(0,230,118,.15)';
+    ctx.strokeStyle = '#00e676'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.roundRect(x-22, encY-14, 44, 24, 4); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#00e676'; ctx.font = 'bold 10px JetBrains Mono'; ctx.textAlign = 'center';
+    ctx.fillText(tok, x, encY+2);
+  });
+
+  // Encoder label
+  ctx.fillStyle = '#555'; ctx.font = '10px JetBrains Mono'; ctx.textAlign = 'left';
+  ctx.fillText('ENCODER OUTPUT (K,V) →', 8, encY - 20);
+
+  // Decoder tokens (bottom)
+  decToks.forEach((tok, i) => {
+    const x = decSpacing * (i+1);
+    ctx.fillStyle = 'rgba(255,64,129,.15)';
+    ctx.strokeStyle = '#ff4081'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.roundRect(x-28, decY-12, 56, 24, 4); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#ff4081'; ctx.font = 'bold 10px JetBrains Mono'; ctx.textAlign = 'center';
+    ctx.fillText(tok, x, decY+2);
+  });
+  ctx.fillStyle = '#555'; ctx.font = '10px JetBrains Mono'; ctx.textAlign = 'left';
+  ctx.fillText('DECODER (Q) generates →', 8, decY + 22);
+}
+drawCrossAttn();
+
+// ══════════════════════════════════════════════
+// WEIGHT TRAINING SIMULATION
+// ══════════════════════════════════════════════
+const W_NAMES = ['W_Q[0,0]','W_Q[1,1]','W_Q[2,2]','W_K[0,0]','W_K[1,1]','W_V[0,0]','W_V[1,1]','FFN_W1','FFN_W2','bias'];
+const W_COLORS = ['#00e676','#00e676','#00e676','#448aff','#448aff','#ff4081','#ff4081','#ffd740','#ffd740','#aaa'];
+let wVals = [];
+let lossHist = [];
+let epochNum = 0;
+let trainInterval = null;
+
+function rng(s) { return ((Math.sin(s*127.1+311.7)*43758.5)%1+1)%1; }
+
+function initWeights() {
+  wVals = W_NAMES.map((_,i) => 0.3 + rng(i*7)*0.5);
+}
+
+function renderWeightBars() {
+  const container = document.getElementById('weight-bars');
+  if (!container) return;
+  container.innerHTML = W_NAMES.map((name, i) => {
+    const pct = Math.min(98, wVals[i]*100);
+    return `<div class="w-bar-row">
+      <div class="w-bar-label">${name}</div>
+      <div class="w-bar-bg"><div class="w-bar-fill" id="wb${i}" style="width:${pct}%;background:${W_COLORS[i]}">${wVals[i].toFixed(3)}</div></div>
+      <div class="w-bar-val" id="wv${i}">${wVals[i].toFixed(4)}</div>
+    </div>`;
+  }).join('');
+}
+
+function startTraining() {
+  if (trainInterval) clearInterval(trainInterval);
+  initWeights(); renderWeightBars(); lossHist = []; epochNum = 0;
+
+  trainInterval = setInterval(() => {
+    if (epochNum >= 50) { clearInterval(trainInterval); return; }
+    epochNum++;
+    const loss = 2.5 * Math.exp(-epochNum * 0.08) + rng(epochNum)*0.3 - 0.15;
+    lossHist.push(Math.max(0.02, loss));
+
+    wVals.forEach((v, i) => {
+      const grad = (rng(i*epochNum+1)*2-1)*Math.max(0.02,loss)*0.12;
+      wVals[i] = Math.max(0.05, Math.min(0.97, v - 0.001*grad*100));
+      const pct = Math.min(98, wVals[i]*100);
+      const bar = document.getElementById(`wb${i}`);
+      const val = document.getElementById(`wv${i}`);
+      if (bar) { bar.style.width = pct+'%'; bar.textContent = wVals[i].toFixed(3); }
+      if (val) val.textContent = wVals[i].toFixed(4);
+    });
+
+    document.getElementById('loss-val').textContent = Math.max(0.02,loss).toFixed(4);
+    document.getElementById('epoch-val').textContent = epochNum;
+    drawLossChart();
+  }, 120);
+}
+
+function resetTraining() {
+  if (trainInterval) clearInterval(trainInterval);
+  epochNum = 0; lossHist = [];
+  initWeights(); renderWeightBars();
+  document.getElementById('loss-val').textContent = '—';
+  document.getElementById('epoch-val').textContent = '0';
+  clearLoss();
+}
+
+function drawLossChart() {
+  const canvas = document.getElementById('loss-canvas');
+  if (!canvas) return;
+  canvas.width = canvas.parentElement.offsetWidth - 56;
+  const ctx = canvas.getContext('2d'); const W = canvas.width, H = canvas.height;
+  ctx.fillStyle='#0a0a0a'; ctx.fillRect(0,0,W,H);
+  if (lossHist.length < 2) return;
+  const pad=35, maxL=Math.max(...lossHist)*1.1;
+  ctx.strokeStyle='rgba(255,255,255,.06)'; ctx.lineWidth=1;
+  for (let i=0;i<=4;i++) { const y=pad+(H-2*pad)*i/4; ctx.beginPath();ctx.moveTo(pad,y);ctx.lineTo(W-pad,y);ctx.stroke(); }
+  ctx.fillStyle='#444'; ctx.font='9px JetBrains Mono'; ctx.textAlign='right';
+  for(let i=0;i<=4;i++){ ctx.fillText((maxL*(1-i/4)).toFixed(2),pad-4,pad+(H-2*pad)*i/4+3); }
+  ctx.beginPath(); ctx.strokeStyle='#ff4081'; ctx.lineWidth=2;
+  lossHist.forEach((l,i)=>{ const x=pad+(W-2*pad)*i/50; const y=pad+(H-2*pad)*(1-l/maxL); i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); });
+  ctx.stroke();
+  ctx.fillStyle='#333'; ctx.textAlign='center'; ctx.font='9px JetBrains Mono';
+  ctx.fillText('Training Loss (cross-entropy)',W/2,H-6);
+}
+function clearLoss() { const c=document.getElementById('loss-canvas'); if(!c)return; c.width=c.parentElement?.offsetWidth-56||600; const ctx=c.getContext('2d'); ctx.fillStyle='#0a0a0a'; ctx.fillRect(0,0,c.width,c.height); }
+
+initWeights(); renderWeightBars(); clearLoss();
+
+// ══════════════════════════════════════════════
+// PIPELINE
+// ══════════════════════════════════════════════
+const PIPE_STEPS_DEF = [
+  { icon:'📝', name:'Tokenization', color:'#00e676', fn: (words) => ({
+    detail:`Split "${words.join(' ')}" → ${words.length} tokens`,
+    chips: words.map(w=>`[${w}]`)
+  })},
+  { icon:'🔢', name:'Vocabulary IDs', color:'#448aff', fn: (words) => ({
+    detail:`Each token looked up in vocabulary (50,257 entries in GPT-2)`,
+    chips: words.map((_,i)=>`id_${1000+i*137}`)
+  })},
+  { icon:'🧮', name:'Token Embeddings', color:'#ff4081', fn: (words) => ({
+    detail:`Each ID mapped to dense vector (d_model = 512 in real models, 3 in our example)`,
+    chips: words.slice(0,4).map(w=>`E("${w}")`)
+  })},
+  { icon:'📍', name:'Positional Encoding', color:'#ffd740', fn: (words) => ({
+    detail:`sin/cos position vectors ADDED to embeddings — preserves word order`,
+    chips: words.map((_,i)=>`PE(pos=${i})`)
+  })},
+  { icon:'🟢', name:'Query · Key · Value', color:'#00e676', fn: (words) => ({
+    detail:`X · W_Q = Q (green), X · W_K = K (blue), X · W_V = V (pink)`,
+    chips:['Q matrix','K matrix','V matrix','W_Q W_K W_V learned!']
+  })},
+  { icon:'👁', name:'Attention Scores (Q·Kᵀ/√dk)', color:'#448aff', fn: (words) => ({
+    detail:`(${words.length}×3)×(3×${words.length}) = (${words.length}×${words.length}) score matrix — who attends to whom`,
+    chips: words.map(w=>`row("${w}")`)
+  })},
+  { icon:'📊', name:'Softmax → Attention Weights', color:'#ff4081', fn: (words) => ({
+    detail:`Each row → probabilities (sum=1). Reveals linguistic relationships!`,
+    chips: [`"it"→highest`, `diag=self-attn`]
+  })},
+  { icon:'⚡', name:'Attention × Value', color:'#ffd740', fn: (words) => ({
+    detail:`Output = A × V: each token becomes context-aware blend of all tokens`,
+    chips: words.map(w=>`out("${w}")`)
+  })},
+  { icon:'🧠', name:'Feed-Forward MLP + GELU', color:'#00e676', fn: (words) => ({
+    detail:`FFN(x) = GELU(x·W₁+b₁)·W₂+b₂ — two linear layers, non-linearity`,
+    chips:['W₁ (512→2048)','GELU','W₂ (2048→512)']
+  })},
+  { icon:'➕', name:'Add & LayerNorm', color:'#448aff', fn: (words) => ({
+    detail:`Residual: output = LayerNorm(x + sublayer(x)) — stable training`,
+    chips:['residual +','layer norm']
+  })},
+  { icon:'🎯', name:'Linear + Softmax → Token', color:'#ff4081', fn: (words) => ({
+    detail:`Final vector → (vocab_size) logits → softmax → probabilities → argmax`,
+    chips:['logits (50257)','softmax','next token!']
+  })},
+];
+
+function runPipeline() {
+  const input = document.getElementById('pipe-input').value.trim();
+  if (!input) return;
+  const words = input.split(/\s+/);
+  const viz = document.getElementById('pipe-steps');
+  const out = document.getElementById('pipe-output');
+  viz.innerHTML = ''; out.style.display = 'none';
+
+  const prog = document.getElementById('pipe-prog');
+  prog.style.width = '0%';
+
+  PIPE_STEPS_DEF.forEach((step, i) => {
+    setTimeout(() => {
+      if (i > 0) {
+        const conn = document.createElement('div');
+        conn.className = 'pipe-conn';
+        viz.appendChild(conn);
+      }
+      const data = step.fn(words);
+      const el = document.createElement('div');
+      el.className = 'pipe-step';
+      el.innerHTML = `
+        <div class="pipe-icon" style="background:${step.color}18;border-color:${step.color}44">${step.icon}</div>
+        <div class="pipe-content">
+          <div class="pipe-name" style="color:${step.color}">${step.name}</div>
+          <div class="pipe-detail">${data.detail}</div>
+          <div class="pipe-chips">
+            ${data.chips.slice(0,6).map(c=>`<span class="pipe-chip" style="border-color:${step.color}44;color:${step.color}">${c}</span>`).join('')}
+          </div>
+        </div>`;
+      viz.appendChild(el);
+      requestAnimationFrame(() => el.classList.add('show'));
+      prog.style.width = ((i+1)/PIPE_STEPS_DEF.length*100)+'%';
+      el.scrollIntoView({behavior:'smooth',block:'nearest'});
+
+      if (i === PIPE_STEPS_DEF.length - 1) {
+        setTimeout(() => {
+          const nextWords = {
+            'magic':['because','it','is','wonderful'],
+            'learning':['because','it','teaches','us'],
+            'it':['is','was','will','becomes'],
+          };
+          const last = words[words.length-1].toLowerCase();
+          const pool = nextWords[last] || ['and','because','so','which','but'];
+          const next = pool[Math.floor(Math.abs(Math.sin(words.length*7+3))*pool.length)];
+          out.style.display = 'block';
+          out.innerHTML = `
+            <div class="output-label">🎯 PREDICTED NEXT TOKEN</div>
+            <div class="output-text">${input} <span>${next}</span></div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#555;margin-top:10px;">
+              Probabilities over vocab → argmax → "${next}" (highest probability)
+            </div>`;
+          out.scrollIntoView({behavior:'smooth'});
+        }, 400);
+      }
+    }, i * 500);
+  });
+}
+
+function clearPipeline() {
+  document.getElementById('pipe-steps').innerHTML = '';
+  document.getElementById('pipe-output').style.display = 'none';
+  document.getElementById('pipe-prog').style.width = '0%';
+}
+
+// ══════════════════════════════════════════════
+// RESIZE
+// ══════════════════════════════════════════════
+window.addEventListener('resize', () => {
+  drawPosCanvas();
+  drawMultiHead();
+  drawCrossAttn();
+  showEmbedBar('I',[1,0,1]);
+});
+
+// Pipe enter key
+document.getElementById('pipe-input').addEventListener('keydown', e => {
+  if (e.key==='Enter') runPipeline();
+});
+</script>
+</body>
+</html>
