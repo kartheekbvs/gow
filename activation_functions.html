@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Activation Functions — Deep Visual Learning</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Instrument+Serif:ital@0;1&family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:    #ffffff;
+  --bg2:   #f8f9fa;
+  --bg3:   #f0f2f5;
+  --bg4:   #e8ebef;
+  --ink:   #111111;
+  --ink2:  #444444;
+  --ink3:  #888888;
+  --border:#d0d5dd;
+  --A:  #007a3d;
+  --B:  #1a5fd4;
+  --C:  #c0185a;
+  --D:  #a07000;
+  --E:  #7b00c8;
+  --F:  #0e7490;
+  --G:  #b45309;
+  --H:  #166534;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--ink);font-family:'Bricolage Grotesque',sans-serif;overflow-x:hidden;}
+::-webkit-scrollbar{width:5px;}
+::-webkit-scrollbar-track{background:#f0f2f5;}
+::-webkit-scrollbar-thumb{background:#bbb;border-radius:3px;}
+
+nav{position:fixed;top:0;left:0;right:0;z-index:200;background:rgba(255,255,255,.97);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);height:48px;display:flex;align-items:center;padding:0 16px;gap:4px;overflow-x:auto;}
+nav .logo{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:var(--ink);margin-right:12px;white-space:nowrap;}
+nav a{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink3);text-decoration:none;padding:4px 10px;border-radius:4px;border:1px solid transparent;white-space:nowrap;transition:all .2s;}
+nav a:hover{color:var(--ink);border-color:var(--border);}
+
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:80px 24px 60px;border-bottom:1px solid var(--border);background:linear-gradient(160deg,#fff 60%,#f0f2f5 100%);}
+.hero-tag{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink3);letter-spacing:4px;text-transform:uppercase;margin-bottom:20px;}
+.hero h1{font-family:'Instrument Serif',serif;font-size:clamp(3rem,8vw,6.5rem);line-height:1.05;margin-bottom:20px;color:var(--ink);}
+.hero h1 em{font-style:italic;color:var(--ink2);}
+.hero-sub{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink3);line-height:2;max-width:560px;margin-bottom:40px;}
+.color-legend{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;}
+.cl-item{display:flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;font-size:11px;}
+.cl-dot{width:12px;height:12px;border-radius:3px;}
+
+.section{max-width:1020px;margin:0 auto;padding:80px 24px;}
+.sec-num{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink3);letter-spacing:3px;margin-bottom:8px;}
+.sec-title{font-family:'Instrument Serif',serif;font-size:clamp(2rem,5vw,3.5rem);line-height:1.1;margin-bottom:14px;}
+.sec-desc{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink2);line-height:2;max-width:700px;margin-bottom:36px;}
+hr.div{border:none;border-top:1px solid var(--border);margin:80px 0;}
+
+.box{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:28px;margin-bottom:24px;}
+.box-title{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+
+.formula-block{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:18px 24px;margin:12px 0;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--ink);line-height:2;}
+.formula-block .label{font-size:10px;color:var(--ink3);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;}
+
+.callout{display:flex;gap:14px;padding:16px 20px;border-radius:8px;margin:16px 0;}
+.callout-icon{font-size:20px;flex-shrink:0;}
+.callout-text{font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.9;color:var(--ink2);}
+.callout-text b{color:var(--ink);}
+.co-tip{background:rgba(0,122,61,.06);border-left:3px solid var(--A);}
+.co-warn{background:rgba(160,112,0,.06);border-left:3px solid var(--D);}
+.co-info{background:rgba(26,95,212,.06);border-left:3px solid var(--B);}
+.co-key{background:rgba(192,24,90,.06);border-left:3px solid var(--C);}
+
+/* Two-col layout */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+@media(max-width:700px){.two-col{grid-template-columns:1fr;}}
+.three-col{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+@media(max-width:800px){.three-col{grid-template-columns:1fr;}}
+
+/* Graph card */
+.graph-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:0;}
+.graph-title{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;}
+.graph-subtitle{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink3);margin-bottom:12px;}
+canvas.fn-graph{display:block;border-radius:6px;border:1px solid var(--border);background:#f8f9fa;}
+
+/* Step flow */
+.step-flow{display:flex;flex-direction:column;gap:0;}
+.step-item{display:flex;gap:20px;position:relative;}
+.step-item+.step-item::before{content:'';position:absolute;left:19px;top:-20px;width:2px;height:20px;background:var(--border);}
+.step-num{width:40px;height:40px;border-radius:8px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;flex-shrink:0;color:var(--ink);background:var(--bg3);}
+.step-body{flex:1;padding-bottom:28px;}
+.step-label{font-weight:800;font-size:.95rem;margin-bottom:4px;}
+.step-text{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink2);line-height:1.9;}
+
+/* Table */
+.tbl-wrap{overflow-x:auto;margin:12px 0;}
+table{border-collapse:collapse;font-family:'JetBrains Mono',monospace;font-size:11px;width:100%;}
+th{background:var(--bg3);color:var(--ink);padding:10px 14px;text-align:left;border:1px solid var(--border);letter-spacing:1px;}
+td{padding:9px 14px;border:1px solid var(--border);color:var(--ink2);vertical-align:middle;}
+tr:hover td{background:var(--bg3);}
+.tok-cell{color:var(--ink);font-weight:700;}
+
+/* Adv badge */
+.adv-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-family:'JetBrains Mono',monospace;font-size:10px;background:var(--bg3);border:1px solid var(--D);color:var(--D);margin-bottom:16px;}
+
+/* prop tag */
+.prop-tag{display:inline-block;padding:3px 10px;border-radius:12px;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;margin:2px;border:1px solid currentColor;}
+
+/* code inline */
+code{font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:1px 6px;}
+
+/* interactive compare */
+#compare-canvas{display:block;border-radius:8px;border:1px solid var(--border);}
+.fn-btn{padding:6px 14px;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;cursor:pointer;border:2px solid currentColor;background:white;transition:all .2s;}
+.fn-btn.active,.fn-btn:hover{color:white!important;}
+
+/* progress bar */
+.prog-bar{height:3px;background:var(--bg3);border-radius:2px;overflow:hidden;margin:16px 0;}
+.prog-fill{height:100%;background:var(--ink);width:0%;transition:width .4s ease;}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
+.fade-in{animation:fadeUp .5s ease both;}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">⚡ ACTIVATION FN</div>
+  <a href="#why">Why</a>
+  <a href="#sigmoid">Sigmoid</a>
+  <a href="#tanh">Tanh</a>
+  <a href="#relu">ReLU</a>
+  <a href="#leaky">Leaky ReLU</a>
+  <a href="#elu">ELU</a>
+  <a href="#gelu">GELU</a>
+  <a href="#swish">Swish</a>
+  <a href="#softmax">Softmax</a>
+  <a href="#compare">Compare</a>
+  <a href="#choose">Which to Use</a>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-tag">Deep Visual Learning Guide</div>
+  <h1>Activation<br><em>Functions</em><br>Visualised</h1>
+  <div class="hero-sub">
+    Every function. Every formula. Full math derivations.<br>
+    Worked examples with real numbers. Interactive graphs.<br>
+    When to use each — and why it matters.
+  </div>
+  <div class="color-legend">
+    <div class="cl-item"><div class="cl-dot" style="background:var(--A)"></div>Formula</div>
+    <div class="cl-item"><div class="cl-dot" style="background:var(--B)"></div>Derivative</div>
+    <div class="cl-item"><div class="cl-dot" style="background:var(--C)"></div>Worked example</div>
+    <div class="cl-item"><div class="cl-dot" style="background:var(--D)"></div>Key property</div>
+    <div class="cl-item"><div class="cl-dot" style="background:var(--E)"></div>Graph</div>
+  </div>
+</div>
+
+<!-- ══ 0. WHY ══ -->
+<div class="section" id="why">
+  <div class="sec-num">CHAPTER 00</div>
+  <div class="sec-title">Why Activation Functions?</div>
+  <div class="sec-desc">Without activation functions, a neural network — no matter how deep — is just a linear transformation. One matrix multiplication. Activation functions introduce non-linearity, letting networks learn curves, patterns, and complex decisions.</div>
+
+  <div class="box">
+    <div class="box-title">THE CORE PROBLEM — LINEAR NETWORKS ARE USELESS</div>
+    <div class="two-col">
+      <div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--C);margin-bottom:10px;letter-spacing:2px;">❌ WITHOUT ACTIVATION (linear only)</div>
+        <div class="step-flow">
+          <div class="step-item">
+            <div class="step-num" style="border-color:var(--C);color:var(--C)">1</div>
+            <div class="step-body">
+              <div class="step-label">Layer 1</div>
+              <div class="step-text">output = W₁ · x + b₁</div>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num" style="border-color:var(--C);color:var(--C)">2</div>
+            <div class="step-body">
+              <div class="step-label">Layer 2</div>
+              <div class="step-text">output = W₂·(W₁·x + b₁) + b₂<br>= (W₂W₁)·x + (W₂b₁+b₂)<br>= <b>W·x + b</b> — still just linear!</div>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num" style="border-color:var(--C);color:var(--C)">N</div>
+            <div class="step-body">
+              <div class="step-label">Any depth</div>
+              <div class="step-text">Still equivalent to a SINGLE linear layer. Cannot model XOR, curves, images, language.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--A);margin-bottom:10px;letter-spacing:2px;">✅ WITH ACTIVATION FUNCTION</div>
+        <div class="step-flow">
+          <div class="step-item">
+            <div class="step-num" style="border-color:var(--A);color:var(--A)">1</div>
+            <div class="step-body">
+              <div class="step-label">Non-linear transform</div>
+              <div class="step-text">σ(W₁·x + b₁) bends the space</div>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num" style="border-color:var(--A);color:var(--A)">2</div>
+            <div class="step-body">
+              <div class="step-label">Compose non-linearities</div>
+              <div class="step-text">Each layer warps the manifold differently → model can approximate ANY function (Universal Approximation Theorem)</div>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-num" style="border-color:var(--A);color:var(--A)">∞</div>
+            <div class="step-body">
+              <div class="step-label">Expressive power</div>
+              <div class="step-text">XOR ✅ &nbsp; Image classification ✅ &nbsp; Language ✅</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="callout co-tip" style="margin-top:8px;">
+      <div class="callout-icon">💡</div>
+      <div class="callout-text"><b>Universal Approximation Theorem:</b> A neural network with at least one hidden layer and a non-linear activation can approximate any continuous function to arbitrary precision — given enough neurons. The activation function IS the source of this power.</div>
+    </div>
+  </div>
+
+  <div class="box">
+    <div class="box-title">WHAT MAKES A GOOD ACTIVATION FUNCTION?</div>
+    <div class="tbl-wrap">
+      <table>
+        <tr><th>Property</th><th>Why it matters</th><th>Which functions have it</th></tr>
+        <tr><td class="tok-cell">Non-linear</td><td>Can model complex functions</td><td>All of them</td></tr>
+        <tr><td class="tok-cell">Differentiable</td><td>Backprop requires ∂f/∂x</td><td>Sigmoid, Tanh, ELU, GELU, Swish</td></tr>
+        <tr><td class="tok-cell">Non-saturating</td><td>Avoids vanishing gradients</td><td>ReLU, Leaky ReLU, ELU, GELU, Swish</td></tr>
+        <tr><td class="tok-cell">Zero-centred output</td><td>Faster convergence</td><td>Tanh, ELU</td></tr>
+        <tr><td class="tok-cell">Computationally cheap</td><td>Fast to evaluate at scale</td><td>ReLU (just max(0,x))</td></tr>
+        <tr><td class="tok-cell">Smooth everywhere</td><td>Better optimisation landscape</td><td>Sigmoid, Tanh, GELU, Swish</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<hr class="div">
+
+<!-- ══ 1. SIGMOID ══ -->
+<div class="section" id="sigmoid">
+  <div class="sec-num">FUNCTION 01</div>
+  <div class="sec-title">Sigmoid (Logistic)</div>
+  <div class="sec-desc">The classic. Squashes any real number into (0, 1). Was the default activation for decades — until vanishing gradients killed it for deep networks. Still essential for binary output layers.</div>
+
+  <div class="two-col">
+    <div>
+      <div class="box" style="height:100%;">
+        <div class="box-title" style="color:var(--A)">FORMULA & DERIVATIVE</div>
+        <div class="formula-block">
+          <div class="label">Function</div>
+          σ(x) = <span style="color:var(--A);font-weight:700">1 / (1 + e<sup>−x</sup>)</span>
+        </div>
+        <div class="formula-block">
+          <div class="label">Derivative (chain rule magic)</div>
+          σ′(x) = <span style="color:var(--B);font-weight:700">σ(x) · (1 − σ(x))</span>
+        </div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink2);line-height:1.9;margin-top:12px;">
+          <b>Proof of derivative:</b><br>
+          σ′(x) = d/dx (1+e<sup>−x</sup>)<sup>−1</sup><br>
+          = −(1+e<sup>−x</sup>)<sup>−2</sup> · (−e<sup>−x</sup>)<br>
+          = e<sup>−x</sup> / (1+e<sup>−x</sup>)²<br>
+          = [1/(1+e<sup>−x</sup>)] · [e<sup>−x</sup>/(1+e<sup>−x</sup>)]<br>
+          = σ(x) · (1 − σ(x)) ✓
+        </div>
+        <div class="formula-block" style="margin-top:14px;">
+          <div class="label">Range</div>
+          Output ∈ <span style="color:var(--D)">(0, 1)</span> — never exactly 0 or 1
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;">
+          <span class="prop-tag" style="color:var(--A)">non-linear</span>
+          <span class="prop-tag" style="color:var(--A)">smooth</span>
+          <span class="prop-tag" style="color:var(--A)">probabilistic output</span>
+          <span class="prop-tag" style="color:var(--C)">saturates at ±∞</span>
+          <span class="prop-tag" style="color:var(--C)">not zero-centred</span>
+          <span class="prop-tag" style="color:var(--C)">vanishing gradient</span>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="graph-card">
+        <div class="graph-title" style="color:var(--E)">GRAPH — σ(x) and σ′(x)</div>
+        <div class="graph-subtitle">Blue = function · Green = derivative · Note max gradient = 0.25 at x=0</div>
+        <canvas id="sigmoid-canvas" class="fn-graph" width="440" height="280"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="box">
+    <div class="box-title" style="color:var(--C)">WORKED EXAMPLES — every step shown</div>
+    <div class="tbl-wrap">
+      <table>
+        <tr>
+          <th>x</th><th>e<sup>−x</sup></th><th>1 + e<sup>−x</sup></th>
+          <th style="color:var(--A)">σ(x) = 1/(1+e⁻ˣ)</th>
+          <th style="color:var(--B)">σ′(x) = σ·(1−σ)</th><th>Interpretation</th>
+        </tr>
+        <tr><td class="tok-cell">−5</td><td>148.41</td><td>149.41</td><td style="color:var(--A)">0.0067</td><td style="color:var(--B)">0.0066</td><td>Strong negative → near 0</td></tr>
+        <tr><td class="tok-cell">−2</td><td>7.389</td><td>8.389</td><td style="color:var(--A)">0.1192</td><td style="color:var(--B)">0.1050</td><td>Negative → low probability</td></tr>
+        <tr><td class="tok-cell">−1</td><td>2.718</td><td>3.718</td><td style="color:var(--A)">0.2689</td><td style="color:var(--B)">0.1966</td><td></td></tr>
+        <tr style="background:rgba(0,122,61,.04)"><td class="tok-cell">0</td><td>1.000</td><td>2.000</td><td style="color:var(--A);font-weight:700">0.5000</td><td style="color:var(--B);font-weight:700">0.2500 ← max</td><td>Zero → 50% probability</td></tr>
+        <tr><td class="tok-cell">1</td><td>0.368</td><td>1.368</td><td style="color:var(--A)">0.7311</td><td style="color:var(--B)">0.1966</td><td></td></tr>
+        <tr><td class="tok-cell">2</td><td>0.135</td><td>1.135</td><td style="color:var(--A)">0.8808</td><td style="color:var(--B)">0.1050</td><td>Positive → high probability</td></tr>
+        <tr><td class="tok-cell">5</td><td>0.0067</td><td>1.0067</td><td style="color:var(--A)">0.9933</td><td style="color:var(--B)">0.0066</td><td>Strong positive → near 1</td></tr>
+      </table>
+    </div>
+    <div class="callout co-warn" style="margin-top:12px;">
+      <div class="callout-icon">⚠️</div>
+      <div class="callout-text"><b>Vanishing Gradient Problem:</b> At x=±5, σ′=0.0066 — nearly zero! In a 10-layer network, gradients multiply: 0.0066¹⁰ ≈ 1.6×10⁻²² — effectively zero. Early layers learn nothing. This killed sigmoid for deep networks in the 2000s.</div>
+    </div>
+  </div>
+</div>
+
+<hr class="div">
+
+<!-- ══ 2. TANH ══ -->
+<div class="section" id="tanh">
+  <div class="sec-num">FUNCTION 02</div>
+  <div class="sec-title">Tanh (Hyperbolic Tangent)</div>
+  <div class="sec-desc">A scaled, shifted sigmoid that outputs in (−1, 1). Zero-centred — gradients push both positive and negative. Preferred over sigmoid for hidden layers, but still saturates.</div>
+
+  <div class="two-col">
+    <div>
+      <div class="box" style="height:100%;">
+        <div class="box-title" style="color:var(--A)">FORMULA & DERIVATIVE</div>
+        <div class="formula-block">
+          <div class="label">Function</div>
+          tanh(x) = <span style="color:var(--A);font-weight:700">(e<sup>x</sup> − e<sup>−x</sup>) / (e<sup>x</sup> + e<sup>−x</sup>)</span>
+        </div>
+        <div class="formula-block">
+          <div class="label">Relation to Sigmoid</div>
+          tanh(x) = <span style="color:var(--D);font-weight:700">2σ(2x) − 1</span>
+        </div>
+        <div class="formula-block">
+          <div class="label">Derivative</div>
+          tanh′(x) = <span style="color:var(--B);font-weight:700">1 − tanh²(x)</span>
+        </div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink2);line-height:1.9;margin-top:12px;">
+          <b>Proof of derivative:</b><br>
+          tanh(x) = sinh(x)/cosh(x)<br>
+          By quotient rule:<br>
+          tanh′ = (cosh²x − sinh²x) / cosh²x<br>
+          = 1 − sinh²x/cosh²x = 1 − tanh²(x) ✓<br><br>
+          Max derivative = <b style="color:var(--B)">1.0</b> at x=0 (vs 0.25 for sigmoid!)
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;">
+          <span class="prop-tag" style="color:var(--A)">zero-centred ✓</span>
+          <span class="prop-tag" style="color:var(--A)">stronger gradient</span>
+          <span class="prop-tag" style="color:var(--A)">smooth</span>
+          <span class="prop-tag" style="color:var(--C)">still saturates</span>
+          <span class="prop-tag" style="color:var(--C)">exp() is slow</span>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="graph-card">
+        <div class="graph-title" style="color:var(--E)">GRAPH — tanh(x) and tanh′(x)</div>
+        <div class="graph-subtitle">Blue = function · Green = derivative · Max gradient = 1.0 at x=0</div>
+        <canvas id="tanh-canvas" class="fn-graph" width="440" height="280"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="box">
+    <div class="box-title" style="color:var(--C)">WORKED EXAMPLES</div>
+    <div class="tbl-wrap">
+      <table>
+        <tr><th>x</th><th>e<sup>x</sup></th><th>e<sup>−x</sup></th><th style="color:var(--A)">tanh(x)</th><th style="color:var(--B)">tanh′(x) = 1−tanh²</th><th>Note</th></tr>
+        <tr><td class="tok-cell">−3</td><td>0.0498</td><td>20.086</td><td style="color:var(--A)">−0.9951</td><td style="color:var(--B)">0.0099</td><td>Nearly saturated</td></tr>
+        <tr><td class="tok-cell">−1</td><td>0.3679</td><td>2.7183</td><td style="color:var(--A)">−0.7616</td><td style="color:var(--B)">0.4200</td><td></td></tr>
+        <tr style="background:rgba(0,122,61,.04)"><td class="tok-cell">0</td><td>1.0</td><td>1.0</td><td style="color:var(--A);font-weight:700">0.0000</td><td style="color:var(--B);font-weight:700">1.0000 ← max</td><td>Zero input → zero output</td></tr>
+        <tr><td class="tok-cell">1</td><td>2.7183</td><td>0.3679</td><td style="color:var(--A)">0.7616</td><td style="color:var(--B)">0.4200</td><td></td></tr>
+        <tr><td class="tok-cell">3</td><td>20.086</td><td>0.0498</td><td style="color:var(--A)">0.9951</td><td style="color:var(--B)">0.0099</td><td>Nearly saturated</td></tr>
+      </table>
+    </div>
+    <div class="callout co-tip">
+      <div class="callout-icon">🆚</div>
+      <div class="callout-text"><b>Tanh vs Sigmoid:</b> Tanh output is zero-centred, so positive and negative updates cancel less during training. Max gradient is 4× larger (1.0 vs 0.25). Both still saturate for large |x|, both use expensive exp(). In practice: tanh for RNNs/LSTMs, neither for deep feedforward nets.</div>
+    </div>
+  </div>
+</div>
+
+<hr class="div">
+
+<!-- ══ 3. RELU ══ -->
+<div class="section" id="relu">
+  <div class="sec-num">FUNCTION 03</div>
+  <div class="sec-title">ReLU (Rectified Linear Unit)</div>
+  <div class="sec-desc">The most popular activation. Trivially simple — zero for negatives, identity for positives. Yet it unlocked training very deep networks. One comparison operation. No exp(). No saturation for positive inputs.</div>
+
+  <div class="two-col">
+    <div>
+      <div class="box" style="height:100%;">
+        <div class="box-title" style="color:var(--A)">FORMULA & DERIVATIVE</div>
+        <div class="formula-block">
+          <div class="label">Function</div>
+          ReLU(x) = <span style="color:var(--A);font-weight:700">max(0, x)</span>
+        </div>
+        <div class="formula-block">
+          <div class="label">Piecewise form</div>
+          ReLU(x) = <span style="color:var(--A)">x</span> if x &gt; 0, else <span style="color:var(--A)">0</span>
+        </div>
+        <div class="formula-block">
+          <div class="label">Derivative</div>
+          ReLU′(x) = <span style="color:var(--B);font-weight:700">1 if x &gt; 0, else 0</span><br>
+          <span style="font-size:10px;color:var(--ink3)">(undefined at x=0, treated as 0 or 1)</span>
+        </div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink2);line-height:1.9;margin-top:12px;">
+          <b>Why it works:</b><br>
+          No saturation for x&gt;0 → gradient always 1<br>
+          Sparse activation (~50% neurons off)<br>
+          Cheap: just <code>max(0,x)</code><br>
+          GPU-friendly: no exp() calls<br><br>
+          <b style="color:var(--C)">Dead ReLU problem:</b> if a neuron's input is always negative, its gradient is always 0 — it never updates. "Dying neurons."
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;">
+          <span class="prop-tag" style="color:var(--A)">no vanishing gradient (x&gt;0)</span>
+          <span class="prop-tag" style="color:var(--A)">computationally cheapest</span>
+          <span class="prop-tag" style="color:var(--A)">sparse activation</span>
+          <span class="prop-tag" style="color:var(--C)">dead neurons</span>
+          <span class="prop-tag" style="color:var(--C)">not zero-centred</span>
+          <span class="prop-tag" style="color:var(--C)">not differentiable at 0</span>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="graph-card">
+        <div class="graph-title" style="color:var(--E)">GRAPH — ReLU(x) and ReLU′(x)</div>
+        <div class="graph-subtitle">Blue = function · Green = derivative · Hard kink at x=0</div>
+        <canvas id="relu-canvas" class="fn-graph" width="440" height="280"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="box">
+    <div class="box-title" style="color:var(--C)">WORKED EXAMPLES</div>
+    <div class="tbl-wrap">
+      <table>
+        <tr><th>x</th><th style="color:var(--A)">ReLU(x) = max(0,x)</th><th style="color:var(--B)">Gradient</th><th>Neuron state</th></tr>
+        <tr><td class="tok-cell">−10</td><td style="color:var(--A)">0</td><td style="color:var(--C)">0 — dead!</td><td>Blocked. No signal.</td></tr>
+        <tr><td class="tok-cell">−2.5</td><td style="color:var(--A)">0</td><td style="color:var(--C)">0 — dead!</td><td>Blocked.</td></tr>
+        <tr><td class="tok-cell">−0.001</td><td style="color:var(--A)">0</td><td style="color:var(--C)">0 — dead!</td><td>Still blocked — even tiny negatives</td></tr>
+        <tr style="background:rgba(0,122,61,.04)"><td class="tok-cell">0</td><td style="color:var(--A)">0</td><td style="color:var(--D)">0 or 1 (undefined)</td><td>Boundary — treated as 0</td></tr>
+        <tr><td class="tok-cell">0.001</td><td style="color:var(--A)">0.001</td><td style="color:var(--B)">1 ✓</td><td>Active — passes through</td></tr>
+        <tr><td class="tok-cell">3</td><td style="color:var(--A)">3</td><td style="color:var(--B)">1 ✓</td><td>Active — identity</td></tr>
+        <tr><td class="tok-cell">100</td><td style="color:var(--A)">100</td><td style="color:var(--B)">1 ✓</td><td>No saturation even at large x!</td></tr>
+      </table>
+    </div>
+    <div class="callout co-info">
+      <div class="callout-icon">📊</div>
+      <div class="callout-text"><b>Sparsity is a feature:</b> ~50% of ReLU neurons output 0 at any given pass. This creates sparse representations — fewer active neurons means less interference between features. Sparse codes are efficient and often more interpretable. This is one reason ReLU outperforms tanh/sigmoid on deep networks.</div>
+    </div>
+  </div>
+</div>
+
+<hr class="div">
+
+<!-- ══ 4. LEAKY RELU ══ -->
+<div class="section" id="leaky">
+  <div class="sec-num">FUNCTION 04</div>
+  <div class="sec-title">Leaky ReLU &amp; Parametric ReLU (PReLU)</div>
+  <div class="sec-desc">A simple fix for dying ReLU neurons — instead of zero for negatives, use a small slope α. Neurons can never truly "die." PReLU makes α a learned parameter.</div>
+
+  <div class="two-col">
+    <div>
+      <div class="box" style="height:100%;">
+        <div class="box-title" style="color:var(--A)">FORMULA & DERIVATIVE</div>
+        <div class="formula-block">
+          <div class="label">Leaky ReLU (α typically 0.01)</div>
+          f(x) = <span style="color:var(--A);font-weight:700">x</span> if x&gt;0, else <span style="color:var(--A);font-weight:700">αx</span>
+        </div>
+        <div class="formula-block">
+          <div class="label">Compact form</div>
+          f(x) = <span style="color:var(--A)">max(αx, x)</span>
+        </div>
+        <div class="formula-block">
+          <div class="label">Derivative</div>
+          f′(x) = <span style="color:var(--B);font-weight:700">1</span> if x&gt;0, else <span style="color:var(--B);font-weight:700">α</span>
+        </div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink2);line-height:1.9;margin-top:12px;">
+          With α=0.01:<br>
+          · Positive side: same as ReLU, gradient=1<br>
+          · Negative side: small leak, gradient=0.01<br>
+          · No dead neurons — gradient never exactly 0<br><br>
+          <b>PReLU:</b> α is learned via backprop.<br>
+          Each neuron learns its own optimal slope.<br>
+          Adds very few extra parameters.
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;">
+          <span class="prop-tag" style="color:var(--A)">no dead neurons</span>
+          <span class="prop-tag" style="color:var(--A)">negative gradient ≠ 0</span>
+          <span class="prop-tag" style="color:var(--A)">almost as cheap as ReLU</span>
+          <span class="prop-tag" style="color:var(--D)">α is a hyperparameter</span>
+          <span class="prop-tag" style="color:var(--C)">not zero-centred</span>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="graph-card">
+        <div class="graph-title" style="color:var(--E)">GRAPH — Leaky ReLU (α=0.1)</div>
+        <div class="graph-subtitle">Blue = function · Green = derivative · Small negative slope visible</div>
+        <canvas id="leaky-canvas" class="fn-graph" width="440" height="280"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="box">
+    <div class="box-title" style="color:var(--C)">WORKED EXAMPLES (α = 0.01)</div>
+    <div class="tbl-wrap">
+      <table>
+        <tr><th>x</th><th style="color:var(--A)">f(x)</th><th style="color:var(--B)">f′(x)</th><th>vs ReLU</th></tr>
+        <tr><td class="tok-cell">−10</td><td style="color:var(--A)">−0.10</td><td style="color:var(--B)">0.01 ✓</td><td>ReLU gives 0 (dead). Leaky gives small signal!</td></tr>
+        <tr><td class="tok-cell">−2</td><td style="color:var(--A)">−0.02</td><td style="color:var(--B)">0.01 ✓</td><td>Small but non-zero gradient</td></tr>
+        <tr><td class="tok-cell">−0.5</td><td style="color:var(--A)">−0.005</td><td style="color:var(--B)">0.01 ✓</td><td></td></tr>
+        <tr style="background:rgba(0,122,61,.04)"><td class="tok-cell">0</td><td style="color:var(--A)">0</td><td style="color:var(--D)">undefined</td><td>Boundary</td></tr>
+        <tr><td class="tok-cell">0.5</td><td style="color:var(--A)">0.5</td><td style="color:var(--B)">1.0</td><td>Identical to ReLU</td></tr>
+        <tr><td class="tok-cell">3</td><td style="color:var(--A)">3</td><td style="color:var(--B)">1.0</td><td>Identical to ReLU</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<hr class="div">
+
+<!-- ══ 5. ELU ══ -->
+<div class="section" id="elu">
+  <div class="sec-num">FUNCTION 05</div>
+  <div class="sec-title">ELU (Exponential Linear Unit)</div>
+  <div class="sec-desc">Smoother than ReLU for negatives. Negative outputs push mean activations toward zero, speeding up learning. Uses exp() for negatives — computationally heavier than ReLU.</div>
+
+  <div class="two-col">
+    <div>
+      <div class="box" style="height:100%;">
+        <div class="box-title" style="color:var(--A)">FORMULA & DERIVATIVE</div>
+        <div class="formula-block">
+          <div class="label">Function (α typically 1.0)</div>
+          ELU(x) = <span style="color:var(--A);font-weight:700">x</span> if x≥0<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span style="color:var(--A);font-weight:700">α(e<sup>x</sup>−1)</span> if x&lt;0
+        </div>
+        <div class="formula-block">
+          <div class="label">Derivative</div>
+          ELU′(x) = <span style="color:var(--B);font-weight:700">1</span> if x≥0<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span style="color:var(--B);font-weight:700">ELU(x) + α</span> if x&lt;0
+        </div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink2);line-height:1.9;margin-top:12px;">
+          <b>Why α(eˣ−1)?</b><br>
+          · Continuous and smooth at x=0<br>
+          · Negative mean output → zero-centred<br>
+          · As x→−∞, ELU→−α (soft saturation)<br>
+          · Derivative is continuous at x=0: ELU′(0⁻)=α(e⁰−1)+α=0+α=α... wait:<br>
+          &nbsp; ELU′(0⁺)=1, ELU′(0⁻)=e⁰·α=α. If α=1 → smooth!<br><br>
+          <b>SELU</b> (Scaled ELU): specific α,λ values that guarantee self-normalising activations (zero mean, unit variance).
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;">
+          <span class="prop-tag" style="color:var(--A)">smooth at x=0</span>
+          <span class="prop-tag" style="color:var(--A)">negative outputs (zero-centred)</span>
+          <span class="prop-tag" style="color:var(--A)">no dead neurons</span>
+          <span class="prop-tag" style="color:var(--C)">exp() cost for negatives</span>
+          <span class="prop-tag" style="color:var(--C)">soft saturation for x≪0</span>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="graph-card">
+        <div class="graph-title" style="color:var(--E)">GRAPH — ELU(x) and ELU′(x)</div>
+        <div class="graph-subtitle">Blue = function · Green = derivative · Smooth curve through origin</div>
+        <canvas id="elu-canvas" class="fn-graph" width="440" height="280"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="box">
+    <div class="box-title" style="color:var(--C)">WORKED EXAMPLES (α = 1.0)</div>
+    <div class="tbl-wrap">
+      <table>
+        <tr><th>x</th><th style="color:var(--A)">ELU(x)</th><th style="color:var(--B)">ELU′(x)</th><th>Calculation</th></tr>
+        <tr><td class="tok-cell">−3</td><td style="color:var(--A)">−0.9502</td><td style="color:var(--B)">0.0498</td><td>α(e⁻³−1) = e⁻³−1 = 0.0498−1</td></tr>
+        <tr><td class="tok-cell">−1</td><td style="color:var(--A)">−0.6321</td><td style="color:var(--B)">0.3679</td><td>α(e⁻¹−1) = 0.3679−1</td></tr>
+        <tr><td class="tok-cell">−0.5</td><td style="color:var(--A)">−0.3935</td><td style="color:var(--B)">0.6065</td><td>α(e⁻⁰·⁵−1)</td></tr>
+        <tr style="background:rgba(0,122,61,.04)"><td class="tok-cell">0</td><td style="color:var(--A);font-weight:700">0</td><td style="color:var(--B)">1.0</td><td>Continuous + smooth here</td></tr>
+        <tr><td class="tok-cell">1</td><td style="color:var(--A)">1</td><td style="color:var(--B)">1.0</td><td>Identity for positives</td></tr>
+        <tr><td class="tok-cell">3</td><td style="color:var(--A)">3</td><td style="color:var(--B)">1.0</td><td>Identity for positives</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<hr class="div">
+
+<!-- ══ 6. GELU ══ -->
+<div class="section" id="gelu">
+  <div class="adv-badge">⭐ MODERN — used in GPT, BERT, Transformers</div>
+  <div class="sec-num">FUNCTION 06</div>
+  <div class="sec-title">GELU (Gaussian Error Linear Unit)</div>
+  <div class="sec-desc">The activation function of modern transformers (BERT, GPT-2/3/4, ViT). Rather than a hard gate (ReLU) it applies a smooth stochastic gate — inputs are weighted by the probability that a Gaussian input would be positive at that value.</div>
+
+  <div class="two-col">
+    <div>
+      <div class="box" style="height:100%;">
+        <div class="box-title" style="color:var(--A)">FORMULA & DERIVATIVE</div>
+        <div class="formula-block">
+          <div class="label">Exact formula</div>
+          GELU(x) = <span style="color:var(--A);font-weight:700">x · Φ(x)</span><br>
+          where Φ(x) = P(X≤x), X~N(0,1)
+        </div>
+        <div class="formula-block">
+          <div class="label">Fast approximation (used in practice)</div>
+          GELU(x) ≈ <span style="color:var(--A);font-weight:700">0.5x(1 + tanh(√(2/π)·(x+0.044715x³)))</span>
+        </div>
+        <div class="formula-block">
+          <div class="label">Derivative (exact)</div>
+          GELU′(x) = <span style="color:var(--B);font-weight:700">Φ(x) + x·φ(x)</span><br>
+          where φ(x) = (1/√2π)·e<sup>−x²/2</sup> (Gaussian PDF)
+        </div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink2);line-height:1.9;margin-top:12px;">
+          <b>Intuition:</b> GELU(x) = x × P(a random Gaussian ≤ x)<br>
+          · Large positive x → P≈1 → passes through (like ReLU)<br>
+          · Large negative x → P≈0 → suppressed<br>
+          · Near 0: smooth probabilistic weighting<br>
+          · Can be slightly negative (unlike ReLU)<br><br>
+          <b>Why better than ReLU?</b> Smooth everywhere, non-monotonic near 0. Empirically outperforms ReLU on transformers and large models.
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;">
+          <span class="prop-tag" style="color:var(--A)">smooth everywhere</span>
+          <span class="prop-tag" style="color:var(--A)">non-monotonic</span>
+          <span class="prop-tag" style="color:var(--A)">probabilistic interpretation</span>
+          <span class="prop-tag" style="color:var(--A)">state-of-the-art for NLP</span>
+          <span class="prop-tag" style="color:var(--C)">more expensive than ReLU</span>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="graph-card">
+        <div class="graph-title" style="color:var(--E)">GRAPH — GELU(x) and GELU′(x)</div>
+        <div class="graph-subtitle">Blue = function · Green = derivative · Smooth kink near x=0, slight dip below 0</div>
+        <canvas id="gelu-canvas" class="fn-graph" width="440" height="280"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="box">
+    <div class="box-title" style="color:var(--C)">WORKED EXAMPLES (using tanh approximation)</div>
+    <div class="tbl-wrap">
+      <table>
+        <tr><th>x</th><th>tanh(…) inner</th><th style="color:var(--A)">GELU(x)</th><th style="color:var(--B)">GELU′(x)</th><th>vs ReLU</th></tr>
+        <tr><td class="tok-cell">−2</td><td>−0.9994</td><td style="color:var(--A)">−0.0454</td><td style="color:var(--B)">0.0829</td><td>ReLU=0 · GELU has small neg value</td></tr>
+        <tr><td class="tok-cell">−1</td><td>−0.9704</td><td style="color:var(--A)">−0.1588</td><td style="color:var(--B)">0.0832</td><td>Non-zero — keeps gradient alive</td></tr>
+        <tr><td class="tok-cell">−0.5</td><td>−0.5951</td><td style="color:var(--A)">−0.1543</td><td style="color:var(--B)">0.2301</td><td></td></tr>
+        <tr style="background:rgba(0,122,61,.04)"><td class="tok-cell">0</td><td>0</td><td style="color:var(--A);font-weight:700">0</td><td style="color:var(--B)">0.5000</td><td>Both zero at origin</td></tr>
+        <tr><td class="tok-cell">0.5</td><td>0.5951</td><td style="color:var(--A)">0.3457</td><td style="color:var(--B)">0.7699</td><td></td></tr>
+        <tr><td class="tok-cell">1</td><td>0.9704</td><td style="color:var(--A)">0.8413</td><td style="color:var(--B)">1.0832</td><td>GELU &gt; ReLU near x=1</td></tr>
+        <tr><td class="tok-cell">2</td><td>0.9994</td><td style="color:var(--A)">1.9545</td><td style="color:var(--B)">1.0829</td><td>≈ ReLU for large positive x</td></tr>
+      </table>
+    </div>
+    <div class="callout co-tip">
+      <div class="callout-icon">🤖</div>
+      <div class="callout-text"><b>Why GPT uses GELU:</b> The slight negative bump and smooth curve allow gradients to flow even for mildly negative inputs, while the probabilistic weighting gives a softer, more natural decision boundary than ReLU's hard gate. Empirically, GELU outperforms ReLU by 1-2% on most NLP benchmarks.</div>
+    </div>
+  </div>
+</div>
+
+<hr class="div">
+
+<!-- ══ 7. SWISH ══ -->
+<div class="section" id="swish">
+  <div class="adv-badge">⭐ MODERN — discovered by Neural Architecture Search</div>
+  <div class="sec-num">FUNCTION 07</div>
+  <div class="sec-title">Swish (SiLU)</div>
+  <div class="sec-desc">Discovered by Google Brain via automated neural architecture search in 2017. Self-gated: the input gates itself through a sigmoid. Non-monotonic, smooth, unbounded above. Used in EfficientNet, PaLM, many modern vision models.</div>
+
+  <div class="two-col">
+    <div>
+      <div class="box" style="height:100%;">
+        <div class="box-title" style="color:var(--A)">FORMULA & DERIVATIVE</div>
+        <div class="formula-block">
+          <div class="label">Function (β=1 in practice)</div>
+          Swish(x) = <span style="color:var(--A);font-weight:700">x · σ(βx)</span> = x · (1/(1+e<sup>−βx</sup>))
+        </div>
+        <div class="formula-block">
+          <div class="label">Also known as SiLU (Sigmoid Linear Unit)</div>
+          SiLU(x) = x · σ(x)
+        </div>
+        <div class="formula-block">
+          <div class="label">Derivative (product rule)</div>
+          Swish′(x) = <span style="color:var(--B);font-weight:700">σ(x) + x·σ(x)·(1−σ(x))</span><br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= <span style="color:var(--B)">σ(x) + Swish(x)·(1−σ(x))</span>
+        </div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink2);line-height:1.9;margin-top:12px;">
+          <b>Self-gating intuition:</b><br>
+          σ(x) is the gate: near 0 for large negatives, near 1 for large positives.<br>
+          x is the value that passes through the gate.<br>
+          Result: large positives pass, near-zero inputs are smoothly gated, very negative values are suppressed (but non-zero)<br><br>
+          Non-monotonic: has a small dip below zero near x≈−1.3, creating a "negative bump" that helps training.
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;">
+          <span class="prop-tag" style="color:var(--A)">smooth everywhere</span>
+          <span class="prop-tag" style="color:var(--A)">non-monotonic</span>
+          <span class="prop-tag" style="color:var(--A)">self-gated</span>
+          <span class="prop-tag" style="color:var(--A)">NAS-discovered</span>
+          <span class="prop-tag" style="color:var(--C)">sigmoid cost</span>
+          <span class="prop-tag" style="color:var(--D)">β is tunable</span>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="graph-card">
+        <div class="graph-title" style="color:var(--E)">GRAPH — Swish(x) and Swish′(x)</div>
+        <div class="graph-subtitle">Blue = function · Green = derivative · Small negative dip near x≈−1.3</div>
+        <canvas id="swish-canvas" class="fn-graph" width="440" height="280"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="box">
+    <div class="box-title" style="color:var(--C)">WORKED EXAMPLES (β = 1)</div>
+    <div class="tbl-wrap">
+      <table>
+        <tr><th>x</th><th>σ(x)</th><th style="color:var(--A)">Swish(x) = x·σ(x)</th><th style="color:var(--B)">Swish′(x)</th><th>Note</th></tr>
+        <tr><td class="tok-cell">−3</td><td>0.0474</td><td style="color:var(--A)">−0.1422</td><td style="color:var(--B)">−0.0908</td><td>Slightly negative</td></tr>
+        <tr><td class="tok-cell">−1.3</td><td>0.2142</td><td style="color:var(--A)">−0.2785 ← dip</td><td style="color:var(--B)">≈0 (local min)</td><td>Minimum of Swish</td></tr>
+        <tr><td class="tok-cell">−1</td><td>0.2689</td><td style="color:var(--A)">−0.2689</td><td style="color:var(--B)">0.0723</td><td></td></tr>
+        <tr style="background:rgba(0,122,61,.04)"><td class="tok-cell">0</td><td>0.5000</td><td style="color:var(--A);font-weight:700">0</td><td style="color:var(--B)">0.5000</td><td>Same as GELU at origin</td></tr>
+        <tr><td class="tok-cell">1</td><td>0.7311</td><td style="color:var(--A)">0.7311</td><td style="color:var(--B)">0.9277</td><td></td></tr>
+        <tr><td class="tok-cell">2</td><td>0.8808</td><td style="color:var(--A)">1.7616</td><td style="color:var(--B)">1.0976</td><td>≈ ReLU for large x</td></tr>
+        <tr><td class="tok-cell">5</td><td>0.9933</td><td style="color:var(--A)">4.9664</td><td style="color:var(--B)">1.0330</td><td>Near identity for large x</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<hr class="div">
+
+<!-- ══ 8. SOFTMAX ══ -->
+<div class="section" id="softmax">
+  <div class="sec-num">FUNCTION 08</div>
+  <div class="sec-title">Softmax</div>
+  <div class="sec-desc">Not a neuron-wise activation — it operates on a whole vector at once. Turns a vector of arbitrary real numbers into a valid probability distribution. Always used as the final layer in multi-class classification and in attention mechanisms.</div>
+
+  <div class="two-col">
+    <div>
+      <div class="box" style="height:100%;">
+        <div class="box-title" style="color:var(--A)">FORMULA & JACOBIAN</div>
+        <div class="formula-block">
+          <div class="label">Function (applied to vector z ∈ ℝᴷ)</div>
+          softmax(zᵢ) = <span style="color:var(--A);font-weight:700">e<sup>zᵢ</sup> / Σⱼ e<sup>zⱼ</sup></span>
+        </div>
+        <div class="formula-block">
+          <div class="label">Properties (always true)</div>
+          Σᵢ softmax(zᵢ) = <span style="color:var(--A)">1</span> &nbsp; (sums to 1)<br>
+          softmax(zᵢ) ∈ <span style="color:var(--A)">(0, 1)</span> &nbsp; (all positive)
+        </div>
+        <div class="formula-block">
+          <div class="label">Jacobian (matrix of partial derivatives)</div>
+          ∂sᵢ/∂zⱼ = <span style="color:var(--B)">sᵢ(1−sᵢ)</span> if i=j<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span style="color:var(--B)">−sᵢ·sⱼ</span> if i≠j
+        </div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink2);line-height:1.9;margin-top:12px;">
+          <b>Temperature scaling:</b><br>
+          softmax(z/T): T&gt;1 → softer (uniform), T&lt;1 → sharper (peaked)<br>
+          Attention uses T=√d_k to stabilise<br><br>
+          <b>Numerical stability trick:</b><br>
+          Always compute softmax(z − max(z))<br>
+          This prevents overflow: e<sup>very_large</sup> = inf
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;">
+          <span class="prop-tag" style="color:var(--A)">outputs sum to 1</span>
+          <span class="prop-tag" style="color:var(--A)">probabilistic interpretation</span>
+          <span class="prop-tag" style="color:var(--A)">used in attention</span>
+          <span class="prop-tag" style="color:var(--C)">vector operation (not element-wise)</span>
+          <span class="prop-tag" style="color:var(--C)">can saturate (winner-takes-all)</span>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="graph-card">
+        <div class="graph-title" style="color:var(--E)">GRAPH — Softmax over varying z₁, z₂=1, z₃=0</div>
+        <div class="graph-subtitle">As z₁ increases it "steals" probability from the other classes</div>
+        <canvas id="softmax-canvas" class="fn-graph" width="440" height="280"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="box">
+    <div class="box-title" style="color:var(--C)">WORKED EXAMPLE — 3-class classification logits [2, 1, 0.5]</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:12px;line-height:2.4;color:var(--ink2);margin-bottom:16px;">
+      Logits z = [<span style="color:var(--A)">2.0</span>, <span style="color:var(--B)">1.0</span>, <span style="color:var(--C)">0.5</span>]<br>
+      Step 1 — exponentiate:<br>
+      &nbsp; e<sup>2.0</sup> = <span style="color:var(--A)">7.389</span>, &nbsp; e<sup>1.0</sup> = <span style="color:var(--B)">2.718</span>, &nbsp; e<sup>0.5</sup> = <span style="color:var(--C)">1.649</span><br>
+      Step 2 — sum: 7.389 + 2.718 + 1.649 = <b>11.756</b><br>
+      Step 3 — divide:<br>
+      &nbsp; P(class 1) = 7.389 / 11.756 = <span style="color:var(--A);font-weight:700">0.6284</span><br>
+      &nbsp; P(class 2) = 2.718 / 11.756 = <span style="color:var(--B);font-weight:700">0.2312</span><br>
+      &nbsp; P(class 3) = 1.649 / 11.756 = <span style="color:var(--C);font-weight:700">0.1403</span><br>
+      &nbsp; Sum check: 0.6284 + 0.2312 + 0.1403 = <b>1.0000 ✓</b>
+    </div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
+      <div style="flex:1;min-width:120px;padding:14px;background:rgba(0,122,61,.08);border-radius:8px;border:1px solid var(--A);text-align:center;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--A);margin-bottom:4px;">CLASS 1</div>
+        <div style="font-family:'Instrument Serif',serif;font-size:2rem;color:var(--A);">62.8%</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--ink3);">logit = 2.0</div>
+      </div>
+      <div style="flex:1;min-width:120px;padding:14px;background:rgba(26,95,212,.08);border-radius:8px;border:1px solid var(--B);text-align:center;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--B);margin-bottom:4px;">CLASS 2</div>
+        <div style="font-family:'Instrument Serif',serif;font-size:2rem;color:var(--B);">23.1%</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--ink3);">logit = 1.0</div>
+      </div>
+      <div style="flex:1;min-width:120px;padding:14px;background:rgba(192,24,90,.08);border-radius:8px;border:1px solid var(--C);text-align:center;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--C);margin-bottom:4px;">CLASS 3</div>
+        <div style="font-family:'Instrument Serif',serif;font-size:2rem;color:var(--C);">14.0%</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--ink3);">logit = 0.5</div>
+      </div>
+    </div>
+    <div class="callout co-info">
+      <div class="callout-icon">🔥</div>
+      <div class="callout-text"><b>Temperature scaling in Attention:</b> Attention scores are divided by √d_k before softmax. With d_k=64, √d_k=8. This prevents very large dot products from pushing softmax into its saturated regions where gradients vanish — exactly the same problem as sigmoid!</div>
+    </div>
+  </div>
+</div>
+
+<hr class="div">
+
+<!-- ══ COMPARE ══ -->
+<div class="section" id="compare">
+  <div class="sec-num">COMPARISON</div>
+  <div class="sec-title">All Functions — Side by Side</div>
+  <div class="sec-desc">Toggle functions on/off to see how they behave in the same coordinate space. Pay attention to the negative half — that's where most of the differences live.</div>
+
+  <div class="box">
+    <div class="box-title">INTERACTIVE OVERLAY GRAPH</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;" id="compare-btns"></div>
+    <canvas id="compare-canvas" width="900" height="360" style="width:100%;display:block;border-radius:8px;border:1px solid var(--border);background:#f8f9fa;"></canvas>
+  </div>
+
+  <div class="box">
+    <div class="box-title">PROPERTY COMPARISON TABLE</div>
+    <div class="tbl-wrap">
+      <table>
+        <tr>
+          <th>Function</th><th>Range</th><th>Monotonic?</th><th>Smooth?</th>
+          <th>Zero-centred?</th><th>Max gradient</th><th>Dead neurons?</th><th>Best use</th>
+        </tr>
+        <tr><td class="tok-cell" style="color:var(--A)">Sigmoid</td><td>(0,1)</td><td>✅</td><td>✅</td><td>❌</td><td>0.25</td><td>No (slow death)</td><td>Output layer (binary)</td></tr>
+        <tr><td class="tok-cell" style="color:var(--B)">Tanh</td><td>(−1,1)</td><td>✅</td><td>✅</td><td>✅</td><td>1.0</td><td>No (slow death)</td><td>RNNs, LSTMs</td></tr>
+        <tr><td class="tok-cell" style="color:var(--C)">ReLU</td><td>[0,∞)</td><td>✅</td><td>❌ (kink)</td><td>❌</td><td>1 (x&gt;0)</td><td>✅ YES</td><td>CNNs, general MLPs</td></tr>
+        <tr><td class="tok-cell" style="color:var(--D)">Leaky ReLU</td><td>(−∞,∞)</td><td>✅</td><td>❌ (kink)</td><td>❌</td><td>1 (x&gt;0)</td><td>No</td><td>When ReLU dies</td></tr>
+        <tr><td class="tok-cell" style="color:var(--E)">ELU</td><td>(−α,∞)</td><td>✅</td><td>✅</td><td>Near ✅</td><td>1 (x&gt;0)</td><td>No</td><td>Deep MLPs</td></tr>
+        <tr style="background:rgba(0,122,61,.04)"><td class="tok-cell" style="color:var(--F)">GELU</td><td>≈(−0.17,∞)</td><td>❌</td><td>✅</td><td>Near ✅</td><td>~1.08</td><td>No</td><td>Transformers (BERT, GPT)</td></tr>
+        <tr style="background:rgba(0,122,61,.04)"><td class="tok-cell" style="color:var(--G)">Swish</td><td>≈(−0.28,∞)</td><td>❌</td><td>✅</td><td>Near ✅</td><td>~1.1</td><td>No</td><td>EfficientNet, PaLM</td></tr>
+        <tr><td class="tok-cell" style="color:var(--H)">Softmax</td><td>(0,1)ᴷ</td><td>✅</td><td>✅</td><td>—</td><td>s(1-s)</td><td>No</td><td>Final classification layer</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<hr class="div">
+
+<!-- ══ CHOOSE ══ -->
+<div class="section" id="choose">
+  <div class="sec-num">CHAPTER 09</div>
+  <div class="sec-title">Which One to Use?</div>
+  <div class="sec-desc">A practical decision guide — match the activation to your architecture, task, and problem.</div>
+
+  <div class="box">
+    <div class="box-title">DECISION GUIDE</div>
+    <div class="step-flow">
+      <div class="step-item">
+        <div class="step-num" style="border-color:var(--A);color:var(--A)">1</div>
+        <div class="step-body">
+          <div class="step-label">Building a Transformer (BERT, GPT, ViT)?</div>
+          <div class="step-text">Use <b style="color:var(--F)">GELU</b> — it's the de-facto standard. TF: <code>activation='gelu'</code>. All major transformer implementations default to it. Swish is a good alternative.</div>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-num" style="border-color:var(--B);color:var(--B)">2</div>
+        <div class="step-body">
+          <div class="step-label">Building a CNN (image classification, detection)?</div>
+          <div class="step-text">Use <b style="color:var(--C)">ReLU</b> as your default. If you see dying neurons (many weights stuck at zero), switch to <b style="color:var(--D)">Leaky ReLU</b> (α=0.1) or <b style="color:var(--G)">Swish</b> (used in EfficientNet).</div>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-num" style="border-color:var(--C);color:var(--C)">3</div>
+        <div class="step-body">
+          <div class="step-label">Building an RNN or LSTM?</div>
+          <div class="step-text">Use <b style="color:var(--B)">Tanh</b> for the recurrent gate (preserves zero-centred activations through time). Use <b style="color:var(--A)">Sigmoid</b> for gate controls (forget/input/output gates need 0–1 range).</div>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-num" style="border-color:var(--D);color:var(--D)">4</div>
+        <div class="step-body">
+          <div class="step-label">Output layer — binary classification?</div>
+          <div class="step-text">Use <b style="color:var(--A)">Sigmoid</b> — outputs a single probability in (0,1). Threshold at 0.5 to get class prediction. Pair with <code>BinaryCrossentropy(from_logits=False)</code>.</div>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-num" style="border-color:var(--E);color:var(--E)">5</div>
+        <div class="step-body">
+          <div class="step-label">Output layer — multi-class classification?</div>
+          <div class="step-text">Use <b style="color:var(--H)">Softmax</b> — outputs a K-dimensional probability vector. Pair with <code>SparseCategoricalCrossentropy(from_logits=False)</code> in TensorFlow.</div>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-num" style="border-color:var(--F);color:var(--F)">6</div>
+        <div class="step-body">
+          <div class="step-label">Output layer — regression (predict a number)?</div>
+          <div class="step-text">Use <b>no activation</b> (linear). Let the output be unbounded. Use <code>MeanSquaredError</code> loss. Adding sigmoid/tanh here would clip your predictions to a fixed range.</div>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-num" style="border-color:var(--G);color:var(--G)">7</div>
+        <div class="step-body">
+          <div class="step-label">Not sure? Baseline rule of thumb:</div>
+          <div class="step-text">Start with <b style="color:var(--C)">ReLU</b> → if it converges poorly, try <b style="color:var(--F)">GELU</b> → if dying neurons, try <b style="color:var(--D)">Leaky ReLU</b>. Run ablations for 5 epochs before committing.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="box">
+    <div class="box-title">TENSORFLOW / KERAS CHEAT SHEET</div>
+    <pre style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:20px;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:2;color:var(--ink);"><span style="color:var(--ink3)"># ── Activation functions in Keras ───────────────────────────────</span>
+<span style="color:var(--B)">import</span> tensorflow <span style="color:var(--B)">as</span> tf
+
+<span style="color:var(--ink3)"># As layer argument (most common)</span>
+tf.keras.layers.Dense(<span style="color:var(--C)">128</span>, activation=<span style="color:var(--A)">'relu'</span>)       <span style="color:var(--ink3)"># ReLU</span>
+tf.keras.layers.Dense(<span style="color:var(--C)">128</span>, activation=<span style="color:var(--A)">'tanh'</span>)       <span style="color:var(--ink3)"># Tanh</span>
+tf.keras.layers.Dense(<span style="color:var(--C)">128</span>, activation=<span style="color:var(--A)">'sigmoid'</span>)    <span style="color:var(--ink3)"># Sigmoid</span>
+tf.keras.layers.Dense(<span style="color:var(--C)">128</span>, activation=<span style="color:var(--A)">'gelu'</span>)       <span style="color:var(--ink3)"># GELU ← transformers default</span>
+tf.keras.layers.Dense(<span style="color:var(--C)">128</span>, activation=<span style="color:var(--A)">'swish'</span>)      <span style="color:var(--ink3)"># Swish / SiLU</span>
+tf.keras.layers.Dense(<span style="color:var(--C)">128</span>, activation=<span style="color:var(--A)">'elu'</span>)        <span style="color:var(--ink3)"># ELU</span>
+tf.keras.layers.Dense(<span style="color:var(--C)">128</span>, activation=<span style="color:var(--A)">'softmax'</span>)    <span style="color:var(--ink3)"># Softmax (output layer)</span>
+
+<span style="color:var(--ink3)"># Leaky ReLU needs its own layer</span>
+tf.keras.layers.LeakyReLU(alpha=<span style="color:var(--C)">0.1</span>)
+
+<span style="color:var(--ink3)"># As standalone function (apply to tensors directly)</span>
+x = tf.constant([<span style="color:var(--C)">-2.0</span>, <span style="color:var(--C)">-1.0</span>, <span style="color:var(--C)">0.0</span>, <span style="color:var(--C)">1.0</span>, <span style="color:var(--C)">2.0</span>])
+tf.nn.relu(x)           <span style="color:var(--ink3)"># → [0, 0, 0, 1, 2]</span>
+tf.nn.sigmoid(x)        <span style="color:var(--ink3)"># → [0.119, 0.269, 0.5, 0.731, 0.881]</span>
+tf.nn.tanh(x)           <span style="color:var(--ink3)"># → [-0.964, -0.762, 0, 0.762, 0.964]</span>
+tf.nn.gelu(x)           <span style="color:var(--ink3)"># → [-0.045, -0.159, 0, 0.841, 1.954]</span>
+tf.nn.swish(x)          <span style="color:var(--ink3)"># → [-0.238, -0.269, 0, 0.731, 1.762]</span>
+tf.nn.softmax(x)        <span style="color:var(--ink3)"># → probabilities summing to 1</span>
+
+<span style="color:var(--ink3)"># Numerical stability trick for softmax</span>
+x_stable = x - tf.reduce_max(x)  <span style="color:var(--ink3)"># subtract max before softmax</span>
+tf.nn.softmax(x_stable)           <span style="color:var(--ink3)"># same result, no overflow</span></pre>
+  </div>
+</div>
+
+<div style="text-align:center;padding:60px 24px;border-top:1px solid var(--border);font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink3);line-height:2;">
+  <div style="font-family:'Instrument Serif',serif;font-size:1.5rem;color:var(--ink);margin-bottom:10px;">f(x) = max(0, x)</div>
+  Built for deep understanding — every formula, every graph, from first principles
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+// GRAPH UTILITIES
+// ══════════════════════════════════════════════
+function drawGraph(canvasId, fns, opts={}) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const W = canvas.offsetWidth || canvas.width;
+  canvas.width  = W;
+  canvas.height = canvas.height || 280;
+  const H = canvas.height;
+  const ctx = canvas.getContext('2d');
+
+  const xMin = opts.xMin ?? -4;
+  const xMax = opts.xMax ?? 4;
+  const yMin = opts.yMin ?? -1.5;
+  const yMax = opts.yMax ?? 2.5;
+  const pad  = { top:20, right:20, bottom:28, left:38 };
+
+  const toCanvasX = x => pad.left + (x - xMin) / (xMax - xMin) * (W - pad.left - pad.right);
+  const toCanvasY = y => pad.top  + (yMax - y) / (yMax - yMin) * (H - pad.top  - pad.bottom);
+
+  // Background
+  ctx.fillStyle = '#f8f9fa'; ctx.fillRect(0,0,W,H);
+
+  // Grid
+  ctx.strokeStyle = 'rgba(0,0,0,.07)'; ctx.lineWidth = 1;
+  for (let gx = Math.ceil(xMin); gx <= xMax; gx++) {
+    ctx.beginPath(); ctx.moveTo(toCanvasX(gx), pad.top); ctx.lineTo(toCanvasX(gx), H-pad.bottom); ctx.stroke();
+    ctx.fillStyle='#aaa';ctx.font='9px JetBrains Mono';ctx.textAlign='center';
+    ctx.fillText(gx, toCanvasX(gx), H-pad.bottom+14);
+  }
+  for (let gy = Math.ceil(yMin); gy <= Math.floor(yMax); gy++) {
+    ctx.beginPath(); ctx.moveTo(pad.left, toCanvasY(gy)); ctx.lineTo(W-pad.right, toCanvasY(gy)); ctx.stroke();
+    if(gy!==0){ctx.fillStyle='#aaa';ctx.font='9px JetBrains Mono';ctx.textAlign='right';ctx.fillText(gy,pad.left-4,toCanvasY(gy)+3);}
+  }
+
+  // Axes
+  ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = 1.5;
+  const y0 = toCanvasY(0);
+  ctx.beginPath(); ctx.moveTo(pad.left, y0); ctx.lineTo(W-pad.right, y0); ctx.stroke();
+  const x0 = toCanvasX(0);
+  ctx.beginPath(); ctx.moveTo(x0, pad.top); ctx.lineTo(x0, H-pad.bottom); ctx.stroke();
+  ctx.fillStyle='#888';ctx.font='9px JetBrains Mono';ctx.textAlign='right';ctx.fillText('0',pad.left-4,y0+3);
+
+  // Plot each function
+  const steps = 600;
+  fns.forEach(({fn, color, width=2.2, dash=[]}) => {
+    ctx.beginPath(); ctx.strokeStyle=color; ctx.lineWidth=width; ctx.setLineDash(dash);
+    let first=true;
+    for (let i=0;i<=steps;i++) {
+      const x = xMin + (xMax-xMin)*i/steps;
+      let y;
+      try { y = fn(x); } catch(e) { first=true; continue; }
+      if (!isFinite(y) || isNaN(y)) { first=true; continue; }
+      const cy = toCanvasY(y);
+      if(first){ctx.moveTo(toCanvasX(x),cy);first=false;}
+      else ctx.lineTo(toCanvasX(x),cy);
+    }
+    ctx.stroke(); ctx.setLineDash([]);
+  });
+}
+
+// ── Math helpers ──────────────────────────────
+const sigmoid = x => 1/(1+Math.exp(-x));
+const tanh_fn = x => Math.tanh(x);
+const relu    = x => Math.max(0,x);
+const leaky   = (x,a=0.1) => x>=0 ? x : a*x;
+const elu     = (x,a=1)   => x>=0 ? x : a*(Math.exp(x)-1);
+const gelu    = x => 0.5*x*(1+Math.tanh(Math.sqrt(2/Math.PI)*(x+0.044715*x*x*x)));
+const swish   = x => x*sigmoid(x);
+
+const dsigmoid = x => { const s=sigmoid(x); return s*(1-s); };
+const dtanh    = x => 1-Math.tanh(x)**2;
+const drelu    = x => x>0?1:0;
+const dleaky   = (x,a=0.1) => x>=0?1:a;
+const delu     = (x,a=1)   => x>=0?1:elu(x,a)+a;
+const dgelu    = x => {
+  const k=Math.sqrt(2/Math.PI), inner=k*(x+0.044715*x*x*x);
+  const t=Math.tanh(inner);
+  const dt=1-t*t;
+  const dInner=k*(1+3*0.044715*x*x);
+  return 0.5*(1+t)+0.5*x*dt*dInner;
+};
+const dswish = x => { const s=sigmoid(x); return s+x*s*(1-s); };
+
+// ── Draw all individual graphs ──────────────
+function drawAll() {
+  const gW = document.querySelector('#sigmoid-canvas')?.parentElement.offsetWidth - 40 || 440;
+
+  // Sigmoid
+  drawGraph('sigmoid-canvas',
+    [{fn:sigmoid,color:'#1a5fd4',width:2.5},{fn:dsigmoid,color:'#007a3d',width:2,dash:[5,3]}],
+    {xMin:-6,xMax:6,yMin:-.2,yMax:1.2});
+
+  // Tanh
+  drawGraph('tanh-canvas',
+    [{fn:tanh_fn,color:'#1a5fd4',width:2.5},{fn:dtanh,color:'#007a3d',width:2,dash:[5,3]}],
+    {xMin:-4,xMax:4,yMin:-1.5,yMax:1.5});
+
+  // ReLU
+  drawGraph('relu-canvas',
+    [{fn:relu,color:'#1a5fd4',width:2.5},{fn:drelu,color:'#007a3d',width:2,dash:[5,3]}],
+    {xMin:-4,xMax:4,yMin:-.5,yMax:3});
+
+  // Leaky ReLU
+  drawGraph('leaky-canvas',
+    [{fn:x=>leaky(x,0.1),color:'#1a5fd4',width:2.5},{fn:x=>dleaky(x,0.1),color:'#007a3d',width:2,dash:[5,3]}],
+    {xMin:-4,xMax:4,yMin:-1,yMax:3});
+
+  // ELU
+  drawGraph('elu-canvas',
+    [{fn:elu,color:'#1a5fd4',width:2.5},{fn:delu,color:'#007a3d',width:2,dash:[5,3]}],
+    {xMin:-4,xMax:4,yMin:-1.5,yMax:3});
+
+  // GELU
+  drawGraph('gelu-canvas',
+    [{fn:gelu,color:'#1a5fd4',width:2.5},{fn:dgelu,color:'#007a3d',width:2,dash:[5,3]}],
+    {xMin:-4,xMax:4,yMin:-1,yMax:3});
+
+  // Swish
+  drawGraph('swish-canvas',
+    [{fn:swish,color:'#1a5fd4',width:2.5},{fn:dswish,color:'#007a3d',width:2,dash:[5,3]}],
+    {xMin:-4,xMax:4,yMin:-1,yMax:3});
+
+  // Softmax visualisation — vary z1 from -3 to 3, z2=1, z3=0
+  drawSoftmaxGraph();
+
+  // Compare graph
+  drawCompare();
+}
+
+function drawSoftmaxGraph() {
+  const canvas = document.getElementById('softmax-canvas');
+  if (!canvas) return;
+  const W = canvas.offsetWidth || canvas.width;
+  canvas.width = W;
+  const H = canvas.height;
+  const ctx = canvas.getContext('2d');
+  const xMin=-3,xMax=3,yMin=0,yMax=1;
+  const pad={top:20,right:20,bottom:28,left:38};
+  const toX = x=>pad.left+(x-xMin)/(xMax-xMin)*(W-pad.left-pad.right);
+  const toY = y=>pad.top+(yMax-y)/(yMax-yMin)*(H-pad.top-pad.bottom);
+
+  ctx.fillStyle='#f8f9fa';ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle='rgba(0,0,0,.07)';ctx.lineWidth=1;
+  for(let gx=-3;gx<=3;gx++){ctx.beginPath();ctx.moveTo(toX(gx),pad.top);ctx.lineTo(toX(gx),H-pad.bottom);ctx.stroke();}
+  [0,.25,.5,.75,1].forEach(gy=>{ctx.beginPath();ctx.moveTo(pad.left,toY(gy));ctx.lineTo(W-pad.right,toY(gy));ctx.stroke();ctx.fillStyle='#aaa';ctx.font='9px JetBrains Mono';ctx.textAlign='right';ctx.fillText(gy.toFixed(2),pad.left-4,toY(gy)+3);});
+  ctx.strokeStyle='rgba(0,0,0,.3)';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(pad.left,toY(0));ctx.lineTo(W-pad.right,toY(0));ctx.stroke();
+  for(let gx=-3;gx<=3;gx++){ctx.fillStyle='#aaa';ctx.font='9px JetBrains Mono';ctx.textAlign='center';ctx.fillText(gx,toX(gx),H-pad.bottom+14);}
+
+  const colors=['#007a3d','#1a5fd4','#c0185a'];
+  const labels=['P(class1)','P(class2)','P(class3)'];
+  const steps=400;
+  colors.forEach((col,ci)=>{
+    ctx.beginPath();ctx.strokeStyle=col;ctx.lineWidth=2.5;ctx.setLineDash([]);
+    let first=true;
+    for(let i=0;i<=steps;i++){
+      const z1=xMin+(xMax-xMin)*i/steps;
+      const z2=1,z3=0;
+      const zs=[z1,z2,z3];
+      const exps=zs.map(z=>Math.exp(z-Math.max(...zs)));
+      const s=exps.reduce((a,b)=>a+b,0);
+      const p=exps[ci]/s;
+      if(first){ctx.moveTo(toX(z1),toY(p));first=false;}
+      else ctx.lineTo(toX(z1),toY(p));
+    }
+    ctx.stroke();
+    // Label at right edge
+    const z1=3;const zs=[z1,1,0];const exps=zs.map(z=>Math.exp(z-Math.max(...zs)));const s=exps.reduce((a,b)=>a+b,0);const p=exps[ci]/s;
+    ctx.fillStyle=col;ctx.font='bold 9px JetBrains Mono';ctx.textAlign='left';
+    ctx.fillText(labels[ci],toX(3)+2,toY(p)+3);
+  });
+}
+
+// ── Compare overlay ──────────────────────────
+const ALL_FNS = [
+  {key:'sigmoid', label:'Sigmoid',   fn:sigmoid,           color:'#007a3d', active:true},
+  {key:'tanh',    label:'Tanh',      fn:tanh_fn,           color:'#1a5fd4', active:true},
+  {key:'relu',    label:'ReLU',      fn:relu,              color:'#c0185a', active:true},
+  {key:'leaky',   label:'Leaky',     fn:x=>leaky(x,0.1),  color:'#a07000', active:false},
+  {key:'elu',     label:'ELU',       fn:elu,               color:'#7b00c8', active:false},
+  {key:'gelu',    label:'GELU',      fn:gelu,              color:'#0e7490', active:true},
+  {key:'swish',   label:'Swish',     fn:swish,             color:'#b45309', active:false},
+];
+
+function buildCompareBtns() {
+  const el = document.getElementById('compare-btns');
+  if (!el) return;
+  el.innerHTML = ALL_FNS.map(f=>`
+    <button class="fn-btn ${f.active?'active':''}" id="cbtn-${f.key}"
+      style="color:${f.color};${f.active?`background:${f.color};color:white;`:''}"
+      onclick="toggleFn('${f.key}')">
+      ${f.label}
+    </button>
+  `).join('');
+}
+
+function toggleFn(key) {
+  const f = ALL_FNS.find(x=>x.key===key);
+  if (!f) return;
+  f.active = !f.active;
+  const btn = document.getElementById(`cbtn-${key}`);
+  if (btn) {
+    btn.style.background = f.active ? f.color : 'white';
+    btn.style.color      = f.active ? 'white' : f.color;
+    btn.style.borderColor = f.color;
+  }
+  drawCompare();
+}
+
+function drawCompare() {
+  const active = ALL_FNS.filter(f=>f.active);
+  const fns = active.map(f=>({fn:f.fn, color:f.color, width:2.5}));
+
+  const canvas = document.getElementById('compare-canvas');
+  if (!canvas) return;
+  canvas.width = canvas.offsetWidth || 900;
+
+  const W = canvas.width, H = canvas.height;
+  const ctx = canvas.getContext('2d');
+  const xMin=-4,xMax=4,yMin=-1.5,yMax=2.5;
+  const pad={top:20,right:80,bottom:28,left:38};
+  const toX=x=>pad.left+(x-xMin)/(xMax-xMin)*(W-pad.left-pad.right);
+  const toY=y=>pad.top+(yMax-y)/(yMax-yMin)*(H-pad.top-pad.bottom);
+
+  ctx.fillStyle='#f8f9fa';ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle='rgba(0,0,0,.07)';ctx.lineWidth=1;
+  for(let gx=-4;gx<=4;gx++){ctx.beginPath();ctx.moveTo(toX(gx),pad.top);ctx.lineTo(toX(gx),H-pad.bottom);ctx.stroke();ctx.fillStyle='#aaa';ctx.font='9px JetBrains Mono';ctx.textAlign='center';ctx.fillText(gx,toX(gx),H-pad.bottom+14);}
+  [-1,0,1,2].forEach(gy=>{ctx.beginPath();ctx.moveTo(pad.left,toY(gy));ctx.lineTo(W-pad.right,toY(gy));ctx.stroke();ctx.fillStyle='#aaa';ctx.font='9px JetBrains Mono';ctx.textAlign='right';ctx.fillText(gy,pad.left-4,toY(gy)+3);});
+  ctx.strokeStyle='rgba(0,0,0,.3)';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(pad.left,toY(0));ctx.lineTo(W-pad.right,toY(0));ctx.stroke();
+  ctx.beginPath();ctx.moveTo(toX(0),pad.top);ctx.lineTo(toX(0),H-pad.bottom);ctx.stroke();
+
+  const steps=600;
+  active.forEach(({fn,color})=>{
+    ctx.beginPath();ctx.strokeStyle=color;ctx.lineWidth=2.5;ctx.setLineDash([]);
+    let first=true;
+    for(let i=0;i<=steps;i++){
+      const x=xMin+(xMax-xMin)*i/steps;
+      let y;try{y=fn(x);}catch(e){first=true;continue;}
+      if(!isFinite(y)||isNaN(y)){first=true;continue;}
+      const cy=toY(Math.max(yMin-0.5,Math.min(yMax+0.5,y)));
+      if(first){ctx.moveTo(toX(x),cy);first=false;}else ctx.lineTo(toX(x),cy);
+    }
+    ctx.stroke();
+    // Right-side label
+    try{
+      const yVal=fn(4);
+      const clampY=Math.max(yMin+0.1,Math.min(yMax-0.1,yVal));
+      ctx.fillStyle=color;ctx.font='bold 10px JetBrains Mono';ctx.textAlign='left';
+      ctx.fillText(ALL_FNS.find(f=>f.fn===fn||f.color===color)?.label||'',toX(4)+4,toY(clampY)+3);
+    }catch(e){}
+  });
+}
+
+buildCompareBtns();
+drawAll();
+
+window.addEventListener('resize', ()=>{
+  drawAll();
+});
+</script>
+</body>
+</html>
