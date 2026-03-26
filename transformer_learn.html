@@ -7,30 +7,30 @@
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Instrument+Serif:ital@0;1&family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg:    #0a0a0a;
-  --bg2:   #111111;
-  --bg3:   #1a1a1a;
-  --bg4:   #222222;
-  --white: #f0f0f0;
-  --white2:#aaaaaa;
-  --white3:#555555;
-  --border:#2a2a2a;
-  --Q:     #00e676;   /* green */
-  --K:     #448aff;   /* blue  */
-  --V:     #ff4081;   /* pink  */
-  --W:     #ffd740;   /* gold  — learned weight */
-  --out:   #ea80fc;   /* purple — output */
-  --warn:  #ff6d00;
+  --bg:    #ffffff;
+  --bg2:   #f8f9fa;
+  --bg3:   #f0f2f5;
+  --bg4:   #e8ebef;
+  --white: #111111;
+  --white2:#444444;
+  --white3:#888888;
+  --border:#d0d5dd;
+  --Q:     #007a3d;   /* dark green */
+  --K:     #1a5fd4;   /* dark blue  */
+  --V:     #c0185a;   /* dark pink  */
+  --W:     #a07000;   /* dark gold  — learned weight */
+  --out:   #7b00c8;   /* dark purple — output */
+  --warn:  #c04a00;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 html{scroll-behavior:smooth;}
 body{background:var(--bg);color:var(--white);font-family:'Bricolage Grotesque',sans-serif;overflow-x:hidden;}
 ::-webkit-scrollbar{width:5px;}
 ::-webkit-scrollbar-track{background:var(--bg);}
-::-webkit-scrollbar-thumb{background:var(--white3);border-radius:3px;}
+::-webkit-scrollbar-thumb{background:#bbb;border-radius:3px;}
 
 /* ── NAV ── */
-nav{position:fixed;top:0;left:0;right:0;z-index:200;background:rgba(10,10,10,.95);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);height:48px;display:flex;align-items:center;padding:0 16px;gap:4px;overflow-x:auto;}
+nav{position:fixed;top:0;left:0;right:0;z-index:200;background:rgba(255,255,255,.97);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);height:48px;display:flex;align-items:center;padding:0 16px;gap:4px;overflow-x:auto;}
 nav .logo{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:var(--white);margin-right:12px;white-space:nowrap;}
 nav a{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--white3);text-decoration:none;padding:4px 10px;border-radius:4px;border:1px solid transparent;white-space:nowrap;transition:all .2s;}
 nav a:hover{color:var(--white);border-color:var(--border);}
@@ -70,21 +70,21 @@ hr.div{border:none;border-top:1px solid var(--border);margin:80px 0;}
 table{border-collapse:collapse;font-family:'JetBrains Mono',monospace;font-size:11px;width:100%;}
 th{background:var(--bg3);color:var(--white);padding:10px 14px;text-align:left;border:1px solid var(--border);letter-spacing:1px;}
 td{padding:9px 14px;border:1px solid var(--border);color:var(--white2);vertical-align:middle;}
-tr:hover td{background:var(--bg3);}
+tr:hover td{background:#f0f2f5;}
 .tok-cell{color:var(--white);font-weight:700;}
 .q-cell{color:var(--Q);}
 .k-cell{color:var(--K);}
 .v-cell{color:var(--V);}
 .w-cell{color:var(--W);}
 .out-cell{color:var(--out);}
-.hi{background:rgba(255,255,255,.05);}
+.hi{background:rgba(0,0,0,.04);}
 
 /* ── MATRIX VISUAL ── */
 .mat-wrap{display:inline-block;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin:8px 4px;}
 .mat-title{font-family:'JetBrains Mono',monospace;font-size:10px;text-align:center;padding:6px;border-bottom:1px solid var(--border);letter-spacing:2px;}
 .mat-body{padding:10px;}
 .mat-row{display:flex;gap:4px;margin-bottom:4px;}
-.mat-cell{width:46px;height:28px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;border:1px solid rgba(255,255,255,.07);}
+.mat-cell{width:46px;height:28px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;border:1px solid rgba(0,0,0,.10);}
 
 /* ── ATTENTION HEATMAP ── */
 .hm-wrap{overflow-x:auto;}
@@ -95,14 +95,14 @@ tr:hover td{background:var(--bg3);}
 
 /* ── BUTTONS ── */
 .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 22px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;cursor:pointer;border:none;transition:all .25s;letter-spacing:.5px;}
-.btn-w{background:var(--white);color:var(--bg);}
-.btn-w:hover{background:#ccc;}
+.btn-w{background:#111;color:#fff;}
+.btn-w:hover{background:#333;}
 .btn-outline{background:transparent;color:var(--white2);border:1px solid var(--border);}
 .btn-outline:hover{border-color:var(--white2);color:var(--white);}
-.btn-Q{background:var(--Q);color:#000;}
+.btn-Q{background:var(--Q);color:#fff;}
 .btn-K{background:var(--K);color:#fff;}
 .btn-V{background:var(--V);color:#fff;}
-.btn-W{background:var(--W);color:#000;}
+.btn-W{background:var(--W);color:#fff;}
 
 /* ── INLINE FORMULA ── */
 .formula{font-family:'JetBrains Mono',monospace;font-size:12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:12px 18px;display:inline-block;margin:8px 0;color:var(--white);}
@@ -122,10 +122,10 @@ tr:hover td{background:var(--bg3);}
 .callout-icon{font-size:20px;flex-shrink:0;}
 .callout-text{font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.9;color:var(--white2);}
 .callout-text b{color:var(--white);}
-.co-tip{background:rgba(0,230,118,.07);border-left:3px solid var(--Q);}
-.co-warn{background:rgba(255,215,64,.07);border-left:3px solid var(--W);}
-.co-info{background:rgba(68,138,255,.07);border-left:3px solid var(--K);}
-.co-key{background:rgba(255,64,129,.07);border-left:3px solid var(--V);}
+.co-tip{background:rgba(0,122,61,.06);border-left:3px solid var(--Q);}
+.co-warn{background:rgba(160,112,0,.06);border-left:3px solid var(--W);}
+.co-info{background:rgba(26,95,212,.06);border-left:3px solid var(--K);}
+.co-key{background:rgba(192,24,90,.06);border-left:3px solid var(--V);}
 
 /* ── PROGRESS BAR ── */
 .prog-bar{height:3px;background:var(--bg3);border-radius:2px;overflow:hidden;margin:20px 0;}
@@ -135,14 +135,14 @@ tr:hover td{background:var(--bg3);}
 .w-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
 .w-bar-label{font-family:'JetBrains Mono',monospace;font-size:10px;width:80px;color:var(--white2);}
 .w-bar-bg{flex:1;height:22px;background:var(--bg3);border-radius:4px;overflow:hidden;}
-.w-bar-fill{height:100%;border-radius:4px;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;color:#000;transition:width .6s cubic-bezier(.34,1.56,.64,1);}
+.w-bar-fill{height:100%;border-radius:4px;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;color:#fff;transition:width .6s cubic-bezier(.34,1.56,.64,1);}
 .w-bar-val{font-family:'JetBrains Mono',monospace;font-size:10px;width:55px;text-align:right;color:var(--white2);}
 
 /* ── DECODER MASK ── */
 .mask-tbl{border-collapse:separate;border-spacing:3px;margin:12px 0;}
 .mask-cell{width:54px;height:36px;border-radius:5px;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;}
-.mask-yes{background:rgba(0,230,118,.15);border:1px solid var(--Q);color:var(--Q);}
-.mask-no{background:rgba(255,64,129,.08);border:1px solid #333;color:var(--white3);}
+.mask-yes{background:rgba(0,122,61,.12);border:1px solid var(--Q);color:var(--Q);}
+.mask-no{background:rgba(192,24,90,.07);border:1px solid #ddd;color:#bbb;}
 
 /* ── PIPELINE STEP ── */
 .pipe-step{display:flex;gap:16px;margin-bottom:4px;opacity:0;transform:translateX(-16px);transition:all .5s;}
@@ -200,6 +200,7 @@ canvas{border-radius:8px;display:block;}
   <a href="#multihead">Multi-Head</a>
   <a href="#weights">Weights</a>
   <a href="#decoder">Decoder</a>
+  <a href="#code">Code</a>
   <a href="#pipeline">Pipeline</a>
 </nav>
 
@@ -715,22 +716,22 @@ canvas{border-radius:8px;display:block;}
   <div class="box">
     <div class="box-title">WHY MULTIPLE HEADS?</div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-top:8px;">
-      <div style="padding:16px;background:var(--bg3);border-radius:8px;border:1px solid rgba(0,230,118,.2);">
+      <div style="padding:16px;background:var(--bg3);border-radius:8px;border:1px solid rgba(0,122,61,.25);">
         <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--Q);margin-bottom:8px;letter-spacing:2px;">HEAD 1</div>
         <div style="font-weight:700;margin-bottom:4px;">Grammar</div>
         <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--white2);">subject → verb relationships<br>"I" → "love" → "machine"</div>
       </div>
-      <div style="padding:16px;background:var(--bg3);border-radius:8px;border:1px solid rgba(68,138,255,.2);">
+      <div style="padding:16px;background:var(--bg3);border-radius:8px;border:1px solid rgba(26,95,212,.25);">
         <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--K);margin-bottom:8px;letter-spacing:2px;">HEAD 2</div>
         <div style="font-weight:700;margin-bottom:4px;">Co-reference</div>
         <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--white2);">pronoun → noun links<br>"it" → "machine learning"</div>
       </div>
-      <div style="padding:16px;background:var(--bg3);border-radius:8px;border:1px solid rgba(255,64,129,.2);">
+      <div style="padding:16px;background:var(--bg3);border-radius:8px;border:1px solid rgba(192,24,90,.25);">
         <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--V);margin-bottom:8px;letter-spacing:2px;">HEAD 3</div>
         <div style="font-weight:700;margin-bottom:4px;">Semantics</div>
         <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--white2);">word meaning clusters<br>"magic" ↔ "love" (positive)</div>
       </div>
-      <div style="padding:16px;background:var(--bg3);border-radius:8px;border:1px solid rgba(255,215,64,.2);">
+      <div style="padding:16px;background:var(--bg3);border-radius:8px;border:1px solid rgba(160,112,0,.25);">
         <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--W);margin-bottom:8px;letter-spacing:2px;">HEAD 4</div>
         <div style="font-weight:700;margin-bottom:4px;">Long-Range</div>
         <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--white2);">distant word relations<br>"I" ↔ "magic" (ends)</div>
@@ -819,81 +820,827 @@ canvas{border-radius:8px;display:block;}
   <div class="adv-badge">⭐⭐ ADVANCED LEVEL</div>
   <div class="sec-num">STEP 10</div>
   <div class="sec-title">Decoder — Generating Output</div>
-  <div class="sec-desc">Encoder understood the input. Now the Decoder generates output ONE TOKEN AT A TIME — using masked self-attention (can't see future) + cross-attention to the encoder.</div>
+  <div class="sec-desc">The encoder understood the input. Now the Decoder generates output ONE TOKEN AT A TIME — using three sublayers: masked self-attention (can't peek at future), cross-attention to the encoder, and a feed-forward network.</div>
 
+  <!-- DECODER ARCHITECTURE OVERVIEW -->
   <div class="box">
-    <div class="box-title">MASKED SELF-ATTENTION — what each word can see</div>
-    <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--white2);margin-bottom:14px;">
-      Decoder can only look at PAST words. Future is MASKED (blocked). This is how GPT generates text.
+    <div class="box-title">THE DECODER'S THREE SUBLAYERS</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:20px;">
+      <div style="padding:18px;background:var(--bg3);border-radius:8px;border:2px solid rgba(0,122,61,.3);">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--Q);margin-bottom:8px;letter-spacing:2px;">SUBLAYER 1</div>
+        <div style="font-weight:800;margin-bottom:6px;">🔒 Masked Self-Attention</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--white2);line-height:1.8;">Each decoded token attends to ALL previously decoded tokens, but CANNOT see future tokens. Uses a causal mask (lower-triangular matrix).</div>
+      </div>
+      <div style="padding:18px;background:var(--bg3);border-radius:8px;border:2px solid rgba(26,95,212,.3);">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--K);margin-bottom:8px;letter-spacing:2px;">SUBLAYER 2</div>
+        <div style="font-weight:800;margin-bottom:6px;">🔗 Cross-Attention</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--white2);line-height:1.8;">Decoder Q comes from sublayer 1. Encoder K, V come from the encoder output. This is how decoder "reads" the source sentence.</div>
+      </div>
+      <div style="padding:18px;background:var(--bg3);border-radius:8px;border:2px solid rgba(160,112,0,.3);">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--W);margin-bottom:8px;letter-spacing:2px;">SUBLAYER 3</div>
+        <div style="font-weight:800;margin-bottom:6px;">⚡ Feed-Forward + Output</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--white2);line-height:1.8;">Same FFN as encoder. Then a final linear layer maps to vocab_size logits → softmax → next token probability.</div>
+      </div>
     </div>
-    <div id="mask-grid"></div>
-
-    <div class="callout co-key">
-      <div class="callout-icon">🚫</div>
+    <div class="callout co-info">
+      <div class="callout-icon">🏗</div>
       <div class="callout-text">
-        <b>Why mask the future?</b> During training, we feed the correct output sequence. If the model could see future words, it would just copy them — no learning! Masking forces it to PREDICT.
+        <b>Encoder vs Decoder:</b> Encoder processes ALL input tokens simultaneously (bidirectional attention). Decoder generates tokens sequentially — one at a time — and can only attend to the past (causal/masked attention). Each sublayer is wrapped in Add &amp; LayerNorm (residual connection).
       </div>
     </div>
   </div>
 
+  <!-- WHAT IS THE MASK? -->
   <div class="box">
-    <div class="box-title">GENERATION STEP-BY-STEP (Translation example)</div>
-    <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--white2);margin-bottom:16px;">
-      Task: translate "I love machine learning because it is magic" → Hindi
+    <div class="box-title" style="color:var(--V)">🔒 WHAT IS THE MASK? — The Causal Mask Explained</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--white2);margin-bottom:14px;line-height:2;">
+      During training the decoder receives the FULL target sequence at once (for efficiency).<br>
+      But it must NOT cheat — token at position <b style="color:var(--white)">i</b> cannot see tokens at position <b style="color:var(--V)">i+1, i+2, …</b><br>
+      Solution: we ADD a large negative number (−∞) to the attention scores for all future positions before softmax.
     </div>
 
-    <div class="step-flow">
-      <div class="step-item">
-        <div class="step-num" style="border-color:var(--Q);color:var(--Q)">0</div>
-        <div class="step-body">
-          <div class="step-label">Start Token</div>
-          <div class="step-text">Input: &lt;START&gt;<br>Decoder asks encoder: "Give me context of the whole input"<br>Output probabilities → picks: <b style="color:var(--Q)">मैं</b> (0.72)</div>
+    <div style="display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;margin-bottom:20px;">
+      <!-- Raw score matrix (before mask) -->
+      <div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--white3);margin-bottom:8px;letter-spacing:2px;">① RAW SCORES (Q·Kᵀ/√dk) before mask — 4 tokens "I love ML magic"</div>
+        <div id="raw-score-before-mask"></div>
+      </div>
+      <!-- After adding -inf mask -->
+      <div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--V);margin-bottom:8px;letter-spacing:2px;">② ADD MASK (future positions → −∞)</div>
+        <div id="raw-score-after-mask"></div>
+      </div>
+      <!-- After softmax -->
+      <div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--Q);margin-bottom:8px;letter-spacing:2px;">③ AFTER SOFTMAX — future positions become 0.00</div>
+        <div id="raw-score-softmax"></div>
+      </div>
+    </div>
+
+    <div class="callout co-tip">
+      <div class="callout-icon">💡</div>
+      <div class="callout-text">
+        <b>Why −∞?</b> softmax(−∞) = e<sup>−∞</sup> / Σ = 0 / Σ ≈ <b>0</b>. Those positions become exactly zero probability — as if they don't exist. The model physically cannot attend to them. In practice, a very large negative number like −1e9 or −10000 is used.
+      </div>
+    </div>
+  </div>
+
+  <!-- WORKED MASK EXAMPLE -->
+  <div class="box">
+    <div class="box-title" style="color:var(--Q)">WORKED EXAMPLE — Masked Attention for "love" (position 1)</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--white2);margin-bottom:16px;line-height:2;">
+      Decoder sequence: <b style="color:var(--white)">"I love ML magic"</b> &nbsp;(positions 0, 1, 2, 3)<br>
+      We compute attention for <b style="color:var(--Q)">"love"</b> at position 1. It can see: "I" ✅  and itself ✅. It CANNOT see: "ML" ✗  and "magic" ✗
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+      <div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--W);margin-bottom:10px;letter-spacing:1px;">STEP A — Q·Kᵀ for "love" row (row index 1):</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:12px;line-height:2.4;color:var(--white2);">
+          Q("love") = <span style="color:var(--Q)">[1,2,2]</span><br>
+          K("I") &nbsp;&nbsp;&nbsp;= <span style="color:var(--K)">[2,1,1]</span>&nbsp; score = 1×2+2×1+2×1 = <span style="color:var(--W);font-weight:700">6</span><br>
+          K("love") = <span style="color:var(--K)">[1,2,1]</span>&nbsp; score = 1×1+2×2+2×1 = <span style="color:var(--W);font-weight:700">7</span><br>
+          K("ML") &nbsp;&nbsp;= <span style="color:var(--K)">[1,1,2]</span>&nbsp; score = 1×1+2×1+2×2 = <span style="color:var(--V);text-decoration:line-through">8</span> → MASKED<br>
+          K("magic")= <span style="color:var(--K)">[2,1,1]</span>&nbsp; score = 1×2+2×1+2×1 = <span style="color:var(--V);text-decoration:line-through">6</span> → MASKED
         </div>
       </div>
-      <div class="step-item">
-        <div class="step-num" style="border-color:var(--Q);color:var(--Q)">1</div>
-        <div class="step-body">
-          <div class="step-label">Second Token</div>
-          <div class="step-text">Input: &lt;START&gt; मैं<br>Masked attention: "मैं" can see "&lt;START&gt;" ✅<br>Output → picks: <b style="color:var(--Q)">ML</b> (or मशीन) (0.65)</div>
+      <div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--W);margin-bottom:10px;letter-spacing:1px;">STEP B — Scale (÷√3≈1.73) then add mask:</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:12px;line-height:2.4;color:var(--white2);">
+          "I" &nbsp;&nbsp;&nbsp;: 6 ÷ 1.73 = <span style="color:var(--Q)">3.46</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→ keep<br>
+          "love": 7 ÷ 1.73 = <span style="color:var(--Q)">4.05</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→ keep<br>
+          "ML" &nbsp;: 8 ÷ 1.73 = 4.62 + <span style="color:var(--V)">(-∞)</span> = <span style="color:var(--V)">-∞</span><br>
+          "magic": 6 ÷ 1.73 = 3.46 + <span style="color:var(--V)">(-∞)</span> = <span style="color:var(--V)">-∞</span>
         </div>
       </div>
-      <div class="step-item">
-        <div class="step-num" style="border-color:var(--Q);color:var(--Q)">2</div>
-        <div class="step-body">
-          <div class="step-label">Continue...</div>
-          <div class="step-text">Each step: use all PREVIOUS decoded tokens + FULL encoder output<br>→ पसंद करता हूँ → क्योंकि → यह → जादू है</div>
+    </div>
+
+    <div style="margin-top:20px;padding:20px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--white3);margin-bottom:14px;letter-spacing:1px;">STEP C — SOFTMAX on masked scores:</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:12px;line-height:2.2;color:var(--white2);">
+        e<sup>3.46</sup> = 31.82 &nbsp;&nbsp; e<sup>4.05</sup> = 57.40 &nbsp;&nbsp; e<sup>−∞</sup> = 0 &nbsp;&nbsp; e<sup>−∞</sup> = 0<br>
+        sum = 31.82 + 57.40 + 0 + 0 = <b style="color:var(--white)">89.22</b><br><br>
+        Attention weights for "love":
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:12px;" id="love-attn-bars"></div>
+      <div style="margin-top:16px;padding:14px;background:var(--bg2);border-radius:6px;border:1px solid var(--out);">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--white3);margin-bottom:6px;">RESULT — Output for "love" = weighted sum of V vectors:</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:13px;line-height:2;">
+          out("love") = <span style="color:var(--Q)">0.357</span> × V("I") + <span style="color:var(--Q)">0.643</span> × V("love") + <span style="color:var(--V)">0</span> × V("ML") + <span style="color:var(--V)">0</span> × V("magic")<br>
+          = <span style="color:var(--Q)">0.357</span>×[1,0,1] + <span style="color:var(--Q)">0.643</span>×[1,1,0]<br>
+          = [0.357,0,0.357] + [0.643,0.643,0] = <span style="color:var(--out);font-weight:700">[1.00, 0.643, 0.357]</span> 🎉
+        </div>
+        <div class="callout co-key" style="margin-top:14px;margin-bottom:0;">
+          <div class="callout-icon">🧠</div>
+          <div class="callout-text">
+            <b>"love" now contains context of ONLY "I" and itself</b> — zero information from "ML" or "magic" which come later. This is causal (autoregressive) attention. At inference time, those future tokens literally don't exist yet!
+          </div>
         </div>
       </div>
-      <div class="step-item">
-        <div class="step-num" style="border-color:var(--W);color:var(--W)">&lt;END&gt;</div>
-        <div class="step-body">
-          <div class="step-label">Stop</div>
-          <div class="step-text">When model outputs &lt;END&gt; token, generation stops.<br>Final output: <b style="color:var(--Q)">मैं ML पसंद करता हूँ क्योंकि यह जादू है</b></div>
-        </div>
+    </div>
+  </div>
+
+  <!-- FULL MASK GRID -->
+  <div class="box">
+    <div class="box-title">CAUSAL MASK MATRIX — full 8×8 for "I love machine learning because it is magic"</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--white2);margin-bottom:14px;line-height:2;">
+      Green ✓ = token CAN attend &nbsp;|&nbsp; Red ✗ = token CANNOT attend (masked with −∞)<br>
+      Lower-triangular = each token only sees itself and past tokens. This is the <b style="color:var(--white)">causal mask</b>.
+    </div>
+    <div id="mask-grid"></div>
+    <div class="callout co-key" style="margin-top:16px;">
+      <div class="callout-icon">🚫</div>
+      <div class="callout-text">
+        <b>Why mask the future?</b> During training, we feed the correct output sequence all at once (teacher forcing). If the model could see future words, it would just copy them — zero learning! Masking forces genuine prediction. At inference, future tokens simply don't exist yet, so the mask is naturally applied.
       </div>
+    </div>
+  </div>
+
+  <!-- INTERACTIVE MASK DEMO -->
+  <div class="box">
+    <div class="box-title" style="color:var(--K)">🎮 INTERACTIVE — Click a token to see what it can attend to</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--white2);margin-bottom:14px;">Select any output token — the mask will highlight which input tokens it is ALLOWED to attend to.</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;" id="interactive-tok-btns"></div>
+    <div id="interactive-mask-display"></div>
+  </div>
+
+  <!-- GENERATION STEP BY STEP -->
+  <div class="box">
+    <div class="box-title">AUTOREGRESSIVE GENERATION — Step-by-step (Summarisation task)</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--white2);margin-bottom:16px;">
+      Task: summarise <b style="color:var(--white)">"I love machine learning because it is magic"</b> → short output<br>
+      At each step, the decoder has access to: all previously generated tokens + the full encoder output (K, V).
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <tr>
+          <th>Step</th>
+          <th>Decoder Input (so far)</th>
+          <th style="color:var(--Q)">Masked Self-Attn sees…</th>
+          <th style="color:var(--K)">Cross-Attn attends to…</th>
+          <th style="color:var(--out)">Generates</th>
+          <th>Prob</th>
+        </tr>
+        <tr>
+          <td class="tok-cell">0</td>
+          <td>[&lt;START&gt;]</td>
+          <td class="q-cell">only &lt;START&gt;</td>
+          <td class="k-cell">all 8 encoder tokens</td>
+          <td class="out-cell">ML</td>
+          <td>0.72</td>
+        </tr>
+        <tr>
+          <td class="tok-cell">1</td>
+          <td>[&lt;START&gt;, ML]</td>
+          <td class="q-cell">ML sees: &lt;START&gt;, ML</td>
+          <td class="k-cell">focuses on "machine","learning"</td>
+          <td class="out-cell">is</td>
+          <td>0.65</td>
+        </tr>
+        <tr>
+          <td class="tok-cell">2</td>
+          <td>[…, is]</td>
+          <td class="q-cell">is sees: steps 0,1,2</td>
+          <td class="k-cell">focuses on "love","magic"</td>
+          <td class="out-cell">loved</td>
+          <td>0.58</td>
+        </tr>
+        <tr>
+          <td class="tok-cell">3</td>
+          <td>[…, loved]</td>
+          <td class="q-cell">loved sees: steps 0–3</td>
+          <td class="k-cell">focuses on "because"</td>
+          <td class="out-cell">because</td>
+          <td>0.61</td>
+        </tr>
+        <tr>
+          <td class="tok-cell">4</td>
+          <td>[…, because]</td>
+          <td class="q-cell">sees steps 0–4</td>
+          <td class="k-cell">focuses on "magic"</td>
+          <td class="out-cell">it's</td>
+          <td>0.79</td>
+        </tr>
+        <tr class="hi">
+          <td class="tok-cell">5</td>
+          <td>[…, it's]</td>
+          <td class="q-cell">sees steps 0–5</td>
+          <td class="k-cell">focuses on "magic","is"</td>
+          <td class="out-cell">magical</td>
+          <td>0.67</td>
+        </tr>
+        <tr>
+          <td class="tok-cell" style="color:var(--W)">&lt;END&gt;</td>
+          <td>[…, magical]</td>
+          <td class="q-cell">sees all previous</td>
+          <td class="k-cell">global context</td>
+          <td class="out-cell" style="color:var(--W)">&lt;END&gt; → STOP</td>
+          <td>0.88</td>
+        </tr>
+      </table>
+    </div>
+
+    <div style="margin-top:16px;padding:16px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--white3);margin-bottom:8px;">FINAL OUTPUT:</div>
+      <div style="font-family:'Instrument Serif',serif;font-size:1.5rem;color:var(--white);">ML is loved because it's magical</div>
     </div>
   </div>
 
   <!-- Encoder-Decoder cross attention -->
   <div class="box">
-    <div class="box-title">ENCODER-DECODER CROSS-ATTENTION</div>
+    <div class="box-title">ENCODER-DECODER CROSS-ATTENTION — How the decoder "reads" the source</div>
     <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--white2);line-height:2;margin-bottom:12px;">
-      When decoder generates each token, it uses:<br>
-      · <span style="color:var(--Q)">Q</span> from decoder (what are we generating?)<br>
-      · <span style="color:var(--K)">K</span> and <span style="color:var(--V)">V</span> from encoder output (what was the input?)
+      For each generated token, cross-attention lets the decoder look at the encoder output:<br>
+      · <span style="color:var(--Q)">Q</span> = from decoder (what concept are we generating now?)<br>
+      · <span style="color:var(--K)">K</span>, <span style="color:var(--V)">V</span> = from encoder (what did the source sentence contain?)<br>
+      Thicker lines = stronger attention. Each output word attends most to its corresponding source token.
     </div>
-    <canvas id="cross-attn-canvas" height="200" style="width:100%;"></canvas>
+    <canvas id="cross-attn-canvas" height="220" style="width:100%;"></canvas>
+
+    <div class="callout co-warn" style="margin-top:16px;">
+      <div class="callout-icon">⚡</div>
+      <div class="callout-text">
+        <b>Cross-attention is the bridge.</b> Masked self-attention only gives context of decoded tokens so far. Cross-attention provides the source meaning. Without it, the decoder would be generating blindly — like translating without reading the original!
+      </div>
+    </div>
+  </div>
+
+  <!-- DECODER vs ENCODER side by side -->
+  <div class="box">
+    <div class="box-title">ENCODER vs DECODER — Key Differences</div>
+    <div class="tbl-wrap">
+      <table>
+        <tr>
+          <th>Property</th>
+          <th style="color:var(--Q)">Encoder</th>
+          <th style="color:var(--K)">Decoder</th>
+        </tr>
+        <tr><td class="tok-cell">Attention type</td><td class="q-cell">Bidirectional (full)</td><td class="k-cell">Causal / Masked (lower-triangular)</td></tr>
+        <tr><td class="tok-cell">Can see future?</td><td class="q-cell">✅ Yes — all tokens</td><td class="k-cell">❌ No — only past tokens</td></tr>
+        <tr><td class="tok-cell">Extra sublayer?</td><td class="q-cell">❌ No cross-attention</td><td class="k-cell">✅ Cross-attention to encoder</td></tr>
+        <tr><td class="tok-cell">Runs how?</td><td class="q-cell">All tokens in parallel</td><td class="k-cell">One token at a time (autoregressive)</td></tr>
+        <tr><td class="tok-cell">Used by model</td><td class="q-cell">BERT (encoder-only)</td><td class="k-cell">GPT (decoder-only), T5 (both)</td></tr>
+        <tr><td class="tok-cell">Output</td><td class="q-cell">Context vectors for each input token</td><td class="k-cell">Probability over vocab → next token</td></tr>
+      </table>
+    </div>
   </div>
 </div>
 
 <hr class="div">
 
-<!-- ══════════ 11. FULL PIPELINE ══════════ -->
+<!-- ══════════ 12. CODE ══════════ -->
+<div class="section" id="code">
+  <div class="adv-badge">💻 IMPLEMENTATION</div>
+  <div class="sec-num">CHAPTER 12</div>
+  <div class="sec-title">Build & Use Transformers in TensorFlow</div>
+  <div class="sec-desc">Two paths: build a custom Transformer from scratch using Keras layers, or load a pre-trained model from HuggingFace and run inference in seconds. Every block is explained — no magic.</div>
+
+  <!-- TAB BAR -->
+  <div style="display:flex;gap:0;margin-bottom:0;border-bottom:2px solid var(--border);">
+    <button onclick="showCodeTab('custom')" id="tab-custom"
+      style="padding:10px 24px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;border:none;cursor:pointer;border-bottom:2px solid var(--K);margin-bottom:-2px;background:white;color:var(--K);">
+      🔧 Build Custom Transformer
+    </button>
+    <button onclick="showCodeTab('pretrained')" id="tab-pretrained"
+      style="padding:10px 24px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;border:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;background:white;color:var(--white3);">
+      ⚡ Use Pre-trained Model
+    </button>
+  </div>
+
+  <!-- ── CUSTOM TRANSFORMER TAB ── -->
+  <div id="tab-content-custom">
+
+    <!-- STEP 1: Scaled Dot-Product Attention -->
+    <div class="box" style="margin-top:24px;">
+      <div class="box-title" style="color:var(--Q)">BLOCK 1 — Scaled Dot-Product Attention</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--white2);margin-bottom:14px;line-height:1.9;">
+        The core attention formula: <b>Attention(Q,K,V) = softmax(QKᵀ / √dk) · V</b><br>
+        Takes Query, Key, Value matrices → returns a context-weighted output matrix.
+      </div>
+      <pre style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:20px;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.9;color:var(--white);"><span style="color:var(--white3)"># ── Block 1: Scaled Dot-Product Attention ──────────────────────</span>
+<span style="color:var(--K)">import</span> tensorflow <span style="color:var(--K)">as</span> tf
+<span style="color:var(--K)">import</span> numpy <span style="color:var(--K)">as</span> np
+
+<span style="color:var(--K)">def</span> <span style="color:var(--Q)">scaled_dot_product_attention</span>(Q, K, V, mask=<span style="color:var(--V)">None</span>):
+    <span style="color:var(--white3)">"""
+    Q : (batch, heads, seq_q, d_k)
+    K : (batch, heads, seq_k, d_k)
+    V : (batch, heads, seq_k, d_v)
+    Returns output (batch, heads, seq_q, d_v) and weights
+    """</span>
+    d_k = tf.cast(tf.shape(K)[<span style="color:var(--V)">-1</span>], tf.float32)
+
+    <span style="color:var(--white3)"># Step 1 — Q · Kᵀ  →  (batch, heads, seq_q, seq_k)</span>
+    scores = tf.matmul(Q, K, transpose_b=<span style="color:var(--V)">True</span>)   <span style="color:var(--white3)"># raw dot products</span>
+    scores = scores / tf.math.sqrt(d_k)           <span style="color:var(--white3)"># ÷ √dk  (stabilise gradients)</span>
+
+    <span style="color:var(--white3)"># Step 2 — apply causal/padding mask (add -1e9 to blocked positions)</span>
+    <span style="color:var(--K)">if</span> mask <span style="color:var(--K)">is not</span> <span style="color:var(--V)">None</span>:
+        scores += (mask * <span style="color:var(--V)">-1e9</span>)
+
+    <span style="color:var(--white3)"># Step 3 — softmax over last axis → attention weights (sum to 1 per row)</span>
+    weights = tf.nn.softmax(scores, axis=<span style="color:var(--V)">-1</span>)     <span style="color:var(--white3)"># (batch, heads, seq_q, seq_k)</span>
+
+    <span style="color:var(--white3)"># Step 4 — weighted sum of Values</span>
+    output = tf.matmul(weights, V)                <span style="color:var(--white3)"># (batch, heads, seq_q, d_v)</span>
+    <span style="color:var(--K)">return</span> output, weights</pre>
+      <div class="callout co-tip" style="margin-top:12px;">
+        <div class="callout-icon">💡</div>
+        <div class="callout-text"><b>mask * -1e9</b> — where mask=1 (blocked), scores become ≈−∞, so softmax gives ≈0. This is exactly the causal mask from Step 10!</div>
+      </div>
+    </div>
+
+    <!-- STEP 2: Multi-Head Attention Layer -->
+    <div class="box">
+      <div class="box-title" style="color:var(--K)">BLOCK 2 — Multi-Head Attention Layer</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--white2);margin-bottom:14px;line-height:1.9;">
+        Splits input into <b>num_heads</b> parallel attention heads, runs scaled dot-product attention on each, then concatenates and projects back. Uses <b>tf.keras.layers.Layer</b> subclassing.
+      </div>
+      <pre style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:20px;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.9;color:var(--white);"><span style="color:var(--white3)"># ── Block 2: Multi-Head Attention ───────────────────────────────</span>
+<span style="color:var(--K)">class</span> <span style="color:var(--Q)">MultiHeadAttention</span>(tf.keras.layers.Layer):
+    <span style="color:var(--K)">def</span> <span style="color:var(--Q)">__init__</span>(self, d_model, num_heads):
+        super().__init__()
+        self.num_heads = num_heads
+        self.d_model   = d_model
+        assert d_model % num_heads == <span style="color:var(--V)">0</span>, <span style="color:var(--V)">"d_model must be divisible by num_heads"</span>
+        self.d_k = d_model // num_heads          <span style="color:var(--white3)"># dimension per head</span>
+
+        <span style="color:var(--white3)"># Learned projection matrices  W_Q, W_K, W_V, W_O</span>
+        self.W_Q = tf.keras.layers.Dense(d_model) <span style="color:var(--white3)"># projects to all heads at once</span>
+        self.W_K = tf.keras.layers.Dense(d_model)
+        self.W_V = tf.keras.layers.Dense(d_model)
+        self.W_O = tf.keras.layers.Dense(d_model) <span style="color:var(--white3)"># output projection</span>
+
+    <span style="color:var(--K)">def</span> <span style="color:var(--Q)">split_heads</span>(self, x, batch_size):
+        <span style="color:var(--white3)"># x: (batch, seq, d_model) → (batch, heads, seq, d_k)</span>
+        x = tf.reshape(x, (batch_size, <span style="color:var(--V)">-1</span>, self.num_heads, self.d_k))
+        <span style="color:var(--K)">return</span> tf.transpose(x, perm=[<span style="color:var(--V)">0</span>, <span style="color:var(--V)">2</span>, <span style="color:var(--V)">1</span>, <span style="color:var(--V)">3</span>])
+
+    <span style="color:var(--K)">def</span> <span style="color:var(--Q)">call</span>(self, Q, K, V, mask=<span style="color:var(--V)">None</span>):
+        batch = tf.shape(Q)[<span style="color:var(--V)">0</span>]
+
+        Q = self.split_heads(self.W_Q(Q), batch)  <span style="color:var(--white3)"># project + split</span>
+        K = self.split_heads(self.W_K(K), batch)
+        V = self.split_heads(self.W_V(V), batch)
+
+        <span style="color:var(--white3)"># Attention for every head in parallel</span>
+        attn_out, attn_weights = scaled_dot_product_attention(Q, K, V, mask)
+
+        <span style="color:var(--white3)"># Merge heads back: (batch, heads, seq, d_k) → (batch, seq, d_model)</span>
+        attn_out = tf.transpose(attn_out, perm=[<span style="color:var(--V)">0</span>, <span style="color:var(--V)">2</span>, <span style="color:var(--V)">1</span>, <span style="color:var(--V)">3</span>])
+        attn_out = tf.reshape(attn_out, (batch, <span style="color:var(--V)">-1</span>, self.d_model))
+
+        output = self.W_O(attn_out)               <span style="color:var(--white3)"># final linear projection</span>
+        <span style="color:var(--K)">return</span> output, attn_weights</pre>
+    </div>
+
+    <!-- STEP 3: Feed-Forward + Add&Norm -->
+    <div class="box">
+      <div class="box-title" style="color:var(--V)">BLOCK 3 — Feed-Forward Network + Add &amp; LayerNorm</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--white2);margin-bottom:14px;line-height:1.9;">
+        Each sublayer output passes through <b>Add &amp; Norm</b>: <code>LayerNorm(x + sublayer(x))</code>. The FFN is two linear layers with a GELU activation — it adds non-linearity and capacity.
+      </div>
+      <pre style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:20px;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.9;color:var(--white);"><span style="color:var(--white3)"># ── Block 3: Feed-Forward Network ───────────────────────────────</span>
+<span style="color:var(--K)">def</span> <span style="color:var(--Q)">point_wise_ffn</span>(d_model, dff):
+    <span style="color:var(--white3)">"""dff = inner dimension (typically 4× d_model)"""</span>
+    <span style="color:var(--K)">return</span> tf.keras.Sequential([
+        tf.keras.layers.Dense(dff,     activation=<span style="color:var(--V)">'gelu'</span>),  <span style="color:var(--white3)"># W1: d_model→dff</span>
+        tf.keras.layers.Dense(d_model, activation=<span style="color:var(--V)">None</span>),   <span style="color:var(--white3)"># W2: dff→d_model</span>
+    ])
+
+<span style="color:var(--white3)"># ── Block 3b: Encoder Layer (Attention + FFN + 2× Add&Norm) ─────</span>
+<span style="color:var(--K)">class</span> <span style="color:var(--Q)">EncoderLayer</span>(tf.keras.layers.Layer):
+    <span style="color:var(--K)">def</span> <span style="color:var(--Q)">__init__</span>(self, d_model, num_heads, dff, dropout=<span style="color:var(--V)">0.1</span>):
+        super().__init__()
+        self.mha  = MultiHeadAttention(d_model, num_heads)
+        self.ffn  = point_wise_ffn(d_model, dff)
+        self.ln1  = tf.keras.layers.LayerNormalization(epsilon=<span style="color:var(--V)">1e-6</span>)
+        self.ln2  = tf.keras.layers.LayerNormalization(epsilon=<span style="color:var(--V)">1e-6</span>)
+        self.drop1 = tf.keras.layers.Dropout(dropout)
+        self.drop2 = tf.keras.layers.Dropout(dropout)
+
+    <span style="color:var(--K)">def</span> <span style="color:var(--Q)">call</span>(self, x, training, mask=<span style="color:var(--V)">None</span>):
+        <span style="color:var(--white3)"># Sub-layer 1: Multi-Head Self-Attention + Add & Norm</span>
+        attn_out, _ = self.mha(x, x, x, mask)     <span style="color:var(--white3)"># Q=K=V=x  (self-attention)</span>
+        attn_out    = self.drop1(attn_out, training=training)
+        out1        = self.ln1(x + attn_out)       <span style="color:var(--white3)"># residual connection</span>
+
+        <span style="color:var(--white3)"># Sub-layer 2: FFN + Add & Norm</span>
+        ffn_out  = self.ffn(out1)
+        ffn_out  = self.drop2(ffn_out, training=training)
+        out2     = self.ln2(out1 + ffn_out)        <span style="color:var(--white3)"># residual connection</span>
+        <span style="color:var(--K)">return</span> out2</pre>
+    </div>
+
+    <!-- STEP 4: Decoder Layer -->
+    <div class="box">
+      <div class="box-title" style="color:var(--W)">BLOCK 4 — Decoder Layer (3 sublayers)</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--white2);margin-bottom:14px;line-height:1.9;">
+        The decoder has <b>three sublayers</b>: (1) masked self-attention, (2) cross-attention to encoder, (3) FFN. Each wrapped in Add &amp; Norm. The causal mask prevents peeking at future tokens.
+      </div>
+      <pre style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:20px;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.9;color:var(--white);"><span style="color:var(--white3)"># ── Block 4: Decoder Layer ──────────────────────────────────────</span>
+<span style="color:var(--K)">class</span> <span style="color:var(--Q)">DecoderLayer</span>(tf.keras.layers.Layer):
+    <span style="color:var(--K)">def</span> <span style="color:var(--Q)">__init__</span>(self, d_model, num_heads, dff, dropout=<span style="color:var(--V)">0.1</span>):
+        super().__init__()
+        self.mha1  = MultiHeadAttention(d_model, num_heads) <span style="color:var(--white3)"># masked self-attn</span>
+        self.mha2  = MultiHeadAttention(d_model, num_heads) <span style="color:var(--white3)"># cross-attention</span>
+        self.ffn   = point_wise_ffn(d_model, dff)
+        self.ln1   = tf.keras.layers.LayerNormalization(epsilon=<span style="color:var(--V)">1e-6</span>)
+        self.ln2   = tf.keras.layers.LayerNormalization(epsilon=<span style="color:var(--V)">1e-6</span>)
+        self.ln3   = tf.keras.layers.LayerNormalization(epsilon=<span style="color:var(--V)">1e-6</span>)
+        self.drop1 = tf.keras.layers.Dropout(dropout)
+        self.drop2 = tf.keras.layers.Dropout(dropout)
+        self.drop3 = tf.keras.layers.Dropout(dropout)
+
+    <span style="color:var(--K)">def</span> <span style="color:var(--Q)">call</span>(self, x, enc_output, training, look_ahead_mask, padding_mask):
+        <span style="color:var(--white3)"># Sub-layer 1: Masked self-attention (uses look_ahead_mask)</span>
+        attn1, w1 = self.mha1(x, x, x, look_ahead_mask)
+        attn1     = self.drop1(attn1, training=training)
+        out1      = self.ln1(x + attn1)
+
+        <span style="color:var(--white3)"># Sub-layer 2: Cross-attention  Q←decoder, K,V←encoder</span>
+        attn2, w2 = self.mha2(out1, enc_output, enc_output, padding_mask)
+        attn2     = self.drop2(attn2, training=training)
+        out2      = self.ln2(out1 + attn2)
+
+        <span style="color:var(--white3)"># Sub-layer 3: Feed-Forward Network</span>
+        ffn_out   = self.ffn(out2)
+        ffn_out   = self.drop3(ffn_out, training=training)
+        out3      = self.ln3(out2 + ffn_out)
+        <span style="color:var(--K)">return</span> out3, w1, w2             <span style="color:var(--white3)"># also return attn weights for viz</span></pre>
+    </div>
+
+    <!-- STEP 5: Positional Encoding + Full Transformer -->
+    <div class="box">
+      <div class="box-title" style="color:var(--out)">BLOCK 5 — Positional Encoding + Full Transformer Model</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--white2);margin-bottom:14px;line-height:1.9;">
+        Sinusoidal positional encodings are added to the token embeddings before the first layer. Then we stack N encoder layers and N decoder layers to form the complete model.
+      </div>
+      <pre style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:20px;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.9;color:var(--white);"><span style="color:var(--white3)"># ── Block 5a: Positional Encoding ───────────────────────────────</span>
+<span style="color:var(--K)">def</span> <span style="color:var(--Q)">positional_encoding</span>(max_len, d_model):
+    positions = np.arange(max_len)[:, np.newaxis]      <span style="color:var(--white3)"># (max_len, 1)</span>
+    dims      = np.arange(d_model)[np.newaxis, :]      <span style="color:var(--white3)"># (1, d_model)</span>
+    angles    = positions / np.power(<span style="color:var(--V)">10000</span>, (<span style="color:var(--V)">2</span> * (dims // <span style="color:var(--V)">2</span>)) / d_model)
+    angles[:, <span style="color:var(--V)">0</span>::<span style="color:var(--V)">2</span>] = np.sin(angles[:, <span style="color:var(--V)">0</span>::<span style="color:var(--V)">2</span>])  <span style="color:var(--white3)"># even dims → sin</span>
+    angles[:, <span style="color:var(--V)">1</span>::<span style="color:var(--V)">2</span>] = np.cos(angles[:, <span style="color:var(--V)">1</span>::<span style="color:var(--V)">2</span>])  <span style="color:var(--white3)"># odd  dims → cos</span>
+    <span style="color:var(--K)">return</span> tf.cast(angles[np.newaxis, :, :], dtype=tf.float32)  <span style="color:var(--white3)"># (1, max_len, d_model)</span>
+
+<span style="color:var(--white3)"># ── Block 5b: Full Transformer ───────────────────────────────────</span>
+<span style="color:var(--K)">class</span> <span style="color:var(--Q)">Transformer</span>(tf.keras.Model):
+    <span style="color:var(--K)">def</span> <span style="color:var(--Q)">__init__</span>(self, num_layers, d_model, num_heads, dff,
+                 input_vocab, target_vocab, max_seq_len, dropout=<span style="color:var(--V)">0.1</span>):
+        super().__init__()
+        self.enc_embed = tf.keras.layers.Embedding(input_vocab,  d_model)
+        self.dec_embed = tf.keras.layers.Embedding(target_vocab, d_model)
+        self.pos_enc   = positional_encoding(max_seq_len, d_model)
+        self.enc_layers = [EncoderLayer(d_model, num_heads, dff, dropout)
+                           <span style="color:var(--K)">for</span> _ <span style="color:var(--K)">in</span> range(num_layers)]
+        self.dec_layers = [DecoderLayer(d_model, num_heads, dff, dropout)
+                           <span style="color:var(--K)">for</span> _ <span style="color:var(--K)">in</span> range(num_layers)]
+        self.final_layer = tf.keras.layers.Dense(target_vocab) <span style="color:var(--white3)"># logits</span>
+        self.dropout     = tf.keras.layers.Dropout(dropout)
+
+    <span style="color:var(--K)">def</span> <span style="color:var(--Q)">call</span>(self, inputs, targets, training, enc_mask, look_ahead_mask, dec_mask):
+        seq_len = tf.shape(inputs)[<span style="color:var(--V)">1</span>]
+
+        <span style="color:var(--white3)"># ── Encoder ──────────────────────────────────────────</span>
+        x = self.enc_embed(inputs)                        <span style="color:var(--white3)"># token → embedding</span>
+        x *= tf.math.sqrt(tf.cast(x.shape[<span style="color:var(--V)">-1</span>], tf.float32)) <span style="color:var(--white3)"># scale</span>
+        x += self.pos_enc[:, :seq_len, :]                 <span style="color:var(--white3)"># add positional encoding</span>
+        x  = self.dropout(x, training=training)
+        <span style="color:var(--K)">for</span> layer <span style="color:var(--K)">in</span> self.enc_layers:
+            x = layer(x, training, enc_mask)
+
+        enc_output = x  <span style="color:var(--white3)"># encoder output → fed into every decoder cross-attn</span>
+
+        <span style="color:var(--white3)"># ── Decoder ──────────────────────────────────────────</span>
+        tgt_len = tf.shape(targets)[<span style="color:var(--V)">1</span>]
+        y = self.dec_embed(targets)
+        y *= tf.math.sqrt(tf.cast(y.shape[<span style="color:var(--V)">-1</span>], tf.float32))
+        y += self.pos_enc[:, :tgt_len, :]
+        y  = self.dropout(y, training=training)
+        <span style="color:var(--K)">for</span> layer <span style="color:var(--K)">in</span> self.dec_layers:
+            y, _, _ = layer(y, enc_output, training, look_ahead_mask, dec_mask)
+
+        logits = self.final_layer(y)  <span style="color:var(--white3)"># (batch, tgt_seq, target_vocab)</span>
+        <span style="color:var(--K)">return</span> logits
+
+<span style="color:var(--white3)"># ── Block 5c: Instantiate & compile ─────────────────────────────</span>
+transformer = Transformer(
+    num_layers=<span style="color:var(--V)">4</span>,           <span style="color:var(--white3)"># N encoder + N decoder layers</span>
+    d_model=<span style="color:var(--V)">128</span>,            <span style="color:var(--white3)"># embedding / attention dimension</span>
+    num_heads=<span style="color:var(--V)">8</span>,            <span style="color:var(--white3)"># number of parallel attention heads</span>
+    dff=<span style="color:var(--V)">512</span>,               <span style="color:var(--white3)"># FFN inner dimension (4× d_model)</span>
+    input_vocab=<span style="color:var(--V)">8500</span>,       <span style="color:var(--white3)"># source vocabulary size</span>
+    target_vocab=<span style="color:var(--V)">8000</span>,      <span style="color:var(--white3)"># target vocabulary size</span>
+    max_seq_len=<span style="color:var(--V)">128</span>,        <span style="color:var(--white3)"># maximum sequence length</span>
+    dropout=<span style="color:var(--V)">0.1</span>
+)
+
+transformer.compile(
+    optimizer=tf.keras.optimizers.Adam(learning_rate=<span style="color:var(--V)">1e-4</span>, beta_1=<span style="color:var(--V)">0.9</span>, beta_2=<span style="color:var(--V)">0.98</span>),
+    loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=<span style="color:var(--V)">True</span>),
+    metrics=[<span style="color:var(--V)">'accuracy'</span>]
+)</pre>
+      <div class="callout co-info" style="margin-top:12px;">
+        <div class="callout-icon">🏗</div>
+        <div class="callout-text">
+          <b>Model size:</b> num_layers=4, d_model=128, num_heads=8, dff=512 gives ~3M parameters — trainable on a laptop GPU. GPT-2 small uses d_model=768, 12 heads, 12 layers (~117M params).
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 6: Masks + Training -->
+    <div class="box">
+      <div class="box-title" style="color:var(--Q)">BLOCK 6 — Create Masks + Training Loop</div>
+      <pre style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:20px;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.9;color:var(--white);"><span style="color:var(--white3)"># ── Block 6a: Mask helpers ──────────────────────────────────────</span>
+<span style="color:var(--K)">def</span> <span style="color:var(--Q)">create_padding_mask</span>(seq):
+    <span style="color:var(--white3)">"""Mask positions where token == 0 (padding)"""</span>
+    mask = tf.cast(tf.math.equal(seq, <span style="color:var(--V)">0</span>), tf.float32)
+    <span style="color:var(--K)">return</span> mask[:, tf.newaxis, tf.newaxis, :]  <span style="color:var(--white3)"># (batch, 1, 1, seq)</span>
+
+<span style="color:var(--K)">def</span> <span style="color:var(--Q)">create_look_ahead_mask</span>(size):
+    <span style="color:var(--white3)">"""Lower-triangular causal mask — 1 = blocked (future), 0 = visible (past)"""</span>
+    mask = <span style="color:var(--V)">1</span> - tf.linalg.band_part(tf.ones((size, size)), <span style="color:var(--V)">-1</span>, <span style="color:var(--V)">0</span>)
+    <span style="color:var(--k)">return</span> mask  <span style="color:var(--white3)"># upper-triangular 1s → these positions get -1e9</span>
+
+<span style="color:var(--white3)"># ── Block 6b: Training step ─────────────────────────────────────</span>
+<span style="color:var(--K)">@tf.function</span>
+<span style="color:var(--K)">def</span> <span style="color:var(--Q)">train_step</span>(inp, tar):
+    <span style="color:var(--white3)"># Teacher forcing: feed correct tokens as decoder input, shifted right</span>
+    tar_inp  = tar[:, :<span style="color:var(--V)">-1</span>]   <span style="color:var(--white3)"># decoder input  (all but last)</span>
+    tar_real = tar[:, <span style="color:var(--V)">1</span>:]   <span style="color:var(--white3)"># target labels  (all but first)</span>
+
+    enc_mask       = create_padding_mask(inp)
+    look_ahead     = create_look_ahead_mask(tf.shape(tar_inp)[<span style="color:var(--V)">1</span>])
+    dec_mask       = create_padding_mask(inp)
+    combined_mask  = tf.maximum(look_ahead, create_padding_mask(tar_inp))
+
+    <span style="color:var(--K)">with</span> tf.GradientTape() <span style="color:var(--K)">as</span> tape:
+        logits = transformer(inp, tar_inp, <span style="color:var(--V)">True</span>, enc_mask, combined_mask, dec_mask)
+        loss   = tf.keras.losses.sparse_categorical_crossentropy(
+                     tar_real, logits, from_logits=<span style="color:var(--V)">True</span>)
+        loss   = tf.reduce_mean(loss)
+
+    grads = tape.gradient(loss, transformer.trainable_variables)
+    transformer.optimizer.apply_gradients(
+        zip(grads, transformer.trainable_variables))
+    <span style="color:var(--K)">return</span> loss
+
+<span style="color:var(--white3)"># ── Block 6c: Epoch loop ────────────────────────────────────────</span>
+<span style="color:var(--K)">for</span> epoch <span style="color:var(--K)">in</span> range(<span style="color:var(--V)">20</span>):
+    <span style="color:var(--K)">for</span> (batch, (inp, tar)) <span style="color:var(--K)">in</span> enumerate(train_dataset):
+        loss = train_step(inp, tar)
+    print(<span style="color:var(--V)">f"Epoch {epoch+1}  loss={loss:.4f}"</span>)</pre>
+    </div>
+
+    <!-- STEP 7: Inference -->
+    <div class="box">
+      <div class="box-title" style="color:var(--V)">BLOCK 7 — Autoregressive Inference (greedy decode)</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--white2);margin-bottom:14px;line-height:1.9;">
+        At inference there is no teacher forcing. We feed <b>&lt;START&gt;</b> and let the model generate one token at a time until it produces <b>&lt;END&gt;</b> or hits max_length.
+      </div>
+      <pre style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:20px;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.9;color:var(--white);"><span style="color:var(--white3)"># ── Block 7: Greedy inference ───────────────────────────────────</span>
+<span style="color:var(--K)">def</span> <span style="color:var(--Q)">predict</span>(model, inp_sentence, tokenizer_src, tokenizer_tgt, max_len=<span style="color:var(--V)">50</span>):
+    <span style="color:var(--white3)"># 1. Tokenise source sentence</span>
+    inp_ids = tokenizer_src.encode(inp_sentence)
+    inp_ids = tf.expand_dims(inp_ids, <span style="color:var(--V)">0</span>)                 <span style="color:var(--white3)"># (1, src_len)</span>
+
+    <span style="color:var(--white3)"># 2. Start with the &lt;START&gt; token id</span>
+    START_ID = tokenizer_tgt.vocab_size
+    END_ID   = tokenizer_tgt.vocab_size + <span style="color:var(--V)">1</span>
+    out      = tf.expand_dims([START_ID], <span style="color:var(--V)">0</span>)              <span style="color:var(--white3)"># (1, 1)</span>
+
+    <span style="color:var(--white3)"># 3. Autoregressive loop — generate one token at a time</span>
+    <span style="color:var(--K)">for</span> _ <span style="color:var(--K)">in</span> range(max_len):
+        enc_mask      = create_padding_mask(inp_ids)
+        look_ahead    = create_look_ahead_mask(tf.shape(out)[<span style="color:var(--V)">1</span>])
+        dec_mask      = create_padding_mask(inp_ids)
+        combined_mask = tf.maximum(look_ahead, create_padding_mask(out))
+
+        logits = model(inp_ids, out, <span style="color:var(--V)">False</span>, enc_mask, combined_mask, dec_mask)
+        <span style="color:var(--white3"># logits: (1, current_len, vocab_size) → take last position</span>
+        next_token = tf.argmax(logits[:, <span style="color:var(--V)">-1</span>:, :], axis=<span style="color:var(--V)">-1</span>)   <span style="color:var(--white3)"># greedy</span>
+        out        = tf.concat([out, next_token], axis=<span style="color:var(--V)">1</span>)
+
+        <span style="color:var(--K)">if</span> next_token == END_ID:
+            <span style="color:var(--K)">break</span>
+
+    <span style="color:var(--white3)"># 4. Decode token IDs back to text (strip START/END)</span>
+    predicted_ids = tf.squeeze(out, axis=<span style="color:var(--V)">0</span>)[<span style="color:var(--V)">1</span>:].numpy()
+    <span style="color:var(--K)">return</span> tokenizer_tgt.decode([i <span style="color:var(--K)">for</span> i <span style="color:var(--K)">in</span> predicted_ids <span style="color:var(--K)">if</span> i &lt; tokenizer_tgt.vocab_size])
+
+<span style="color:var(--white3)"># Example usage:</span>
+result = predict(transformer, <span style="color:var(--V)">"I love machine learning"</span>, tok_en, tok_de)
+print(result)  <span style="color:var(--white3)"># → "Ich liebe maschinelles Lernen"</span></pre>
+    </div>
+
+  </div><!-- end custom tab -->
+
+  <!-- ── PRE-TRAINED TAB ── -->
+  <div id="tab-content-pretrained" style="display:none;">
+
+    <div class="box" style="margin-top:24px;">
+      <div class="box-title" style="color:var(--Q)">SETUP — Install Dependencies</div>
+      <pre style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:20px;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.9;color:var(--white);"><span style="color:var(--white3)"># Install (run once in terminal / Colab cell)</span>
+pip install tensorflow transformers datasets tokenizers</pre>
+    </div>
+
+    <!-- GPT-2 Text Generation -->
+    <div class="box">
+      <div class="box-title" style="color:var(--K)">USE CASE 1 — GPT-2 Text Generation (decoder-only)</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--white2);margin-bottom:14px;line-height:1.9;">
+        GPT-2 is a decoder-only transformer. We load the pre-trained weights, tokenise a prompt, and autoregressively generate tokens. No fine-tuning needed for text completion.
+      </div>
+      <pre style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:20px;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.9;color:var(--white);"><span style="color:var(--white3)"># ── GPT-2 Text Generation ───────────────────────────────────────</span>
+<span style="color:var(--K)">from</span> transformers <span style="color:var(--K)">import</span> TFGPT2LMHeadModel, GPT2Tokenizer
+<span style="color:var(--K)">import</span> tensorflow <span style="color:var(--K)">as</span> tf
+
+<span style="color:var(--white3)"># 1. Load tokeniser and model weights from HuggingFace Hub</span>
+tokenizer = GPT2Tokenizer.from_pretrained(<span style="color:var(--V)">'gpt2'</span>)
+model     = TFGPT2LMHeadModel.from_pretrained(<span style="color:var(--V)">'gpt2'</span>)
+
+<span style="color:var(--white3)"># 2. Encode your prompt → token IDs</span>
+prompt   = <span style="color:var(--V)">"I love machine learning because"</span>
+input_ids = tokenizer.encode(prompt, return_tensors=<span style="color:var(--V)">'tf'</span>)
+
+<span style="color:var(--white3)"># 3. Generate (beam search for better quality)</span>
+output_ids = model.generate(
+    input_ids,
+    max_new_tokens=<span style="color:var(--V)">50</span>,           <span style="color:var(--white3)"># how many new tokens to produce</span>
+    num_beams=<span style="color:var(--V)">5</span>,               <span style="color:var(--white3)"># beam search width (1 = greedy)</span>
+    no_repeat_ngram_size=<span style="color:var(--V)">2</span>,    <span style="color:var(--white3)"># prevent repetition</span>
+    early_stopping=<span style="color:var(--V)">True</span>,
+    pad_token_id=tokenizer.eos_token_id
+)
+
+<span style="color:var(--white3)"># 4. Decode back to text</span>
+generated = tokenizer.decode(output_ids[<span style="color:var(--V)">0</span>], skip_special_tokens=<span style="color:var(--V)">True</span>)
+print(generated)
+<span style="color:var(--white3)"># → "I love machine learning because it gives computers the ability to
+<span style="color:var(--white3)">#    learn from data without being explicitly programmed..."</span></pre>
+      <div class="callout co-info" style="margin-top:12px;">
+        <div class="callout-icon">🔢</div>
+        <div class="callout-text"><b>What model.generate() does internally:</b> runs the decoder loop from Block 7 for you — feeding &lt;START&gt;, sampling or beam-searching, appending each new token, stopping at &lt;EOS&gt;. It is the same autoregressive loop, just packaged.</div>
+      </div>
+    </div>
+
+    <!-- BERT Sentence Embeddings -->
+    <div class="box">
+      <div class="box-title" style="color:var(--V)">USE CASE 2 — BERT Sentence Embeddings (encoder-only)</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--white2);margin-bottom:14px;line-height:1.9;">
+        BERT is encoder-only — bidirectional attention, no causal mask. It is used to get rich contextual embeddings of text, useful for classification, search, and similarity tasks.
+      </div>
+      <pre style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:20px;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.9;color:var(--white);"><span style="color:var(--white3)"># ── BERT Sentence Embeddings ────────────────────────────────────</span>
+<span style="color:var(--K)">from</span> transformers <span style="color:var(--K)">import</span> TFBertModel, BertTokenizer
+<span style="color:var(--K)">import</span> tensorflow <span style="color:var(--K)">as</span> tf
+
+tokenizer = BertTokenizer.from_pretrained(<span style="color:var(--V)">'bert-base-uncased'</span>)
+model     = TFBertModel.from_pretrained(<span style="color:var(--V)">'bert-base-uncased'</span>)
+
+sentences = [
+    <span style="color:var(--V)">"I love machine learning because it is magic"</span>,
+    <span style="color:var(--V)">"Deep learning is fascinating and powerful"</span>,
+]
+
+<span style="color:var(--white3)"># Tokenise with padding/truncation → attention_mask handles padding</span>
+encoded = tokenizer(sentences, padding=<span style="color:var(--V)">True</span>, truncation=<span style="color:var(--V)">True</span>,
+                    max_length=<span style="color:var(--V)">64</span>, return_tensors=<span style="color:var(--V)">'tf'</span>)
+
+<span style="color:var(--white3)"># Forward pass — no gradients needed for inference</span>
+outputs = model(**encoded)
+
+<span style="color:var(--white3)"># outputs.last_hidden_state : (batch, seq_len, 768) — one vector per token</span>
+<span style="color:var(--white3)"># outputs.pooler_output     : (batch, 768)          — [CLS] token embedding</span>
+token_embeddings   = outputs.last_hidden_state   <span style="color:var(--white3)"># per-token context vectors</span>
+sentence_embedding = outputs.pooler_output       <span style="color:var(--white3)"># whole-sentence vector</span>
+
+<span style="color:var(--white3)"># Mean-pool token embeddings (often better than [CLS] for similarity)</span>
+mask         = tf.cast(encoded[<span style="color:var(--V)">'attention_mask'</span>][..., tf.newaxis], tf.float32)
+mean_pooled  = tf.reduce_sum(token_embeddings * mask, axis=<span style="color:var(--V)">1</span>) / tf.reduce_sum(mask, axis=<span style="color:var(--V)">1</span>)
+
+<span style="color:var(--white3)"># Cosine similarity between two sentences</span>
+a, b = mean_pooled[<span style="color:var(--V)">0</span>], mean_pooled[<span style="color:var(--V)">1</span>]
+cos_sim = tf.reduce_sum(a*b) / (tf.norm(a) * tf.norm(b))
+print(<span style="color:var(--V)">f"Similarity: {cos_sim:.4f}"</span>)  <span style="color:var(--white3)"># → ~0.91 (very similar topics)</span></pre>
+    </div>
+
+    <!-- Fine-Tuning -->
+    <div class="box">
+      <div class="box-title" style="color:var(--W)">USE CASE 3 — Fine-Tune BERT for Text Classification</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--white2);margin-bottom:14px;line-height:1.9;">
+        Add a classification head on top of BERT's <b>[CLS]</b> token output and fine-tune on your labelled data. This is the standard approach for sentiment analysis, spam detection, etc.
+      </div>
+      <pre style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:20px;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.9;color:var(--white);"><span style="color:var(--white3)"># ── Fine-Tune BERT for Classification ───────────────────────────</span>
+<span style="color:var(--K)">from</span> transformers <span style="color:var(--K)">import</span> TFBertForSequenceClassification, BertTokenizer
+<span style="color:var(--K)">import</span> tensorflow <span style="color:var(--K)">as</span> tf
+
+NUM_CLASSES = <span style="color:var(--V)">2</span>  <span style="color:var(--white3)"># e.g. positive / negative sentiment</span>
+
+<span style="color:var(--white3)"># 1. Load pre-trained BERT + classification head (randomly initialised)</span>
+tokenizer = BertTokenizer.from_pretrained(<span style="color:var(--V)">'bert-base-uncased'</span>)
+model     = TFBertForSequenceClassification.from_pretrained(
+                <span style="color:var(--V)">'bert-base-uncased'</span>, num_labels=NUM_CLASSES)
+
+<span style="color:var(--white3)"># 2. Compile with a small learning rate (pre-trained weights are fragile)</span>
+model.compile(
+    optimizer=tf.keras.optimizers.Adam(learning_rate=<span style="color:var(--V)">2e-5</span>),
+    loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=<span style="color:var(--V)">True</span>),
+    metrics=[<span style="color:var(--V)">'accuracy'</span>]
+)
+
+<span style="color:var(--white3)"># 3. Tokenise your dataset</span>
+texts  = [<span style="color:var(--V)">"I love this film"</span>, <span style="color:var(--V)">"This was terrible"</span>, <span style="color:var(--V)">"Absolutely brilliant"</span>]
+labels = [<span style="color:var(--V)">1</span>, <span style="color:var(--V)">0</span>, <span style="color:var(--V)">1</span>]  <span style="color:var(--white3)"># 1=positive, 0=negative</span>
+
+encoded = tokenizer(texts, padding=<span style="color:var(--V)">True</span>, truncation=<span style="color:var(--V)">True</span>,
+                    max_length=<span style="color:var(--V)">128</span>, return_tensors=<span style="color:var(--V)">'tf'</span>)
+dataset = tf.data.Dataset.from_tensor_slices((dict(encoded), labels)).batch(<span style="color:var(--V)">8</span>)
+
+<span style="color:var(--white3)"># 4. Fine-tune — just a few epochs needed on small data</span>
+model.fit(dataset, epochs=<span style="color:var(--V)">3</span>)
+
+<span style="color:var(--white3)"># 5. Inference on new text</span>
+test = tokenizer([<span style="color:var(--V)">"This is pure magic"</span>], return_tensors=<span style="color:var(--V)">'tf'</span>, padding=<span style="color:var(--V)">True</span>)
+logits     = model(**test).logits           <span style="color:var(--white3)"># (1, 2)</span>
+prediction = tf.argmax(logits, axis=<span style="color:var(--V)">-1</span>)    <span style="color:var(--white3)"># 0=negative, 1=positive</span>
+label      = [<span style="color:var(--V)">"negative"</span>, <span style="color:var(--V)">"positive"</span>][prediction.numpy()[<span style="color:var(--V)">0</span>]]
+print(<span style="color:var(--V)">f"Predicted: {label}"</span>)  <span style="color:var(--white3)"># → Predicted: positive</span></pre>
+      <div class="callout co-warn" style="margin-top:12px;">
+        <div class="callout-icon">⚡</div>
+        <div class="callout-text">
+          <b>Learning rate matters!</b> 2e-5 to 5e-5 is the standard range for BERT fine-tuning. Too high → catastrophic forgetting of pre-trained weights. Too low → won't adapt to your task.
+        </div>
+      </div>
+    </div>
+
+    <!-- T5 Seq2Seq -->
+    <div class="box">
+      <div class="box-title" style="color:var(--out)">USE CASE 4 — T5 Encoder-Decoder for Summarisation</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--white2);margin-bottom:14px;line-height:1.9;">
+        T5 uses the full encoder-decoder architecture (like our custom transformer above). It frames every task as text-to-text using task prefixes. Perfect for summarisation, translation, Q&amp;A.
+      </div>
+      <pre style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:20px;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.9;color:var(--white);"><span style="color:var(--white3)"># ── T5 Summarisation ────────────────────────────────────────────</span>
+<span style="color:var(--K)">from</span> transformers <span style="color:var(--K)">import</span> TFT5ForConditionalGeneration, T5Tokenizer
+
+tokenizer = T5Tokenizer.from_pretrained(<span style="color:var(--V)">'t5-small'</span>)
+model     = TFT5ForConditionalGeneration.from_pretrained(<span style="color:var(--V)">'t5-small'</span>)
+
+<span style="color:var(--white3)"># T5 needs a task prefix — "summarize: " tells the model what to do</span>
+text = (<span style="color:var(--V)">"summarize: Machine learning is a branch of artificial intelligence "
+        "that enables systems to learn and improve from experience without "
+        "being explicitly programmed. It focuses on developing computer programs "
+        "that can access data and use it to learn for themselves."</span>)
+
+input_ids = tokenizer.encode(text, return_tensors=<span style="color:var(--V)">'tf'</span>, max_length=<span style="color:var(--V)">512</span>, truncation=<span style="color:var(--V)">True</span>)
+
+<span style="color:var(--white3)"># Generate summary</span>
+summary_ids = model.generate(
+    input_ids,
+    max_new_tokens=<span style="color:var(--V)">60</span>,
+    num_beams=<span style="color:var(--V)">4</span>,
+    length_penalty=<span style="color:var(--V)">2.0</span>,     <span style="color:var(--white3)"># penalise very short outputs</span>
+    early_stopping=<span style="color:var(--V)">True</span>
+)
+
+summary = tokenizer.decode(summary_ids[<span style="color:var(--V)">0</span>], skip_special_tokens=<span style="color:var(--V)">True</span>)
+print(summary)
+<span style="color:var(--white3)"># → "machine learning enables systems to learn and improve from experience."</span></pre>
+    </div>
+
+    <!-- Quick reference table -->
+    <div class="box">
+      <div class="box-title">MODEL CHEAT SHEET — which to use for what</div>
+      <div class="tbl-wrap">
+        <table>
+          <tr>
+            <th>Model</th>
+            <th>Architecture</th>
+            <th>Best for</th>
+            <th>HuggingFace ID</th>
+          </tr>
+          <tr><td class="tok-cell">GPT-2</td><td class="k-cell">Decoder-only</td><td class="q-cell">Text generation, completion</td><td style="color:var(--white2)">'gpt2'</td></tr>
+          <tr><td class="tok-cell">BERT</td><td class="k-cell">Encoder-only</td><td class="q-cell">Classification, embeddings, NER</td><td style="color:var(--white2)">'bert-base-uncased'</td></tr>
+          <tr><td class="tok-cell">RoBERTa</td><td class="k-cell">Encoder-only</td><td class="q-cell">Better BERT (more training data)</td><td style="color:var(--white2)">'roberta-base'</td></tr>
+          <tr><td class="tok-cell">T5</td><td class="k-cell">Encoder-Decoder</td><td class="q-cell">Summarisation, translation, Q&amp;A</td><td style="color:var(--white2)">'t5-small'</td></tr>
+          <tr><td class="tok-cell">DistilBERT</td><td class="k-cell">Encoder-only</td><td class="q-cell">Fast BERT (40% smaller, 60% faster)</td><td style="color:var(--white2)">'distilbert-base-uncased'</td></tr>
+          <tr class="hi"><td class="tok-cell">GPT-4 / Claude</td><td class="k-cell">Decoder-only</td><td class="q-cell">Everything — via API only</td><td style="color:var(--white2)">API call</td></tr>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- end pretrained tab -->
+</div><!-- end code section -->
+
+<hr class="div">
+
+<!-- ══════════ PIPELINE (moved here) ══════════ -->
 <div class="section" id="pipeline">
   <div class="adv-badge">🚀 FULL SYSTEM</div>
   <div class="sec-num">FINAL STEP</div>
   <div class="sec-title">Full Transformer Pipeline</div>
-  <div class="sec-desc">Enter any sentence and watch all 9 steps run in sequence — from raw text to predicted output. Everything we learned, combined.</div>
+  <div class="sec-desc">Enter any sentence and watch all 11 steps run in sequence — from raw text to predicted output. Everything we learned, combined.</div>
 
   <div class="box">
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;">
@@ -914,6 +1661,14 @@ canvas{border-radius:8px;display:block;}
 </div>
 
 <script>
+function showCodeTab(tab) {
+  document.getElementById('tab-content-custom').style.display    = tab === 'custom'    ? 'block' : 'none';
+  document.getElementById('tab-content-pretrained').style.display = tab === 'pretrained' ? 'block' : 'none';
+  const activeStyle   = 'border-bottom:2px solid var(--K);margin-bottom:-2px;background:white;color:var(--K);';
+  const inactiveStyle = 'border-bottom:2px solid transparent;margin-bottom:-2px;background:white;color:var(--white3);';
+  document.getElementById('tab-custom').style.cssText     += tab==='custom'     ? activeStyle : inactiveStyle;
+  document.getElementById('tab-pretrained').style.cssText += tab==='pretrained' ? activeStyle : inactiveStyle;
+}
 // ══════════════════════════════════════════════
 // DATA
 // ══════════════════════════════════════════════
@@ -965,9 +1720,9 @@ function renderMat(id, mat, color) {
   html += '</div></div>';
   container.innerHTML = html;
 }
-renderMat('wq-mat', WQ, '#00e676');
-renderMat('wk-mat', WK, '#448aff');
-renderMat('wv-mat', WV, '#ff4081');
+renderMat('wq-mat', WQ, '#007a3d');
+renderMat('wk-mat', WK, '#1a5fd4');
+renderMat('wv-mat', WV, '#c0185a');
 
 // ══════════════════════════════════════════════
 // HEATMAPS
@@ -983,7 +1738,7 @@ function buildHeatmap(id, data, showVal, colorFn) {
     row.forEach((val, ci) => {
       const bg = colorFn(val, ri, ci);
       const tv = typeof val === 'number' ? val.toFixed(2) : val;
-      const textColor = val > (showVal===1?5:0.25) ? '#000' : '#aaa';
+      const textColor = val > (showVal===1?5:0.25) ? '#fff' : '#555';
       html += `<td style="padding:2px;border:none;"><div class="hm-cell" style="background:${bg};color:${textColor}">${tv}</div></td>`;
     });
     html += '</tr>';
@@ -995,12 +1750,12 @@ function buildHeatmap(id, data, showVal, colorFn) {
 // Score heatmap — green-tinted
 buildHeatmap('score-hm', RAW_SCORES, 1, (v,ri,ci) => {
   const t = v/12;
-  return `rgba(0,230,118,${0.05+t*0.8})`;
+  return `rgba(0,122,61,${0.08+t*0.85})`;
 });
 
 // Softmax heatmap — blue-tinted
 buildHeatmap('softmax-hm', ATTN_WEIGHTS, 0, (v,ri,ci) => {
-  return `rgba(68,138,255,${0.05+v*0.9})`;
+  return `rgba(26,95,212,${0.06+v*0.88})`;
 });
 
 // Contribution bars for "I"
@@ -1011,7 +1766,7 @@ function buildContribBars() {
   let html = '';
   TOKENS.forEach((tok, i) => {
     const pct = Math.round(weights[i] * 100);
-    const colorMap = ['#00e676','#ff4081','#448aff','#ffd740','#aaa','#ff4081','#448aff','#00e676'];
+    const colorMap = ['#007a3d','#c0185a','#1a5fd4','#a07000','#888','#c0185a','#1a5fd4','#007a3d'];
     html += `
       <div class="contrib-row">
         <div class="contrib-tok">${tok}</div>
@@ -1036,11 +1791,11 @@ function showEmbedBar(word, vec) {
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
   ctx.clearRect(0, 0, W, H);
-  ctx.fillStyle = '#111'; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = '#f8f9fa'; ctx.fillRect(0, 0, W, H);
 
   const barW = 80, gap = 40;
   const startX = (W - (vec.length * (barW + gap))) / 2 + gap;
-  const colors = ['#00e676','#448aff','#ff4081'];
+  const colors = ['#007a3d','#1a5fd4','#c0185a'];
   const labels = ['dim 0','dim 1','dim 2'];
 
   vec.forEach((v, i) => {
@@ -1050,7 +1805,7 @@ function showEmbedBar(word, vec) {
     const y = H - 30 - barH;
 
     // Background
-    ctx.fillStyle = 'rgba(255,255,255,0.04)';
+    ctx.fillStyle = 'rgba(0,0,0,0.04)';
     ctx.fillRect(x, 30, barW, H - 60);
 
     // Bar
@@ -1069,13 +1824,13 @@ function showEmbedBar(word, vec) {
     ctx.fillText(v, x + barW/2, y - 8);
 
     // Label
-    ctx.fillStyle = '#666';
+    ctx.fillStyle = '#888';
     ctx.font = '10px JetBrains Mono';
     ctx.fillText(labels[i], x + barW/2, H - 10);
   });
 
   // Title
-  ctx.fillStyle = '#f0f0f0';
+  ctx.fillStyle = '#111';
   ctx.font = 'bold 13px Bricolage Grotesque';
   ctx.textAlign = 'left';
   ctx.fillText(`"${word}" embedding = [${vec.join(', ')}]`, 12, 20);
@@ -1095,7 +1850,7 @@ function drawPosCanvas() {
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
   ctx.clearRect(0, 0, W, H);
-  ctx.fillStyle = '#111'; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = '#f8f9fa'; ctx.fillRect(0, 0, W, H);
 
   const pad = 50, tokH = (H - pad*2) / 8;
   const dimW = (W - pad*2) / 32;
@@ -1106,16 +1861,16 @@ function drawPosCanvas() {
         ? Math.sin(pos / Math.pow(10000, 2*i/64))
         : Math.cos(pos / Math.pow(10000, (2*i)/64));
       const t = (val + 1) / 2;
-      ctx.fillStyle = `hsl(${180 + t*40}, 70%, ${15+t*55}%)`;
+      ctx.fillStyle = `hsl(${200 + t*40}, 60%, ${40+t*40}%)`;
       ctx.fillRect(pad + i * dimW, pad + pos * tokH, dimW - 1, tokH - 1);
     }
-    ctx.fillStyle = '#aaa';
+    ctx.fillStyle = '#444';
     ctx.font = '10px JetBrains Mono';
     ctx.textAlign = 'right';
     ctx.fillText(TOKENS[pos], pad - 6, pad + pos * tokH + tokH/2 + 4);
   }
 
-  ctx.fillStyle = '#555';
+  ctx.fillStyle = '#888';
   ctx.textAlign = 'center';
   ctx.font = '10px JetBrains Mono';
   ctx.fillText('← 32 embedding dimensions →', pad + 32*dimW/2, H - 8);
@@ -1132,16 +1887,16 @@ function drawMultiHead() {
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
   ctx.clearRect(0, 0, W, H);
-  ctx.fillStyle = '#111'; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = '#f8f9fa'; ctx.fillRect(0, 0, W, H);
 
   const heads = 4;
-  const headColors = ['#00e676','#448aff','#ff4081','#ffd740'];
+  const headColors = ['#007a3d','#1a5fd4','#c0185a','#a07000'];
   const headLabels = ['Head 1\n(grammar)','Head 2\n(coreref)','Head 3\n(semantic)','Head 4\n(long-range)'];
   const headW = (W - 100) / heads;
   const inputY = 30, headY = 80, concatY = 160, outputY = H - 20;
 
   // Input label
-  ctx.fillStyle = '#aaa'; ctx.font = '11px JetBrains Mono'; ctx.textAlign = 'center';
+  ctx.fillStyle = '#444'; ctx.font = '11px JetBrains Mono'; ctx.textAlign = 'center';
   ctx.fillText('Input X (after pos encoding)', W/2, inputY + 8);
 
   heads_loop: for (let h = 0; h < heads; h++) {
@@ -1166,9 +1921,9 @@ function drawMultiHead() {
 
     // Q, K, V labels inside
     ctx.font = '9px JetBrains Mono';
-    ctx.fillStyle = '#00e676'; ctx.fillText('Q', cx-14, headY+46);
-    ctx.fillStyle = '#448aff'; ctx.fillText('K', cx, headY+46);
-    ctx.fillStyle = '#ff4081'; ctx.fillText('V', cx+14, headY+46);
+    ctx.fillStyle = '#007a3d'; ctx.fillText('Q', cx-14, headY+46);
+    ctx.fillStyle = '#1a5fd4'; ctx.fillText('K', cx, headY+46);
+    ctx.fillStyle = '#c0185a'; ctx.fillText('V', cx+14, headY+46);
 
     // Line to concat
     ctx.strokeStyle = col + '66';
@@ -1176,19 +1931,184 @@ function drawMultiHead() {
   }
 
   // Concat box
-  ctx.fillStyle = 'rgba(255,215,64,.12)';
-  ctx.strokeStyle = '#ffd740'; ctx.lineWidth = 1.5;
+  ctx.fillStyle = 'rgba(160,112,0,.10)';
+  ctx.strokeStyle = '#a07000'; ctx.lineWidth = 1.5;
   ctx.beginPath(); ctx.roundRect(W/2-120, concatY, 240, 32, 6); ctx.fill(); ctx.stroke();
-  ctx.fillStyle = '#ffd740'; ctx.font = 'bold 11px Bricolage Grotesque'; ctx.textAlign = 'center';
+  ctx.fillStyle = '#a07000'; ctx.font = 'bold 11px Bricolage Grotesque'; ctx.textAlign = 'center';
   ctx.fillText('Concat all heads → × W_O', W/2, concatY+20);
 
   // Arrow to output
-  ctx.strokeStyle = '#aaa'; ctx.lineWidth = 1.5;
+  ctx.strokeStyle = '#888'; ctx.lineWidth = 1.5;
   ctx.beginPath(); ctx.moveTo(W/2, concatY+32); ctx.lineTo(W/2, outputY-8); ctx.stroke();
-  ctx.fillStyle = '#f0f0f0'; ctx.font = 'bold 11px Bricolage Grotesque'; ctx.textAlign = 'center';
+  ctx.fillStyle = '#111'; ctx.font = 'bold 11px Bricolage Grotesque'; ctx.textAlign = 'center';
   ctx.fillText('Combined context-aware output', W/2, outputY);
 }
 drawMultiHead();
+
+// ══════════════════════════════════════════════
+// DECODER MASK MATRICES (new)
+// ══════════════════════════════════════════════
+const DEC_TOKS = ['I','love','ML','magic'];
+const DEC_RAW = [
+  [6, 5, 5, 6],
+  [6, 7, 8, 6],
+  [5, 6, 5, 5],
+  [6, 5, 5, 6]
+];
+
+function buildMaskMatrix(id, data, masked) {
+  const container = document.getElementById(id);
+  if (!container) return;
+  let html = '<div style="overflow-x:auto;"><table style="border-collapse:separate;border-spacing:3px;font-family:JetBrains Mono,monospace;font-size:10px;">';
+  html += '<thead><tr><th style="background:transparent;border:none;padding:4px 8px;color:#888;"></th>';
+  DEC_TOKS.forEach(t => html += `<th style="background:transparent;border:none;padding:4px 8px;color:#888;">${t}</th>`);
+  html += '</tr></thead><tbody>';
+  data.forEach((row, ri) => {
+    html += `<tr><td style="padding:4px 8px;color:#666;">${DEC_TOKS[ri]}</td>`;
+    row.forEach((val, ci) => {
+      const isMasked = masked && ci > ri;
+      let bg, textColor, displayVal;
+      if (isMasked) {
+        bg = '#f5f5f5'; textColor = '#ccc'; displayVal = '−∞';
+      } else {
+        const t = (val - 4) / 4;
+        bg = `rgba(26,95,212,${0.06 + t * 0.35})`;
+        textColor = '#1a5fd4';
+        displayVal = val;
+      }
+      html += `<td style="padding:2px;border:none;"><div style="width:54px;height:34px;border-radius:5px;background:${bg};border:1px solid ${isMasked?'#e0e0e0':'rgba(26,95,212,.3)'};display:flex;align-items:center;justify-content:center;font-weight:700;color:${textColor};">${displayVal}</div></td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table></div>';
+  container.innerHTML = html;
+}
+
+function buildSoftmaxMaskMatrix(id) {
+  const container = document.getElementById(id);
+  if (!container) return;
+  // Apply mask then softmax per row
+  const masked = DEC_RAW.map((row, ri) =>
+    row.map((v, ci) => ci > ri ? -1e9 : v / 1.73)
+  );
+  const softmaxed = masked.map(row => {
+    const mx = Math.max(...row.filter(v => v > -1e8));
+    const exps = row.map(v => v < -1e7 ? 0 : Math.exp(v - mx));
+    const s = exps.reduce((a,b)=>a+b,0);
+    return exps.map(v => v/s);
+  });
+
+  let html = '<div style="overflow-x:auto;"><table style="border-collapse:separate;border-spacing:3px;font-family:JetBrains Mono,monospace;font-size:10px;">';
+  html += '<thead><tr><th style="background:transparent;border:none;padding:4px 8px;color:#888;"></th>';
+  DEC_TOKS.forEach(t => html += `<th style="background:transparent;border:none;padding:4px 8px;color:#888;">${t}</th>`);
+  html += '</tr></thead><tbody>';
+  softmaxed.forEach((row, ri) => {
+    html += `<tr><td style="padding:4px 8px;color:#666;">${DEC_TOKS[ri]}</td>`;
+    row.forEach((val, ci) => {
+      const isMasked = ci > ri;
+      const bg = isMasked ? '#f5f5f5' : `rgba(0,122,61,${0.04 + val * 0.8})`;
+      const textColor = isMasked ? '#ccc' : (val > 0.4 ? '#fff' : '#007a3d');
+      const border = isMasked ? '1px solid #e0e0e0' : '1px solid rgba(0,122,61,.3)';
+      html += `<td style="padding:2px;border:none;"><div style="width:54px;height:34px;border-radius:5px;background:${bg};border:${border};display:flex;align-items:center;justify-content:center;font-weight:700;color:${textColor};">${isMasked?'0.00':val.toFixed(2)}</div></td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table></div>';
+  container.innerHTML = html;
+}
+
+buildMaskMatrix('raw-score-before-mask', DEC_RAW, false);
+buildMaskMatrix('raw-score-after-mask', DEC_RAW, true);
+buildSoftmaxMaskMatrix('raw-score-softmax');
+
+// Love attention bars
+function buildLoveAttnBars() {
+  const container = document.getElementById('love-attn-bars');
+  if (!container) return;
+  const data = [
+    {tok:'I',    w:0.357, color:'#1a5fd4'},
+    {tok:'love', w:0.643, color:'#007a3d'},
+    {tok:'ML',   w:0,     color:'#bbb', masked:true},
+    {tok:'magic',w:0,     color:'#bbb', masked:true},
+  ];
+  container.innerHTML = data.map(d => `
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:${d.masked?'#ccc':'#444'}">${d.tok}</div>
+      <div style="width:70px;height:${Math.max(4, d.w*80)}px;background:${d.color};border-radius:4px 4px 0 0;display:flex;align-items:flex-start;justify-content:center;padding-top:4px;">
+        ${d.w > 0 ? `<span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#fff;font-weight:700">${d.w}</span>` : ''}
+      </div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:${d.masked?'#ccc':'#007a3d'}">${d.masked?'(masked)':d.w.toFixed(3)}</div>
+    </div>
+  `).join('');
+}
+buildLoveAttnBars();
+
+// Interactive mask demo
+function buildInteractiveMask() {
+  const btnsEl = document.getElementById('interactive-tok-btns');
+  const displayEl = document.getElementById('interactive-mask-display');
+  if (!btnsEl || !displayEl) return;
+
+  const colors = ['#007a3d','#1a5fd4','#c0185a','#a07000','#6b21a8','#0e7490','#9d174d','#166534'];
+  btnsEl.innerHTML = TOKENS.map((tok, i) => `
+    <button onclick="showInteractiveMask(${i})" id="imask-btn-${i}"
+      style="padding:7px 16px;border-radius:20px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;cursor:pointer;border:1px solid ${colors[i]};background:white;color:${colors[i]};transition:all .2s;"
+      onmouseover="this.style.background='${colors[i]}';this.style.color='#fff'"
+      onmouseout="if(window._selectedMaskTok!=${i}){this.style.background='white';this.style.color='${colors[i]}'}"
+    >${tok} <span style="font-size:9px;opacity:.7">(pos ${i})</span></button>
+  `).join('');
+  showInteractiveMask(3); // show "learning" as default
+}
+
+window._selectedMaskTok = 3;
+function showInteractiveMask(selectedIdx) {
+  window._selectedMaskTok = selectedIdx;
+  const colors = ['#007a3d','#1a5fd4','#c0185a','#a07000','#6b21a8','#0e7490','#9d174d','#166534'];
+  // Reset all btn styles
+  TOKENS.forEach((_, i) => {
+    const btn = document.getElementById(`imask-btn-${i}`);
+    if (!btn) return;
+    if (i === selectedIdx) {
+      btn.style.background = colors[i];
+      btn.style.color = '#fff';
+    } else {
+      btn.style.background = 'white';
+      btn.style.color = colors[i];
+    }
+  });
+
+  const displayEl = document.getElementById('interactive-mask-display');
+  if (!displayEl) return;
+
+  let html = '<div style="overflow-x:auto;margin-top:8px;"><table style="border-collapse:separate;border-spacing:3px;font-family:JetBrains Mono,monospace;font-size:11px;"><tbody>';
+  html += '<tr><td style="padding:4px 12px;color:#888;font-size:10px;">Position</td>';
+  TOKENS.forEach((t, i) => {
+    html += `<td style="padding:3px;border:none;"><div style="width:62px;height:28px;border-radius:4px;background:#f0f2f5;display:flex;align-items:center;justify-content:center;font-weight:700;color:#555;font-size:10px;">${t}</div></td>`;
+  });
+  html += '</tr><tr><td style="padding:4px 12px;font-weight:700;color:'+colors[selectedIdx]+';font-size:10px;">"'+TOKENS[selectedIdx]+'" sees:</td>';
+  TOKENS.forEach((t, i) => {
+    const canSee = i <= selectedIdx;
+    const isSelf = i === selectedIdx;
+    let bg, textColor, label;
+    if (isSelf) {
+      bg = colors[selectedIdx]; textColor = '#fff'; label = '✓ self';
+    } else if (canSee) {
+      bg = `rgba(0,122,61,.12)`; textColor = '#007a3d'; label = '✓ see';
+    } else {
+      bg = '#f8f8f8'; textColor = '#ccc'; label = '✗ mask';
+    }
+    html += `<td style="padding:3px;border:none;"><div style="width:62px;height:34px;border-radius:5px;background:${bg};border:1px solid ${canSee?colors[isSelf?selectedIdx:0]+'44':'#e0e0e0'};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:${textColor};">${label}</div></td>`;
+  });
+  html += '</tr></tbody></table></div>';
+  html += `<div style="margin-top:12px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#555;">
+    <b style="color:${colors[selectedIdx]}">"${TOKENS[selectedIdx]}"</b> at position ${selectedIdx} can attend to positions 0–${selectedIdx}:
+    <b style="color:#007a3d">${TOKENS.slice(0, selectedIdx+1).map(t=>'"'+t+'"').join(', ')}</b>
+    ${selectedIdx < 7 ? `— BLOCKED from: <b style="color:#c0185a">${TOKENS.slice(selectedIdx+1).map(t=>'"'+t+'"').join(', ')}</b>` : '— (last token, no future to block)'}
+  </div>`;
+  displayEl.innerHTML = html;
+}
+
+buildInteractiveMask();
 
 // ══════════════════════════════════════════════
 // MASK GRID
@@ -1197,16 +2117,16 @@ function buildMaskGrid() {
   const container = document.getElementById('mask-grid');
   if (!container) return;
   const shortToks = ['I','love','mach','learn','becz','it','is','magic'];
-  let html = '<div style="overflow-x:auto;"><table class="mask-tbl"><thead><tr><th style="background:transparent;border:none;padding:4px 8px;font-family:JetBrains Mono,monospace;font-size:10px;color:#555;"></th>';
-  shortToks.forEach(t => html += `<th style="background:transparent;border:none;padding:4px 8px;font-family:JetBrains Mono,monospace;font-size:10px;color:#555;">${t}</th>`);
+  let html = '<div style="overflow-x:auto;"><table class="mask-tbl"><thead><tr><th style="background:transparent;border:none;padding:4px 8px;font-family:JetBrains Mono,monospace;font-size:10px;color:#888;"></th>';
+  shortToks.forEach(t => html += `<th style="background:transparent;border:none;padding:4px 8px;font-family:JetBrains Mono,monospace;font-size:10px;color:#888;">${t}</th>`);
   html += '</tr></thead><tbody>';
   shortToks.forEach((rowT, ri) => {
-    html += `<tr><td style="padding:4px 8px;font-family:JetBrains Mono,monospace;font-size:10px;color:#aaa;">${rowT}</td>`;
+    html += `<tr><td style="padding:4px 8px;font-family:JetBrains Mono,monospace;font-size:10px;color:#666;">${rowT}</td>`;
     shortToks.forEach((colT, ci) => {
       if (ci <= ri) {
-        html += `<td style="padding:3px;border:none;"><div style="width:52px;height:32px;border-radius:4px;background:rgba(0,230,118,.12);border:1px solid var(--Q);display:flex;align-items:center;justify-content:center;font-family:JetBrains Mono,monospace;font-size:9px;color:var(--Q)">✓ see</div></td>`;
+        html += `<td style="padding:3px;border:none;"><div style="width:52px;height:32px;border-radius:4px;background:rgba(0,122,61,.10);border:1px solid #007a3d;display:flex;align-items:center;justify-content:center;font-family:JetBrains Mono,monospace;font-size:9px;color:#007a3d">✓ see</div></td>`;
       } else {
-        html += `<td style="padding:3px;border:none;"><div style="width:52px;height:32px;border-radius:4px;background:rgba(255,64,129,.05);border:1px solid #222;display:flex;align-items:center;justify-content:center;font-family:JetBrains Mono,monospace;font-size:9px;color:#333">✗ mask</div></td>`;
+        html += `<td style="padding:3px;border:none;"><div style="width:52px;height:32px;border-radius:4px;background:#f5f5f5;border:1px solid #ddd;display:flex;align-items:center;justify-content:center;font-family:JetBrains Mono,monospace;font-size:9px;color:#bbb">✗ mask</div></td>`;
       }
     });
     html += '</tr>';
@@ -1226,10 +2146,10 @@ function drawCrossAttn() {
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
   ctx.clearRect(0, 0, W, H);
-  ctx.fillStyle = '#111'; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = '#f8f9fa'; ctx.fillRect(0, 0, W, H);
 
   const encToks = TOKENS;
-  const decToks = ['मैं','ML','पसंद','करता','हूँ'];
+  const decToks = ['ML','is','loved','because',"it's"];
   const encY = 40, decY = H - 40;
   const encSpacing = W / (encToks.length + 1);
   const decSpacing = W / (decToks.length + 1);
@@ -1250,7 +2170,7 @@ function drawCrossAttn() {
       const s = strength[di] ? strength[di][ei] : 0.1;
       if (s > 0.2) {
         ctx.beginPath();
-        ctx.strokeStyle = `rgba(68,138,255,${s * 0.9})`;
+        ctx.strokeStyle = `rgba(26,95,212,${s * 0.9})`;
         ctx.lineWidth = s * 3;
         ctx.moveTo(ex, encY+10); ctx.lineTo(dx, decY-10); ctx.stroke();
       }
@@ -1260,28 +2180,28 @@ function drawCrossAttn() {
   // Encoder tokens (top)
   encToks.forEach((tok, i) => {
     const x = encSpacing * (i+1);
-    ctx.fillStyle = 'rgba(0,230,118,.15)';
-    ctx.strokeStyle = '#00e676'; ctx.lineWidth = 1;
+    ctx.fillStyle = 'rgba(0,122,61,.12)';
+    ctx.strokeStyle = '#007a3d'; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.roundRect(x-22, encY-14, 44, 24, 4); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = '#00e676'; ctx.font = 'bold 10px JetBrains Mono'; ctx.textAlign = 'center';
+    ctx.fillStyle = '#007a3d'; ctx.font = 'bold 10px JetBrains Mono'; ctx.textAlign = 'center';
     ctx.fillText(tok, x, encY+2);
   });
 
   // Encoder label
-  ctx.fillStyle = '#555'; ctx.font = '10px JetBrains Mono'; ctx.textAlign = 'left';
+  ctx.fillStyle = '#888'; ctx.font = '10px JetBrains Mono'; ctx.textAlign = 'left';
   ctx.fillText('ENCODER OUTPUT (K,V) →', 8, encY - 20);
 
   // Decoder tokens (bottom)
   decToks.forEach((tok, i) => {
     const x = decSpacing * (i+1);
-    ctx.fillStyle = 'rgba(255,64,129,.15)';
-    ctx.strokeStyle = '#ff4081'; ctx.lineWidth = 1;
+    ctx.fillStyle = 'rgba(192,24,90,.12)';
+    ctx.strokeStyle = '#c0185a'; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.roundRect(x-28, decY-12, 56, 24, 4); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = '#ff4081'; ctx.font = 'bold 10px JetBrains Mono'; ctx.textAlign = 'center';
+    ctx.fillStyle = '#c0185a'; ctx.font = 'bold 10px JetBrains Mono'; ctx.textAlign = 'center';
     ctx.fillText(tok, x, decY+2);
   });
-  ctx.fillStyle = '#555'; ctx.font = '10px JetBrains Mono'; ctx.textAlign = 'left';
-  ctx.fillText('DECODER (Q) generates →', 8, decY + 22);
+  ctx.fillStyle = '#888'; ctx.font = '10px JetBrains Mono'; ctx.textAlign = 'left';
+  ctx.fillText('DECODER (Q) output tokens →', 8, decY + 22);
 }
 drawCrossAttn();
 
@@ -1289,7 +2209,7 @@ drawCrossAttn();
 // WEIGHT TRAINING SIMULATION
 // ══════════════════════════════════════════════
 const W_NAMES = ['W_Q[0,0]','W_Q[1,1]','W_Q[2,2]','W_K[0,0]','W_K[1,1]','W_V[0,0]','W_V[1,1]','FFN_W1','FFN_W2','bias'];
-const W_COLORS = ['#00e676','#00e676','#00e676','#448aff','#448aff','#ff4081','#ff4081','#ffd740','#ffd740','#aaa'];
+const W_COLORS = ['#007a3d','#007a3d','#007a3d','#1a5fd4','#1a5fd4','#c0185a','#c0185a','#a07000','#a07000','#888'];
 let wVals = [];
 let lossHist = [];
 let epochNum = 0;
@@ -1354,20 +2274,20 @@ function drawLossChart() {
   if (!canvas) return;
   canvas.width = canvas.parentElement.offsetWidth - 56;
   const ctx = canvas.getContext('2d'); const W = canvas.width, H = canvas.height;
-  ctx.fillStyle='#0a0a0a'; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#f8f9fa'; ctx.fillRect(0,0,W,H);
   if (lossHist.length < 2) return;
   const pad=35, maxL=Math.max(...lossHist)*1.1;
-  ctx.strokeStyle='rgba(255,255,255,.06)'; ctx.lineWidth=1;
+  ctx.strokeStyle='rgba(0,0,0,.08)'; ctx.lineWidth=1;
   for (let i=0;i<=4;i++) { const y=pad+(H-2*pad)*i/4; ctx.beginPath();ctx.moveTo(pad,y);ctx.lineTo(W-pad,y);ctx.stroke(); }
-  ctx.fillStyle='#444'; ctx.font='9px JetBrains Mono'; ctx.textAlign='right';
+  ctx.fillStyle='#888'; ctx.font='9px JetBrains Mono'; ctx.textAlign='right';
   for(let i=0;i<=4;i++){ ctx.fillText((maxL*(1-i/4)).toFixed(2),pad-4,pad+(H-2*pad)*i/4+3); }
-  ctx.beginPath(); ctx.strokeStyle='#ff4081'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.strokeStyle='#c0185a'; ctx.lineWidth=2;
   lossHist.forEach((l,i)=>{ const x=pad+(W-2*pad)*i/50; const y=pad+(H-2*pad)*(1-l/maxL); i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); });
   ctx.stroke();
-  ctx.fillStyle='#333'; ctx.textAlign='center'; ctx.font='9px JetBrains Mono';
+  ctx.fillStyle='#bbb'; ctx.textAlign='center'; ctx.font='9px JetBrains Mono';
   ctx.fillText('Training Loss (cross-entropy)',W/2,H-6);
 }
-function clearLoss() { const c=document.getElementById('loss-canvas'); if(!c)return; c.width=c.parentElement?.offsetWidth-56||600; const ctx=c.getContext('2d'); ctx.fillStyle='#0a0a0a'; ctx.fillRect(0,0,c.width,c.height); }
+function clearLoss() { const c=document.getElementById('loss-canvas'); if(!c)return; c.width=c.parentElement?.offsetWidth-56||600; const ctx=c.getContext('2d'); ctx.fillStyle='#f8f9fa'; ctx.fillRect(0,0,c.width,c.height); }
 
 initWeights(); renderWeightBars(); clearLoss();
 
@@ -1375,47 +2295,47 @@ initWeights(); renderWeightBars(); clearLoss();
 // PIPELINE
 // ══════════════════════════════════════════════
 const PIPE_STEPS_DEF = [
-  { icon:'📝', name:'Tokenization', color:'#00e676', fn: (words) => ({
+  { icon:'📝', name:'Tokenization', color:'#007a3d', fn: (words) => ({
     detail:`Split "${words.join(' ')}" → ${words.length} tokens`,
     chips: words.map(w=>`[${w}]`)
   })},
-  { icon:'🔢', name:'Vocabulary IDs', color:'#448aff', fn: (words) => ({
+  { icon:'🔢', name:'Vocabulary IDs', color:'#1a5fd4', fn: (words) => ({
     detail:`Each token looked up in vocabulary (50,257 entries in GPT-2)`,
     chips: words.map((_,i)=>`id_${1000+i*137}`)
   })},
-  { icon:'🧮', name:'Token Embeddings', color:'#ff4081', fn: (words) => ({
+  { icon:'🧮', name:'Token Embeddings', color:'#c0185a', fn: (words) => ({
     detail:`Each ID mapped to dense vector (d_model = 512 in real models, 3 in our example)`,
     chips: words.slice(0,4).map(w=>`E("${w}")`)
   })},
-  { icon:'📍', name:'Positional Encoding', color:'#ffd740', fn: (words) => ({
+  { icon:'📍', name:'Positional Encoding', color:'#a07000', fn: (words) => ({
     detail:`sin/cos position vectors ADDED to embeddings — preserves word order`,
     chips: words.map((_,i)=>`PE(pos=${i})`)
   })},
-  { icon:'🟢', name:'Query · Key · Value', color:'#00e676', fn: (words) => ({
+  { icon:'🟢', name:'Query · Key · Value', color:'#007a3d', fn: (words) => ({
     detail:`X · W_Q = Q (green), X · W_K = K (blue), X · W_V = V (pink)`,
     chips:['Q matrix','K matrix','V matrix','W_Q W_K W_V learned!']
   })},
-  { icon:'👁', name:'Attention Scores (Q·Kᵀ/√dk)', color:'#448aff', fn: (words) => ({
+  { icon:'👁', name:'Attention Scores (Q·Kᵀ/√dk)', color:'#1a5fd4', fn: (words) => ({
     detail:`(${words.length}×3)×(3×${words.length}) = (${words.length}×${words.length}) score matrix — who attends to whom`,
     chips: words.map(w=>`row("${w}")`)
   })},
-  { icon:'📊', name:'Softmax → Attention Weights', color:'#ff4081', fn: (words) => ({
+  { icon:'📊', name:'Softmax → Attention Weights', color:'#c0185a', fn: (words) => ({
     detail:`Each row → probabilities (sum=1). Reveals linguistic relationships!`,
     chips: [`"it"→highest`, `diag=self-attn`]
   })},
-  { icon:'⚡', name:'Attention × Value', color:'#ffd740', fn: (words) => ({
+  { icon:'⚡', name:'Attention × Value', color:'#a07000', fn: (words) => ({
     detail:`Output = A × V: each token becomes context-aware blend of all tokens`,
     chips: words.map(w=>`out("${w}")`)
   })},
-  { icon:'🧠', name:'Feed-Forward MLP + GELU', color:'#00e676', fn: (words) => ({
+  { icon:'🧠', name:'Feed-Forward MLP + GELU', color:'#007a3d', fn: (words) => ({
     detail:`FFN(x) = GELU(x·W₁+b₁)·W₂+b₂ — two linear layers, non-linearity`,
     chips:['W₁ (512→2048)','GELU','W₂ (2048→512)']
   })},
-  { icon:'➕', name:'Add & LayerNorm', color:'#448aff', fn: (words) => ({
+  { icon:'➕', name:'Add & LayerNorm', color:'#1a5fd4', fn: (words) => ({
     detail:`Residual: output = LayerNorm(x + sublayer(x)) — stable training`,
     chips:['residual +','layer norm']
   })},
-  { icon:'🎯', name:'Linear + Softmax → Token', color:'#ff4081', fn: (words) => ({
+  { icon:'🎯', name:'Linear + Softmax → Token', color:'#c0185a', fn: (words) => ({
     detail:`Final vector → (vocab_size) logits → softmax → probabilities → argmax`,
     chips:['logits (50257)','softmax','next token!']
   })},
@@ -1470,7 +2390,7 @@ function runPipeline() {
           out.innerHTML = `
             <div class="output-label">🎯 PREDICTED NEXT TOKEN</div>
             <div class="output-text">${input} <span>${next}</span></div>
-            <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#555;margin-top:10px;">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#888;margin-top:10px;">
               Probabilities over vocab → argmax → "${next}" (highest probability)
             </div>`;
           out.scrollIntoView({behavior:'smooth'});
