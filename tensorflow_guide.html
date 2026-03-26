@@ -1,0 +1,2281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TensorFlow & Keras — Complete Visual Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Instrument+Serif:ital@0;1&family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:    #ffffff;
+  --bg2:   #f8f9fa;
+  --bg3:   #f0f2f5;
+  --bg4:   #e8ebef;
+  --ink:   #111111;
+  --ink2:  #444444;
+  --ink3:  #888888;
+  --border:#d0d5dd;
+  --A:  #007a3d;
+  --B:  #1a5fd4;
+  --C:  #c0185a;
+  --D:  #a07000;
+  --E:  #7b00c8;
+  --F:  #0e7490;
+  --G:  #b45309;
+  --H:  #166534;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--ink);font-family:'Bricolage Grotesque',sans-serif;overflow-x:hidden;}
+::-webkit-scrollbar{width:5px;}
+::-webkit-scrollbar-track{background:#f0f2f5;}
+::-webkit-scrollbar-thumb{background:#bbb;border-radius:3px;}
+
+nav{position:fixed;top:0;left:0;right:0;z-index:200;background:rgba(255,255,255,.97);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);height:48px;display:flex;align-items:center;padding:0 16px;gap:4px;overflow-x:auto;}
+nav .logo{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:var(--ink);margin-right:12px;white-space:nowrap;}
+nav a{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink3);text-decoration:none;padding:4px 10px;border-radius:4px;border:1px solid transparent;white-space:nowrap;transition:all .2s;}
+nav a:hover{color:var(--ink);border-color:var(--border);}
+nav .sep{color:var(--border);font-size:16px;margin:0 4px;}
+
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:80px 24px 60px;border-bottom:1px solid var(--border);background:linear-gradient(160deg,#fff 60%,#f0f2f5 100%);}
+.hero-tag{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink3);letter-spacing:4px;text-transform:uppercase;margin-bottom:20px;}
+.hero h1{font-family:'Instrument Serif',serif;font-size:clamp(3rem,8vw,6.5rem);line-height:1.05;margin-bottom:20px;color:var(--ink);}
+.hero h1 em{font-style:italic;color:var(--ink2);}
+.hero-sub{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink3);line-height:2;max-width:600px;margin-bottom:40px;}
+.hero-stats{display:flex;gap:32px;flex-wrap:wrap;justify-content:center;margin-bottom:32px;}
+.stat-item{text-align:center;}
+.stat-num{font-family:'Instrument Serif',serif;font-size:2.5rem;color:var(--ink);}
+.stat-label{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink3);letter-spacing:2px;text-transform:uppercase;}
+.color-legend{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;}
+.cl-item{display:flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;font-size:11px;}
+.cl-dot{width:12px;height:12px;border-radius:3px;}
+
+.section{max-width:1020px;margin:0 auto;padding:80px 24px;}
+.sec-num{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink3);letter-spacing:3px;margin-bottom:8px;}
+.sec-title{font-family:'Instrument Serif',serif;font-size:clamp(2rem,5vw,3.5rem);line-height:1.1;margin-bottom:14px;}
+.sec-desc{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink2);line-height:2;max-width:700px;margin-bottom:36px;}
+hr.div{border:none;border-top:1px solid var(--border);margin:80px 0;}
+.chapter-divider{background:var(--bg3);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:20px 24px;text-align:center;margin:0;}
+.chapter-divider span{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink3);letter-spacing:4px;text-transform:uppercase;}
+
+.box{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:28px;margin-bottom:24px;}
+.box-title{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+
+.formula-block{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:18px 24px;margin:12px 0;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--ink);line-height:2;}
+.formula-block .label{font-size:10px;color:var(--ink3);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;}
+
+.callout{display:flex;gap:14px;padding:16px 20px;border-radius:8px;margin:16px 0;}
+.callout-icon{font-size:20px;flex-shrink:0;}
+.callout-text{font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.9;color:var(--ink2);}
+.callout-text b{color:var(--ink);}
+.co-tip{background:rgba(0,122,61,.06);border-left:3px solid var(--A);}
+.co-warn{background:rgba(160,112,0,.06);border-left:3px solid var(--D);}
+.co-info{background:rgba(26,95,212,.06);border-left:3px solid var(--B);}
+.co-key{background:rgba(192,24,90,.06);border-left:3px solid var(--C);}
+.co-adv{background:rgba(123,0,200,.06);border-left:3px solid var(--E);}
+
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+@media(max-width:700px){.two-col{grid-template-columns:1fr;}}
+.three-col{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+@media(max-width:800px){.three-col{grid-template-columns:1fr;}}
+
+.graph-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:0;}
+.graph-title{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;}
+.graph-subtitle{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink3);margin-bottom:12px;}
+canvas.fn-graph{display:block;border-radius:6px;border:1px solid var(--border);background:#f8f9fa;width:100%;}
+
+.step-flow{display:flex;flex-direction:column;gap:0;}
+.step-item{display:flex;gap:20px;position:relative;}
+.step-item+.step-item::before{content:'';position:absolute;left:19px;top:-20px;width:2px;height:20px;background:var(--border);}
+.step-num{width:40px;height:40px;border-radius:8px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;flex-shrink:0;color:var(--ink);background:var(--bg3);}
+.step-body{flex:1;padding-bottom:28px;}
+.step-label{font-weight:800;font-size:.95rem;margin-bottom:4px;}
+.step-text{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink2);line-height:1.9;}
+
+.tbl-wrap{overflow-x:auto;margin:12px 0;}
+table{border-collapse:collapse;font-family:'JetBrains Mono',monospace;font-size:11px;width:100%;}
+th{background:var(--bg3);color:var(--ink);padding:10px 14px;text-align:left;border:1px solid var(--border);letter-spacing:1px;}
+td{padding:9px 14px;border:1px solid var(--border);color:var(--ink2);vertical-align:middle;}
+tr:hover td{background:var(--bg3);}
+.tok-cell{color:var(--ink);font-weight:700;}
+
+.adv-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-family:'JetBrains Mono',monospace;font-size:10px;background:var(--bg3);border:1px solid var(--D);color:var(--D);margin-bottom:16px;}
+.fire-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-family:'JetBrains Mono',monospace;font-size:10px;background:rgba(192,24,90,.06);border:1px solid var(--C);color:var(--C);margin-bottom:16px;}
+
+.prop-tag{display:inline-block;padding:3px 10px;border-radius:12px;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;margin:2px;border:1px solid currentColor;}
+code{font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:1px 6px;}
+
+pre{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:20px;margin:12px 0;overflow-x:auto;}
+pre code{background:none;border:none;padding:0;font-size:12px;line-height:1.8;color:var(--ink);}
+.kw{color:#7b00c8;font-weight:700;}
+.fn{color:#1a5fd4;}
+.st{color:#007a3d;}
+.cm{color:#888;font-style:italic;}
+.nm{color:#c0185a;}
+.at{color:#a07000;}
+
+.param-table{width:100%;border-collapse:collapse;margin:12px 0;}
+.param-table th{background:var(--bg3);padding:10px 14px;text-align:left;border:1px solid var(--border);font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:1px;color:var(--ink);}
+.param-table td{padding:10px 14px;border:1px solid var(--border);font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink2);vertical-align:top;line-height:1.7;}
+.param-table tr:hover td{background:var(--bg3);}
+.param-name{color:var(--B);font-weight:700;}
+.param-type{color:var(--D);font-size:10px;}
+.param-default{color:var(--A);font-size:10px;}
+
+.interactive-demo{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;margin:16px 0;}
+.demo-title{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--ink3);margin-bottom:16px;}
+.demo-controls{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:center;}
+.demo-label{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink2);}
+input[type=range]{accent-color:var(--B);}
+.demo-output{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:14px;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.9;min-height:60px;}
+.demo-btn{padding:7px 16px;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;cursor:pointer;border:2px solid var(--B);background:white;color:var(--B);transition:all .2s;}
+.demo-btn:hover,.demo-btn.active{background:var(--B);color:white;}
+.demo-btn-green{border-color:var(--A);color:var(--A);}
+.demo-btn-green:hover{background:var(--A);color:white;}
+.demo-btn-red{border-color:var(--C);color:var(--C);}
+.demo-btn-red:hover{background:var(--C);color:white;}
+
+.tensor-vis{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:12px 0;}
+.tensor-cell{width:40px;height:40px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;border:1px solid;}
+.tensor-label{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink3);text-align:center;margin-top:4px;}
+
+.arch-flow{display:flex;align-items:center;gap:0;overflow-x:auto;padding:12px 0;}
+.arch-block{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px 16px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:10px;flex-shrink:0;min-width:80px;}
+.arch-block .arch-name{font-weight:700;color:var(--ink);margin-bottom:3px;}
+.arch-block .arch-detail{color:var(--ink3);font-size:9px;}
+.arch-arrow{font-size:20px;color:var(--border);margin:0 4px;flex-shrink:0;}
+.arch-block.highlight{border-color:var(--B);background:rgba(26,95,212,.05);}
+.arch-block.highlight .arch-name{color:var(--B);}
+
+.pill{display:inline-block;padding:2px 10px;border-radius:20px;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;margin:2px;}
+.pill-green{background:rgba(0,122,61,.1);color:var(--A);border:1px solid rgba(0,122,61,.2);}
+.pill-blue{background:rgba(26,95,212,.1);color:var(--B);border:1px solid rgba(26,95,212,.2);}
+.pill-red{background:rgba(192,24,90,.1);color:var(--C);border:1px solid rgba(192,24,90,.2);}
+.pill-gold{background:rgba(160,112,0,.1);color:var(--D);border:1px solid rgba(160,112,0,.2);}
+.pill-purple{background:rgba(123,0,200,.1);color:var(--E);border:1px solid rgba(123,0,200,.2);}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
+.fade-in{animation:fadeUp .5s ease both;}
+
+.prog-bar{height:3px;background:var(--bg3);border-radius:2px;overflow:hidden;margin:16px 0;}
+.prog-fill{height:100%;background:var(--ink);width:0%;transition:width .4s ease;}
+
+.fn-btn{padding:6px 14px;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;cursor:pointer;border:2px solid currentColor;background:white;transition:all .2s;}
+.fn-btn.active,.fn-btn:hover{color:white!important;}
+
+.mini-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;font-family:'JetBrains Mono',monospace;font-size:11px;}
+.mini-card .title{font-weight:700;color:var(--ink);margin-bottom:6px;font-size:12px;}
+.mini-card .val{color:var(--ink2);line-height:1.8;}
+
+.compare-row{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);border-radius:8px;overflow:hidden;margin:12px 0;}
+.compare-cell{background:var(--bg2);padding:16px;font-family:'JetBrains Mono',monospace;font-size:11px;}
+.compare-cell .compare-head{font-weight:700;color:var(--ink);margin-bottom:8px;font-size:13px;display:flex;align-items:center;gap:8px;}
+.compare-cell ul{list-style:none;color:var(--ink2);line-height:2;}
+.compare-cell ul li::before{content:'→ ';color:var(--ink3);}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">⚡ TF + KERAS</div>
+  <a href="#tensors">Tensors</a>
+  <a href="#variables">Variables</a>
+  <a href="#ops">Ops</a>
+  <a href="#gradient">GradTape</a>
+  <span class="sep">|</span>
+  <a href="#sequential">Sequential</a>
+  <a href="#functional">Functional</a>
+  <a href="#subclass">Subclass</a>
+  <span class="sep">|</span>
+  <a href="#layers">Layers</a>
+  <a href="#activations">Activations</a>
+  <a href="#losses">Losses</a>
+  <a href="#optimizers">Optimizers</a>
+  <span class="sep">|</span>
+  <a href="#compile">compile()</a>
+  <a href="#fit">fit()</a>
+  <a href="#predict">predict()</a>
+  <span class="sep">|</span>
+  <a href="#tfdata">tf.data</a>
+  <a href="#custom-loop">Custom Loop</a>
+  <span class="sep">|</span>
+  <a href="#normalization">Normalization</a>
+  <a href="#metrics">Metrics</a>
+  <a href="#cnn">CNN</a>
+  <a href="#rnn">LSTM/GRU</a>
+  <a href="#transfer">Transfer</a>
+  <a href="#lr-schedule">LR Schedule</a>
+  <a href="#augmentation">Augmentation</a>
+  <span class="sep">|</span>
+  <a href="#transformers">Transformers</a>
+  <a href="#tfhub">TF Hub</a>
+  <a href="#debugging">Debugging</a>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-tag">Complete Visual Learning Guide</div>
+  <h1>TensorFlow<br><em>&amp; Keras</em><br>Mastery</h1>
+  <div class="hero-sub">
+    Every concept. Every parameter. Every attribute explained.<br>
+    Beginner to Advanced — with interactive demos & real code.<br>
+    From tf.Tensor basics to Transformer architectures.
+  </div>
+  <div class="hero-stats">
+    <div class="stat-item"><div class="stat-num">40</div><div class="stat-label">Concepts</div></div>
+    <div class="stat-item"><div class="stat-num">200+</div><div class="stat-label">Parameters</div></div>
+    <div class="stat-item"><div class="stat-num">60+</div><div class="stat-label">Code Demos</div></div>
+    <div class="stat-item"><div class="stat-num">Live</div><div class="stat-label">Interactive</div></div>
+  </div>
+  <div class="color-legend">
+    <div class="cl-item"><div class="cl-dot" style="background:var(--A)"></div>Core concept</div>
+    <div class="cl-item"><div class="cl-dot" style="background:var(--B)"></div>Parameter/Attribute</div>
+    <div class="cl-item"><div class="cl-dot" style="background:var(--C)"></div>Warning / Gotcha</div>
+    <div class="cl-item"><div class="cl-dot" style="background:var(--D)"></div>Best practice</div>
+    <div class="cl-item"><div class="cl-dot" style="background:var(--E)"></div>Advanced</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     CHAPTER 1 — TENSORS
+═══════════════════════════════════════════ -->
+<div class="chapter-divider"><span>⬡ Chapter 01 — Foundations</span></div>
+
+<div class="section" id="tensors">
+  <div class="sec-num">CONCEPT 01</div>
+  <div class="sec-title">tf.Tensor — <em>The Basics</em></div>
+  <div class="sec-desc">A Tensor is the fundamental data structure in TensorFlow. Think of it as an n-dimensional array — a generalization of scalars, vectors, and matrices. Everything in TF flows through tensors.</div>
+
+  <div class="two-col">
+    <div class="box">
+      <div class="box-title" style="color:var(--A)">What is a Tensor?</div>
+      <div class="step-flow">
+        <div class="step-item">
+          <div class="step-num" style="color:var(--A);border-color:var(--A)">0D</div>
+          <div class="step-body">
+            <div class="step-label">Scalar</div>
+            <div class="step-text">Single number. Shape = (). Example: <code>tf.constant(42)</code></div>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num" style="color:var(--B);border-color:var(--B)">1D</div>
+          <div class="step-body">
+            <div class="step-label">Vector</div>
+            <div class="step-text">Array of numbers. Shape = (n,). Example: <code>tf.constant([1,2,3])</code></div>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num" style="color:var(--C);border-color:var(--C)">2D</div>
+          <div class="step-body">
+            <div class="step-label">Matrix</div>
+            <div class="step-text">Rows × columns. Shape = (rows, cols). Like a spreadsheet of numbers.</div>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num" style="color:var(--E);border-color:var(--E)">nD</div>
+          <div class="step-body">
+            <div class="step-label">Higher-Order</div>
+            <div class="step-text">Images: (batch, H, W, channels). Videos: (batch, T, H, W, C).</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="interactive-demo" id="tensor-demo">
+        <div class="demo-title">⚡ Live Tensor Inspector</div>
+        <div class="demo-controls">
+          <button class="demo-btn active" onclick="setTensorDemo('scalar',this)">Scalar 0D</button>
+          <button class="demo-btn" onclick="setTensorDemo('vector',this)">Vector 1D</button>
+          <button class="demo-btn" onclick="setTensorDemo('matrix',this)">Matrix 2D</button>
+          <button class="demo-btn" onclick="setTensorDemo('image',this)">Image 4D</button>
+        </div>
+        <div class="demo-output" id="tensor-out"></div>
+      </div>
+      <div class="callout co-info">
+        <div class="callout-icon">💡</div>
+        <div class="callout-text"><b>Immutability:</b> Tensors created with <code>tf.constant()</code> are immutable — their values cannot change after creation. For learnable weights, use <code>tf.Variable</code>.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="box" style="margin-top:24px;">
+    <div class="box-title" style="color:var(--B)">tf.constant() — All Parameters</div>
+    <div class="tbl-wrap">
+      <table class="param-table">
+        <tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr>
+        <tr><td class="param-name">value</td><td class="param-type">array/list/scalar</td><td class="param-default">required</td><td>The actual data. Can be Python int/float, list, numpy array.</td></tr>
+        <tr><td class="param-name">dtype</td><td class="param-type">tf.DType</td><td class="param-default">None (inferred)</td><td><code>tf.float32</code>, <code>tf.int32</code>, <code>tf.float64</code>, <code>tf.bool</code>, <code>tf.string</code>. Default float=float32, int=int32.</td></tr>
+        <tr><td class="param-name">shape</td><td class="param-type">tuple/TensorShape</td><td class="param-default">None (inferred)</td><td>Explicit reshape of value. Must be compatible with value's total elements.</td></tr>
+        <tr><td class="param-name">name</td><td class="param-type">str</td><td class="param-default">None</td><td>Optional name for the tensor, used in TensorBoard and debugging.</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="box">
+    <div class="box-title" style="color:var(--A)">Key Tensor Attributes & Methods</div>
+    <div class="tbl-wrap">
+      <table class="param-table">
+        <tr><th>Attribute / Method</th><th>Returns</th><th>Description</th></tr>
+        <tr><td class="param-name">.shape</td><td class="param-type">TensorShape</td><td>Tuple-like. <code>t.shape</code> → <code>TensorShape([3, 4])</code>. Access dims: <code>t.shape[0]</code></td></tr>
+        <tr><td class="param-name">.rank / tf.rank(t)</td><td class="param-type">int / Tensor</td><td>Number of dimensions. Scalar=0, vector=1, matrix=2.</td></tr>
+        <tr><td class="param-name">.dtype</td><td class="param-type">tf.DType</td><td>Data type: <code>tf.float32</code>, <code>tf.int32</code>, etc.</td></tr>
+        <tr><td class="param-name">.device</td><td class="param-type">str</td><td>Which device holds the tensor: <code>"/job:localhost/device:CPU:0"</code> or GPU.</td></tr>
+        <tr><td class="param-name">.numpy()</td><td class="param-type">np.ndarray</td><td>Convert tensor → numpy array. Only works in eager mode.</td></tr>
+        <tr><td class="param-name">tf.size(t)</td><td class="param-type">Tensor</td><td>Total number of elements (product of all dims). <code>tf.size([3,4])</code> → 12.</td></tr>
+        <tr><td class="param-name">tf.reshape(t, shape)</td><td class="param-type">Tensor</td><td>Reshape tensor. Use -1 for auto-dimension. <code>tf.reshape(t, [2,-1])</code></td></tr>
+        <tr><td class="param-name">tf.cast(t, dtype)</td><td class="param-type">Tensor</td><td>Change dtype. <code>tf.cast(x, tf.float32)</code> converts int → float.</td></tr>
+        <tr><td class="param-name">tf.expand_dims(t, axis)</td><td class="param-type">Tensor</td><td>Insert dimension at axis. (3,) → (1,3) with axis=0.</td></tr>
+        <tr><td class="param-name">tf.squeeze(t)</td><td class="param-type">Tensor</td><td>Remove all size-1 dimensions. (1,3,1) → (3,).</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <pre><code><span class="kw">import</span> tensorflow <span class="kw">as</span> tf
+
+<span class="cm"># ── Creation ──────────────────────────────────</span>
+scalar = tf.<span class="fn">constant</span>(<span class="nm">42</span>)                          <span class="cm"># 0D, shape=()</span>
+vector = tf.<span class="fn">constant</span>([<span class="nm">1.0</span>, <span class="nm">2.0</span>, <span class="nm">3.0</span>])            <span class="cm"># 1D, shape=(3,)</span>
+matrix = tf.<span class="fn">constant</span>([[<span class="nm">1</span>,<span class="nm">2</span>],[<span class="nm">3</span>,<span class="nm">4</span>]], dtype=tf.float32)  <span class="cm"># 2D</span>
+
+<span class="cm"># ── Inspect ───────────────────────────────────</span>
+<span class="fn">print</span>(matrix.shape)      <span class="cm"># TensorShape([2, 2])</span>
+<span class="fn">print</span>(matrix.dtype)      <span class="cm"># &lt;dtype: 'float32'&gt;</span>
+<span class="fn">print</span>(tf.<span class="fn">rank</span>(matrix))   <span class="cm"># tf.Tensor(2, shape=(), dtype=int32)</span>
+<span class="fn">print</span>(tf.<span class="fn">size</span>(matrix))   <span class="cm"># tf.Tensor(4, ...)</span>
+
+<span class="cm"># ── Convert ───────────────────────────────────</span>
+np_arr = matrix.<span class="fn">numpy</span>()  <span class="cm"># → numpy array [[1. 2.][3. 4.]]</span>
+f64 = tf.<span class="fn">cast</span>(matrix, tf.float64)
+
+<span class="cm"># ── Reshape ───────────────────────────────────</span>
+flat = tf.<span class="fn">reshape</span>(matrix, [<span class="nm">-1</span>])    <span class="cm"># [1, 2, 3, 4]</span>
+col  = tf.<span class="fn">expand_dims</span>(vector, axis=<span class="nm">1</span>) <span class="cm"># (3,) → (3,1)</span></code></pre>
+</div>
+
+<hr class="div">
+
+<!-- CONCEPT 02 — Variables -->
+<div class="section" id="variables">
+  <div class="sec-num">CONCEPT 02</div>
+  <div class="sec-title">tf.Variable — <em>Learnable Parameters</em></div>
+  <div class="sec-desc">Variables are mutable tensors. They are the parameters your model learns: weights, biases, embeddings. When you call <code>optimizer.apply_gradients()</code>, it updates Variables in-place.</div>
+
+  <div class="two-col">
+    <div class="box">
+      <div class="box-title" style="color:var(--B)">tf.Variable() — All Parameters</div>
+      <div class="tbl-wrap">
+        <table class="param-table">
+          <tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr>
+          <tr><td class="param-name">initial_value</td><td class="param-type">tensor/callable</td><td class="param-default">required</td><td>Starting value. Can be a tf.Tensor, numpy array, Python value, or a callable (lazy init).</td></tr>
+          <tr><td class="param-name">trainable</td><td class="param-type">bool</td><td class="param-default">True</td><td>If True, GradientTape watches this variable and optimizers update it. Set False to freeze layers.</td></tr>
+          <tr><td class="param-name">dtype</td><td class="param-type">tf.DType</td><td class="param-default">None</td><td>Data type. Usually float32 for weights.</td></tr>
+          <tr><td class="param-name">name</td><td class="param-type">str</td><td class="param-default">"Variable"</td><td>Human-readable name shown in TensorBoard.</td></tr>
+          <tr><td class="param-name">shape</td><td class="param-type">tuple</td><td class="param-default">None</td><td>If set, variable can be assigned values of any compatible shape.</td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="box">
+      <div class="box-title" style="color:var(--A)">Variable Methods</div>
+      <div class="tbl-wrap">
+        <table class="param-table">
+          <tr><th>Method</th><th>Description</th></tr>
+          <tr><td class="param-name">.assign(value)</td><td>Replace variable's value entirely. Returns the variable itself.</td></tr>
+          <tr><td class="param-name">.assign_add(delta)</td><td>Add delta to variable in-place: <code>var += delta</code>.</td></tr>
+          <tr><td class="param-name">.assign_sub(delta)</td><td>Subtract delta from variable: <code>var -= delta</code>.</td></tr>
+          <tr><td class="param-name">.read_value()</td><td>Returns current tensor value as a tf.Tensor snapshot.</td></tr>
+          <tr><td class="param-name">.numpy()</td><td>Get current value as numpy array.</td></tr>
+          <tr><td class="param-name">.trainable</td><td>Boolean attribute: is this variable watched by gradient tape?</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout co-warn">
+    <div class="callout-icon">⚠️</div>
+    <div class="callout-text"><b>trainable=False — Freezing Layers:</b> When you load a pretrained model and want to freeze its weights, set each layer's <code>layer.trainable = False</code>. This sets all Variable's <code>trainable=False</code> so they don't get updated during fine-tuning.</div>
+  </div>
+
+  <div class="compare-row">
+    <div class="compare-cell">
+      <div class="compare-head" style="color:var(--A)">✅ tf.constant</div>
+      <ul>
+        <li>Immutable — value never changes</li>
+        <li>Used for fixed inputs, hyperparams</li>
+        <li>Slightly faster (no mutation overhead)</li>
+        <li>Cannot be trained/updated by optimizer</li>
+        <li>Example: padding value, class weights</li>
+      </ul>
+    </div>
+    <div class="compare-cell">
+      <div class="compare-head" style="color:var(--B)">🔥 tf.Variable</div>
+      <ul>
+        <li>Mutable — can be updated in-place</li>
+        <li>Used for weights, biases, embeddings</li>
+        <li>Watched by GradientTape automatically</li>
+        <li>Updated by optimizer.apply_gradients()</li>
+        <li>Example: Dense layer kernel, LSTM gates</li>
+      </ul>
+    </div>
+  </div>
+
+  <pre><code><span class="cm"># ── Create Variables ──────────────────────────</span>
+w = tf.Variable(tf.<span class="fn">random.normal</span>([<span class="nm">3</span>, <span class="nm">2</span>]), name=<span class="st">"weights"</span>)
+b = tf.Variable(tf.<span class="fn">zeros</span>([<span class="nm">2</span>]), name=<span class="st">"bias"</span>)
+
+<span class="cm"># ── Mutation ──────────────────────────────────</span>
+w.<span class="fn">assign</span>(tf.<span class="fn">ones</span>([<span class="nm">3</span>, <span class="nm">2</span>]))         <span class="cm"># replace all values</span>
+b.<span class="fn">assign_add</span>([<span class="nm">0.1</span>, <span class="nm">0.1</span>])          <span class="cm"># b += [0.1, 0.1]</span>
+b.<span class="fn">assign_sub</span>([<span class="nm">0.05</span>, <span class="nm">0.05</span>])        <span class="cm"># b -= [0.05, 0.05]</span>
+
+<span class="cm"># ── Freeze (non-trainable) ────────────────────</span>
+frozen = tf.Variable([<span class="nm">1.0</span>, <span class="nm">2.0</span>], trainable=<span class="kw">False</span>)
+<span class="cm"># Will NOT be updated by optimizer</span></code></pre>
+</div>
+
+<hr class="div">
+
+<!-- CONCEPT 03 — Ops & Broadcasting -->
+<div class="section" id="ops">
+  <div class="sec-num">CONCEPT 03</div>
+  <div class="sec-title">Tensor <em>Operations</em></div>
+  <div class="sec-desc">TensorFlow overloads Python operators. <code>+</code>, <code>*</code>, <code>-</code>, <code>/</code> work element-wise. Matrix multiplication uses <code>tf.matmul()</code> or the <code>@</code> operator. Broadcasting automatically expands dimensions.</div>
+
+  <div class="three-col">
+    <div class="box">
+      <div class="box-title" style="color:var(--A)">Arithmetic</div>
+      <table class="param-table">
+        <tr><th>Op</th><th>Function</th></tr>
+        <tr><td class="param-name">a + b</td><td>tf.add(a, b) — element-wise add</td></tr>
+        <tr><td class="param-name">a * b</td><td>tf.multiply(a, b) — element-wise multiply</td></tr>
+        <tr><td class="param-name">a @ b</td><td>tf.matmul(a, b) — matrix multiply</td></tr>
+        <tr><td class="param-name">a ** 2</td><td>tf.pow(a, 2) — element-wise power</td></tr>
+        <tr><td class="param-name">tf.sqrt(a)</td><td>element-wise square root</td></tr>
+        <tr><td class="param-name">tf.abs(a)</td><td>absolute value</td></tr>
+        <tr><td class="param-name">tf.exp(a)</td><td>e^x element-wise</td></tr>
+        <tr><td class="param-name">tf.log(a)</td><td>natural log</td></tr>
+      </table>
+    </div>
+    <div class="box">
+      <div class="box-title" style="color:var(--B)">Reduction</div>
+      <table class="param-table">
+        <tr><th>Function</th><th>What it does</th></tr>
+        <tr><td class="param-name">tf.reduce_sum(x, axis)</td><td>Sum along axis</td></tr>
+        <tr><td class="param-name">tf.reduce_mean(x, axis)</td><td>Mean along axis</td></tr>
+        <tr><td class="param-name">tf.reduce_max(x, axis)</td><td>Max along axis</td></tr>
+        <tr><td class="param-name">tf.reduce_min(x, axis)</td><td>Min along axis</td></tr>
+        <tr><td class="param-name">tf.argmax(x, axis)</td><td>Index of maximum</td></tr>
+        <tr><td class="param-name">tf.argmin(x, axis)</td><td>Index of minimum</td></tr>
+        <tr><td class="param-name">keepdims=True</td><td>Keep reduced dims as size-1</td></tr>
+      </table>
+    </div>
+    <div class="box">
+      <div class="box-title" style="color:var(--C)">Indexing & Slicing</div>
+      <table class="param-table">
+        <tr><th>Syntax</th><th>Meaning</th></tr>
+        <tr><td class="param-name">x[0]</td><td>First element</td></tr>
+        <tr><td class="param-name">x[1:3]</td><td>Elements 1 to 2</td></tr>
+        <tr><td class="param-name">x[:, 0]</td><td>All rows, column 0</td></tr>
+        <tr><td class="param-name">x[..., -1]</td><td>Last element of last dim</td></tr>
+        <tr><td class="param-name">tf.gather(x, [0,2])</td><td>Select rows by index</td></tr>
+        <tr><td class="param-name">tf.boolean_mask(x, mask)</td><td>Select by boolean</td></tr>
+        <tr><td class="param-name">tf.where(cond, a, b)</td><td>Conditional select</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="box">
+    <div class="box-title" style="color:var(--D)">Broadcasting Rules — Explained Visually</div>
+    <div class="sec-desc" style="margin-bottom:16px;">Broadcasting automatically expands tensors along dimensions of size 1 to match the other tensor. No data is copied — it's a virtual expansion.</div>
+    <div class="interactive-demo">
+      <div class="demo-title">Broadcasting Calculator</div>
+      <div class="demo-controls" id="broadcast-demo">
+        <span class="demo-label">A shape:</span>
+        <button class="demo-btn active" onclick="setBroadcast('3,1','1,4',this)">3×1 + 1×4 → 3×4</button>
+        <button class="demo-btn" onclick="setBroadcast('5','3,5',this)">5 + 3×5 → 3×5</button>
+        <button class="demo-btn" onclick="setBroadcast('1','4',this)">scalar + vector</button>
+        <button class="demo-btn demo-btn-red" onclick="setBroadcast('3,2','4',this)">❌ Incompatible</button>
+      </div>
+      <div class="demo-output" id="broadcast-out"></div>
+    </div>
+  </div>
+</div>
+
+<hr class="div">
+
+<!-- CONCEPT 05/06 — tf.function + GradientTape -->
+<div class="section" id="gradient">
+  <div class="sec-num">CONCEPT 05 + 06</div>
+  <div class="sec-title">tf.function <em>&amp; GradientTape</em></div>
+  <div class="sec-desc">tf.function compiles Python functions into TensorFlow graphs for speed. GradientTape records operations so you can compute gradients — the foundation of all training.</div>
+
+  <div class="two-col">
+    <div class="box">
+      <div class="box-title" style="color:var(--A)">tf.function — Parameters</div>
+      <table class="param-table">
+        <tr><th>Parameter</th><th>Default</th><th>Description</th></tr>
+        <tr><td class="param-name">func</td><td class="param-default">None</td><td>The Python function to compile. Used as decorator or directly.</td></tr>
+        <tr><td class="param-name">input_signature</td><td class="param-default">None</td><td>List of tf.TensorSpec to fix input shapes/dtypes, preventing retracing on new shapes.</td></tr>
+        <tr><td class="param-name">reduce_retracing</td><td class="param-default">False</td><td>Try to reduce retracing by generalizing input specs automatically.</td></tr>
+        <tr><td class="param-name">jit_compile</td><td class="param-default">False</td><td>Use XLA compilation for extra speed (TPU/GPU). Can break on unsupported ops.</td></tr>
+        <tr><td class="param-name">experimental_relax_shapes</td><td class="param-default">False</td><td>(Legacy) generalize shapes to avoid retracing.</td></tr>
+      </table>
+      <div class="callout co-warn" style="margin-top:12px;">
+        <div class="callout-icon">⚠️</div>
+        <div class="callout-text"><b>Retracing:</b> Every new input shape or Python value triggers retracing (slow!). Use <code>input_signature</code> or <code>tf.TensorSpec</code> to prevent this.</div>
+      </div>
+    </div>
+    <div class="box">
+      <div class="box-title" style="color:var(--C)">GradientTape — API</div>
+      <table class="param-table">
+        <tr><th>Parameter/Method</th><th>Description</th></tr>
+        <tr><td class="param-name">persistent=False</td><td>If True, tape can compute multiple gradients (e.g., for Jacobian). Must call tape.reset() when done.</td></tr>
+        <tr><td class="param-name">watch_accessed_variables=True</td><td>Automatically watches all trainable Variables. Set False to manually control what's watched.</td></tr>
+        <tr><td class="param-name">tape.watch(tensor)</td><td>Manually watch a non-Variable tensor. Needed for input gradients.</td></tr>
+        <tr><td class="param-name">tape.gradient(y, x)</td><td>Compute dy/dx. x can be a tensor or list of tensors.</td></tr>
+        <tr><td class="param-name">tape.jacobian(y, x)</td><td>Full Jacobian matrix — all partial derivatives.</td></tr>
+        <tr><td class="param-name">tape.batch_jacobian(y, x)</td><td>Per-sample Jacobian for batched inputs (faster than looping).</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <pre><code><span class="cm"># ── tf.function — compile for speed ──────────</span>
+@tf.<span class="fn">function</span>(input_signature=[tf.<span class="fn">TensorSpec</span>(shape=[<span class="kw">None</span>, <span class="nm">10</span>], dtype=tf.float32)])
+<span class="kw">def</span> <span class="fn">fast_forward</span>(x):
+    <span class="kw">return</span> tf.<span class="fn">matmul</span>(x, weights) + bias
+
+<span class="cm"># ── GradientTape — compute gradients ─────────</span>
+x = tf.Variable([<span class="nm">2.0</span>, <span class="nm">3.0</span>])
+
+<span class="kw">with</span> tf.<span class="fn">GradientTape</span>() <span class="kw">as</span> tape:
+    y = x[<span class="nm">0</span>]**<span class="nm">2</span> + x[<span class="nm">1</span>]**<span class="nm">3</span>   <span class="cm"># y = x0² + x1³</span>
+
+grads = tape.<span class="fn">gradient</span>(y, x)   <span class="cm"># [2*x0, 3*x1²] = [4.0, 27.0]</span>
+
+<span class="cm"># ── Persistent tape — multiple gradients ─────</span>
+<span class="kw">with</span> tf.<span class="fn">GradientTape</span>(persistent=<span class="kw">True</span>) <span class="kw">as</span> tape:
+    y = x[<span class="nm">0</span>]**<span class="nm">2</span>
+    z = x[<span class="nm">1</span>]**<span class="nm">2</span>
+
+dy = tape.<span class="fn">gradient</span>(y, x)
+dz = tape.<span class="fn">gradient</span>(z, x)   <span class="cm"># Only possible with persistent=True</span>
+<span class="kw">del</span> tape                      <span class="cm"># Always delete persistent tapes!</span>
+
+<span class="cm"># ── Watch non-Variable (e.g., input gradients)</span>
+x_input = tf.<span class="fn">constant</span>([<span class="nm">1.0</span>, <span class="nm">2.0</span>])
+<span class="kw">with</span> tf.<span class="fn">GradientTape</span>() <span class="kw">as</span> tape:
+    tape.<span class="fn">watch</span>(x_input)       <span class="cm"># Must manually watch constants</span>
+    out = tf.<span class="fn">reduce_sum</span>(x_input ** <span class="nm">2</span>)
+
+grad = tape.<span class="fn">gradient</span>(out, x_input)   <span class="cm"># [2.0, 4.0]</span></code></pre>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     CHAPTER 2 — KERAS MODEL BUILDING
+═══════════════════════════════════════════ -->
+<div class="chapter-divider"><span>⬡ Chapter 02 — Keras Model Building</span></div>
+
+<div class="section" id="sequential">
+  <div class="sec-num">CONCEPT 07</div>
+  <div class="sec-title">Keras <em>Sequential API</em></div>
+  <div class="sec-desc">The simplest way to build models — a linear stack of layers. Each layer feeds directly into the next. Perfect for most classification and regression tasks.</div>
+
+  <div class="arch-flow">
+    <div class="arch-block"><div class="arch-name">Input</div><div class="arch-detail">(batch, 784)</div></div>
+    <div class="arch-arrow">→</div>
+    <div class="arch-block highlight"><div class="arch-name">Dense(256)</div><div class="arch-detail">+ ReLU</div></div>
+    <div class="arch-arrow">→</div>
+    <div class="arch-block highlight"><div class="arch-name">Dropout(0.3)</div><div class="arch-detail">regularize</div></div>
+    <div class="arch-arrow">→</div>
+    <div class="arch-block highlight"><div class="arch-name">Dense(128)</div><div class="arch-detail">+ ReLU</div></div>
+    <div class="arch-arrow">→</div>
+    <div class="arch-block highlight"><div class="arch-name">Dense(10)</div><div class="arch-detail">+ Softmax</div></div>
+    <div class="arch-arrow">→</div>
+    <div class="arch-block"><div class="arch-name">Output</div><div class="arch-detail">(batch, 10)</div></div>
+  </div>
+
+  <pre><code><span class="kw">from</span> tensorflow <span class="kw">import</span> keras
+
+<span class="cm"># ── Method 1: Pass layers as list ─────────────</span>
+model = keras.<span class="fn">Sequential</span>([
+    keras.layers.<span class="fn">Input</span>(shape=(<span class="nm">784</span>,)),       <span class="cm"># explicit input (recommended)</span>
+    keras.layers.<span class="fn">Dense</span>(<span class="nm">256</span>, activation=<span class="st">"relu"</span>),
+    keras.layers.<span class="fn">Dropout</span>(<span class="nm">0.3</span>),
+    keras.layers.<span class="fn">Dense</span>(<span class="nm">128</span>, activation=<span class="st">"relu"</span>),
+    keras.layers.<span class="fn">Dense</span>(<span class="nm">10</span>, activation=<span class="st">"softmax"</span>),
+], name=<span class="st">"mnist_classifier"</span>)
+
+<span class="cm"># ── Method 2: .add() incrementally ────────────</span>
+model2 = keras.<span class="fn">Sequential</span>()
+model2.<span class="fn">add</span>(keras.layers.<span class="fn">Dense</span>(<span class="nm">64</span>, activation=<span class="st">"relu"</span>, input_shape=(<span class="nm">20</span>,)))
+model2.<span class="fn">add</span>(keras.layers.<span class="fn">Dense</span>(<span class="nm">1</span>, activation=<span class="st">"sigmoid"</span>))
+
+<span class="cm"># ── Inspect ───────────────────────────────────</span>
+model.<span class="fn">summary</span>()                  <span class="cm"># print architecture</span>
+model.layers                     <span class="cm"># list of layer objects</span>
+model.get_layer(<span class="st">"dense"</span>).weights  <span class="cm"># access layer weights</span></code></pre>
+</div>
+
+<hr class="div">
+
+<div class="section" id="functional">
+  <div class="sec-num">CONCEPT 08</div>
+  <div class="sec-title">Keras <em>Functional API</em></div>
+  <div class="sec-desc">Graph-style model building. Create any DAG architecture: multi-input, multi-output, residual connections, skip connections. More flexible than Sequential — used for ResNets, BERT, etc.</div>
+
+  <div class="two-col">
+    <div class="box">
+      <div class="box-title" style="color:var(--B)">When to use Functional API</div>
+      <ul style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink2);line-height:2.2;list-style:none;">
+        <li>✅ Residual / skip connections (ResNet)</li>
+        <li>✅ Multiple inputs (text + image)</li>
+        <li>✅ Multiple outputs (classification + regression)</li>
+        <li>✅ Shared layers (weight sharing)</li>
+        <li>✅ When you need model.get_layer() access</li>
+        <li>❌ Loops / conditionals inside forward pass → use Subclassing</li>
+      </ul>
+    </div>
+    <pre style="margin:0;"><code><span class="cm"># ── Multi-input Functional model ─────────────</span>
+img_in = keras.<span class="fn">Input</span>(shape=(<span class="nm">224</span>,<span class="nm">224</span>,<span class="nm">3</span>), name=<span class="st">"image"</span>)
+txt_in = keras.<span class="fn">Input</span>(shape=(<span class="nm">100</span>,), name=<span class="st">"text"</span>)
+
+<span class="cm"># Image branch</span>
+x = keras.layers.<span class="fn">Conv2D</span>(<span class="nm">32</span>, <span class="nm">3</span>, activation=<span class="st">"relu"</span>)(img_in)
+x = keras.layers.<span class="fn">GlobalAveragePooling2D</span>()(x)
+
+<span class="cm"># Text branch</span>
+t = keras.layers.<span class="fn">Embedding</span>(<span class="nm">10000</span>, <span class="nm">64</span>)(txt_in)
+t = keras.layers.<span class="fn">GlobalAveragePooling1D</span>()(t)
+
+<span class="cm"># Merge & output</span>
+merged = keras.layers.<span class="fn">Concatenate</span>()([x, t])
+out = keras.layers.<span class="fn">Dense</span>(<span class="nm">1</span>, activation=<span class="st">"sigmoid"</span>)(merged)
+
+model = keras.<span class="fn">Model</span>(
+    inputs=[img_in, txt_in],
+    outputs=out
+)</code></pre>
+  </div>
+</div>
+
+<hr class="div">
+
+<div class="section" id="subclass">
+  <div class="sec-num">CONCEPT 09</div>
+  <div class="sec-title">Keras <em>Subclassing API</em></div>
+  <div class="sec-desc">Maximum flexibility. Define models as Python classes. The <code>call()</code> method IS the forward pass — you can use Python loops, conditionals, and any logic inside it.</div>
+
+  <div class="callout co-adv">
+    <div class="callout-icon">🧠</div>
+    <div class="callout-text"><b>Use Subclassing when:</b> you need dynamic computation graphs — different paths based on input, RNNs with custom recurrence, research architectures with experimental ops.</div>
+  </div>
+
+  <pre><code><span class="kw">class</span> <span class="fn">MyTransformerBlock</span>(keras.layers.Layer):
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, d_model, num_heads, dff, dropout_rate=<span class="nm">0.1</span>):
+        <span class="fn">super</span>().<span class="fn">__init__</span>()
+        self.attn = keras.layers.<span class="fn">MultiHeadAttention</span>(num_heads=num_heads, key_dim=d_model//num_heads)
+        self.ff1  = keras.layers.<span class="fn">Dense</span>(dff, activation=<span class="st">"gelu"</span>)
+        self.ff2  = keras.layers.<span class="fn">Dense</span>(d_model)
+        self.norm1 = keras.layers.<span class="fn">LayerNormalization</span>()
+        self.norm2 = keras.layers.<span class="fn">LayerNormalization</span>()
+        self.drop  = keras.layers.<span class="fn">Dropout</span>(dropout_rate)
+
+    <span class="kw">def</span> <span class="fn">call</span>(self, x, training=<span class="kw">False</span>):
+        <span class="cm"># Self-attention + residual</span>
+        attn_out = self.attn(x, x)
+        x = self.norm1(x + self.drop(attn_out, training=training))
+        <span class="cm"># Feed-forward + residual</span>
+        ff_out = self.ff2(self.ff1(x))
+        x = self.norm2(x + self.drop(ff_out, training=training))
+        <span class="kw">return</span> x
+
+    <span class="kw">def</span> <span class="fn">get_config</span>(self):       <span class="cm"># For serialization!</span>
+        <span class="kw">return</span> {<span class="st">"d_model"</span>: ..., <span class="st">"num_heads"</span>: ...}
+
+<span class="cm"># ── build() vs __init__() ─────────────────────</span>
+<span class="kw">class</span> <span class="fn">LinearLayer</span>(keras.layers.Layer):
+    <span class="kw">def</span> <span class="fn">build</span>(self, input_shape):    <span class="cm"># called once on first data</span>
+        self.w = self.<span class="fn">add_weight</span>(shape=(input_shape[-<span class="nm">1</span>], self.units),
+                                  initializer=<span class="st">"glorot_uniform"</span>)
+        self.b = self.<span class="fn">add_weight</span>(shape=(self.units,), initializer=<span class="st">"zeros"</span>)</code></pre>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     CHAPTER 3 — LAYERS
+═══════════════════════════════════════════ -->
+<div class="chapter-divider"><span>⬡ Chapter 03 — Core Layers</span></div>
+
+<div class="section" id="layers">
+  <div class="sec-num">CONCEPT 10</div>
+  <div class="sec-title">Dense, Embedding, <em>Attention Layers</em></div>
+
+  <!-- Dense -->
+  <div class="box">
+    <div class="box-title" style="color:var(--A)">Dense Layer — keras.layers.Dense()</div>
+    <div class="sec-desc" style="margin-bottom:16px;">Fully-connected layer. Every input neuron connects to every output neuron. Computes: <code>output = activation(input @ kernel + bias)</code></div>
+    <div class="tbl-wrap">
+      <table class="param-table">
+        <tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr>
+        <tr><td class="param-name">units</td><td class="param-type">int</td><td class="param-default">required</td><td>Number of output neurons. The "width" of this layer.</td></tr>
+        <tr><td class="param-name">activation</td><td class="param-type">str / callable</td><td class="param-default">None</td><td><code>"relu"</code>, <code>"sigmoid"</code>, <code>"tanh"</code>, <code>"softmax"</code>, <code>"gelu"</code>. None = linear (no activation).</td></tr>
+        <tr><td class="param-name">use_bias</td><td class="param-type">bool</td><td class="param-default">True</td><td>Whether to add a bias vector. Set False if using BatchNorm after.</td></tr>
+        <tr><td class="param-name">kernel_initializer</td><td class="param-type">str / Initializer</td><td class="param-default">"glorot_uniform"</td><td>How weights are initialized. Options: <code>"glorot_normal"</code>, <code>"he_normal"</code>, <code>"zeros"</code>, <code>"orthogonal"</code>.</td></tr>
+        <tr><td class="param-name">bias_initializer</td><td class="param-type">str / Initializer</td><td class="param-default">"zeros"</td><td>How bias is initialized.</td></tr>
+        <tr><td class="param-name">kernel_regularizer</td><td class="param-type">Regularizer</td><td class="param-default">None</td><td><code>keras.regularizers.L2(0.01)</code> to penalize large weights (prevents overfitting).</td></tr>
+        <tr><td class="param-name">activity_regularizer</td><td class="param-type">Regularizer</td><td class="param-default">None</td><td>Applied to the layer's output (activations), not weights.</td></tr>
+        <tr><td class="param-name">kernel_constraint</td><td class="param-type">Constraint</td><td class="param-default">None</td><td><code>keras.constraints.MaxNorm(2.)</code> — clip weights during training.</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- Embedding -->
+  <div class="box">
+    <div class="box-title" style="color:var(--C)">🔥 Embedding Layer — keras.layers.Embedding()</div>
+    <div class="sec-desc" style="margin-bottom:16px;">Maps integer token IDs to dense vectors. Learns a lookup table: each word/token gets its own trainable vector. Input shape: (batch, seq_len). Output: (batch, seq_len, embedding_dim).</div>
+    <div class="tbl-wrap">
+      <table class="param-table">
+        <tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr>
+        <tr><td class="param-name">input_dim</td><td class="param-type">int</td><td class="param-default">required</td><td>Vocabulary size — number of unique tokens. All inputs must be < input_dim.</td></tr>
+        <tr><td class="param-name">output_dim</td><td class="param-type">int</td><td class="param-default">required</td><td>Embedding dimension (vector size). Common: 64, 128, 256, 512, 768 (BERT).</td></tr>
+        <tr><td class="param-name">embeddings_initializer</td><td class="param-type">str</td><td class="param-default">"uniform"</td><td>How to initialize embedding vectors. Use <code>"glorot_uniform"</code> for better training.</td></tr>
+        <tr><td class="param-name">mask_zero</td><td class="param-type">bool</td><td class="param-default">False</td><td>If True, token ID 0 is treated as padding and masked from loss/attention.</td></tr>
+        <tr><td class="param-name">input_length</td><td class="param-type">int</td><td class="param-default">None</td><td>Fixed sequence length (needed for Flatten after Embedding).</td></tr>
+        <tr><td class="param-name">embeddings_regularizer</td><td class="param-type">Regularizer</td><td class="param-default">None</td><td>L2 regularization on embedding weights.</td></tr>
+        <tr><td class="param-name">trainable</td><td class="param-type">bool</td><td class="param-default">True</td><td>Set False to use frozen pretrained embeddings (e.g., GloVe, word2vec).</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- MultiHeadAttention -->
+  <div class="box">
+    <div class="box-title" style="color:var(--E)">🔥 MultiHeadAttention — keras.layers.MultiHeadAttention()</div>
+    <div class="sec-desc" style="margin-bottom:16px;">The core of Transformer models. Splits queries, keys, values into multiple "heads" that attend in parallel, then concatenates and projects the results. Learns relationships across positions.</div>
+    <div class="tbl-wrap">
+      <table class="param-table">
+        <tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr>
+        <tr><td class="param-name">num_heads</td><td class="param-type">int</td><td class="param-default">required</td><td>Number of parallel attention heads. Common: 4, 8, 12 (BERT-base=12, GPT-3=96).</td></tr>
+        <tr><td class="param-name">key_dim</td><td class="param-type">int</td><td class="param-default">required</td><td>Size of each attention head's key/query. Often d_model // num_heads.</td></tr>
+        <tr><td class="param-name">value_dim</td><td class="param-type">int</td><td class="param-default">None</td><td>Dimension for value projections. Defaults to key_dim if None.</td></tr>
+        <tr><td class="param-name">dropout</td><td class="param-type">float</td><td class="param-default">0.0</td><td>Dropout applied to attention weights (not values). Typically 0.1 for training.</td></tr>
+        <tr><td class="param-name">use_bias</td><td class="param-type">bool</td><td class="param-default">True</td><td>Whether to use bias in Q,K,V projections.</td></tr>
+        <tr><td class="param-name">output_shape</td><td class="param-type">int/tuple</td><td class="param-default">None</td><td>Override output projection dimension. Defaults to input's last dim.</td></tr>
+        <tr><td class="param-name">attention_axes</td><td class="param-type">int/tuple</td><td class="param-default">None</td><td>Which axes to attend over. None = attend over all but batch and head.</td></tr>
+      </table>
+    </div>
+    <div class="callout co-info">
+      <div class="callout-icon">📐</div>
+      <div class="callout-text"><b>Call signature:</b> <code>mha(query, value, key=None, attention_mask=None, training=False, return_attention_scores=False)</code>. If key=None, uses value as key (self-attention). attention_mask shape: (batch, num_heads, q_len, k_len).</div>
+    </div>
+  </div>
+
+  <!-- LayerNorm, Dropout -->
+  <div class="two-col">
+    <div class="box">
+      <div class="box-title" style="color:var(--F)">🔥 LayerNormalization</div>
+      <table class="param-table">
+        <tr><th>Parameter</th><th>Default</th><th>Description</th></tr>
+        <tr><td class="param-name">axis</td><td class="param-default">-1</td><td>Which axis (or list of axes) to normalize. -1 = last axis (per-token in transformers).</td></tr>
+        <tr><td class="param-name">epsilon</td><td class="param-default">0.001</td><td>Small constant added to variance to prevent division by zero.</td></tr>
+        <tr><td class="param-name">center</td><td class="param-default">True</td><td>Whether to learn β (bias) shift parameter.</td></tr>
+        <tr><td class="param-name">scale</td><td class="param-default">True</td><td>Whether to learn γ (scale) parameter.</td></tr>
+      </table>
+      <div class="formula-block"><div class="label">Formula</div>y = γ × (x − μ) / √(σ² + ε) + β<br><small style="color:var(--ink3)">μ,σ computed per token (across features)</small></div>
+    </div>
+    <div class="box">
+      <div class="box-title" style="color:var(--G)">Dropout</div>
+      <table class="param-table">
+        <tr><th>Parameter</th><th>Default</th><th>Description</th></tr>
+        <tr><td class="param-name">rate</td><td class="param-default">required</td><td>Fraction of inputs to randomly set to 0. 0.2–0.5 typical. 0 = no dropout.</td></tr>
+        <tr><td class="param-name">noise_shape</td><td class="param-default">None</td><td>Shape of binary dropout mask. For sequence data, use (batch,1,features) to drop whole timesteps.</td></tr>
+        <tr><td class="param-name">seed</td><td class="param-default">None</td><td>Random seed for reproducibility.</td></tr>
+        <tr><td class="param-name">training</td><td class="param-default">False</td><td>In call(): must pass training=True to activate dropout during training!</td></tr>
+      </table>
+      <div class="callout co-warn" style="margin-top:8px;">
+        <div class="callout-icon">⚠️</div>
+        <div class="callout-text"><b>Dropout is ONLY active during training</b> — automatically disabled during <code>model.evaluate()</code> and <code>model.predict()</code>.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="div">
+
+<!-- CONCEPT 12 — Activations visual -->
+<div class="section" id="activations">
+  <div class="sec-num">CONCEPT 12</div>
+  <div class="sec-title">Activation <em>Functions</em></div>
+  <div class="sec-desc">Activation functions introduce non-linearity. Without them, deep networks collapse to a single linear transformation. Each function has different properties that suit different tasks.</div>
+
+  <div class="interactive-demo">
+    <div class="demo-title">⚡ Interactive Activation Comparison</div>
+    <div class="demo-controls" id="act-btns"></div>
+    <canvas id="act-canvas" height="200" style="width:100%;border-radius:8px;border:1px solid var(--border);display:block;"></canvas>
+  </div>
+
+  <div class="three-col" style="margin-top:24px;">
+    <div class="box">
+      <div class="box-title" style="color:var(--B)">ReLU & Variants</div>
+      <div class="formula-block"><div class="label">ReLU</div>f(x) = max(0, x)</div>
+      <div class="formula-block"><div class="label">Leaky ReLU</div>f(x) = x if x>0 else αx (α≈0.01–0.3)</div>
+      <div class="formula-block"><div class="label">GELU (Transformers)</div>f(x) = x·Φ(x) where Φ = CDF of normal</div>
+      <div class="callout co-info" style="margin-top:8px;">
+        <div class="callout-icon">💡</div>
+        <div class="callout-text"><b>ReLU dying neuron problem:</b> If a neuron always receives negative inputs, its gradient is always 0 — it never learns. Fix: use Leaky ReLU, He initialization, or smaller learning rates.</div>
+      </div>
+    </div>
+    <div class="box">
+      <div class="box-title" style="color:var(--C)">Sigmoid & Tanh</div>
+      <div class="formula-block"><div class="label">Sigmoid</div>σ(x) = 1/(1+e⁻ˣ) → range [0,1]</div>
+      <div class="formula-block"><div class="label">Tanh</div>tanh(x) = (eˣ−e⁻ˣ)/(eˣ+e⁻ˣ) → range [−1,1]</div>
+      <div class="callout co-warn" style="margin-top:8px;">
+        <div class="callout-icon">⚠️</div>
+        <div class="callout-text"><b>Vanishing gradient:</b> For large |x|, gradients of sigmoid/tanh → 0. Avoid in hidden layers of deep networks — use ReLU variants instead. Sigmoid still used for binary output layers.</div>
+      </div>
+    </div>
+    <div class="box">
+      <div class="box-title" style="color:var(--E)">Softmax</div>
+      <div class="formula-block"><div class="label">Softmax</div>P(i) = eˣⁱ / Σⱼ eˣʲ</div>
+      <table class="param-table" style="margin-top:8px;">
+        <tr><th>Parameter</th><th>Description</th></tr>
+        <tr><td class="param-name">axis</td><td>Axis to normalize along. Default -1 (last axis). In NLP use axis=-1 over vocab dimension.</td></tr>
+      </table>
+      <div class="callout co-tip" style="margin-top:8px;">
+        <div class="callout-icon">✅</div>
+        <div class="callout-text"><b>Temperature scaling:</b> Divide logits by T before softmax. T>1 → uniform distribution, T&lt;1 → sharper/confident predictions.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     LOSSES + OPTIMIZERS
+═══════════════════════════════════════════ -->
+<div class="chapter-divider"><span>⬡ Chapter 04 — Loss Functions &amp; Optimizers</span></div>
+
+<div class="section" id="losses">
+  <div class="sec-num">CONCEPT 13</div>
+  <div class="sec-title">Loss <em>Functions</em></div>
+
+  <div class="three-col">
+    <div class="box">
+      <div class="box-title" style="color:var(--A)">Regression Losses</div>
+      <div class="formula-block"><div class="label">MSE — Mean Squared Error</div>L = (1/n)Σ(y − ŷ)²<br><small style="color:var(--ink3)">Penalizes large errors heavily. Sensitive to outliers.</small></div>
+      <div class="formula-block"><div class="label">MAE — Mean Absolute Error</div>L = (1/n)Σ|y − ŷ|<br><small style="color:var(--ink3)">More robust to outliers. Less smooth near 0.</small></div>
+      <div class="formula-block"><div class="label">Huber Loss</div>Quadratic for |err|≤δ, linear otherwise.<br><small style="color:var(--ink3)">Best of both worlds. δ is a hyperparameter.</small></div>
+    </div>
+    <div class="box">
+      <div class="box-title" style="color:var(--B)">Classification Losses</div>
+      <div class="formula-block"><div class="label">Binary Crossentropy</div>L = −[y·log(ŷ) + (1−y)·log(1−ŷ)]<br><small style="color:var(--ink3)">For 2-class problems. Output: sigmoid neuron.</small></div>
+      <div class="formula-block"><div class="label">Categorical Crossentropy</div>L = −Σᵢ yᵢ·log(ŷᵢ)<br><small style="color:var(--ink3)">Multi-class, one-hot labels.</small></div>
+      <div class="formula-block"><div class="label">Sparse Cat. Crossentropy</div>Same as above but labels are integers.<br><small style="color:var(--ink3)">More memory-efficient, no one-hot needed.</small></div>
+    </div>
+    <div class="box">
+      <div class="box-title" style="color:var(--C)">Loss Parameters</div>
+      <table class="param-table">
+        <tr><th>Parameter</th><th>Description</th></tr>
+        <tr><td class="param-name">from_logits</td><td>If True, applies softmax/sigmoid internally. More numerically stable. Use when last layer has NO activation.</td></tr>
+        <tr><td class="param-name">reduction</td><td><code>"sum_over_batch_size"</code> (default), <code>"sum"</code>, <code>"none"</code>. Use <code>"none"</code> for per-sample losses in custom loops.</td></tr>
+        <tr><td class="param-name">name</td><td>Human-readable name for this loss in logs.</td></tr>
+        <tr><td class="param-name">label_smoothing</td><td>BCELoss: fraction to smooth labels. 0.1 means y=0→0.05, y=1→0.95. Reduces overconfidence.</td></tr>
+        <tr><td class="param-name">class_weight</td><td>Pass to model.fit() as dict {0:1.0, 1:5.0}. Weight rare classes higher.</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<hr class="div">
+
+<div class="section" id="optimizers">
+  <div class="sec-num">CONCEPT 14</div>
+  <div class="sec-title">Optimizers — <em>Adam &amp; Beyond</em></div>
+  <div class="sec-desc">Optimizers update model weights based on gradients. Adam is the default workhorse. Each optimizer has specific hyperparameters that significantly affect training.</div>
+
+  <div class="box">
+    <div class="box-title" style="color:var(--C)">🔥 Adam — keras.optimizers.Adam()</div>
+    <div class="sec-desc" style="margin-bottom:16px;">Adaptive Moment Estimation. Combines momentum and RMSprop. Maintains per-parameter adaptive learning rates. Works well out of the box.</div>
+    <div class="tbl-wrap">
+      <table class="param-table">
+        <tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr>
+        <tr><td class="param-name">learning_rate</td><td class="param-type">float / Schedule</td><td class="param-default">0.001</td><td>Step size for weight updates. Most important hyperparameter. Try: 1e-4 to 1e-2.</td></tr>
+        <tr><td class="param-name">beta_1</td><td class="param-type">float</td><td class="param-default">0.9</td><td>Exponential decay for first moment (gradient momentum). Controls how quickly old gradients decay.</td></tr>
+        <tr><td class="param-name">beta_2</td><td class="param-type">float</td><td class="param-default">0.999</td><td>Exponential decay for second moment (squared gradient). Controls step size adaptation.</td></tr>
+        <tr><td class="param-name">epsilon</td><td class="param-type">float</td><td class="param-default">1e-7</td><td>Prevents division by zero. Increase (e.g., 1e-5) if training is unstable or using float16.</td></tr>
+        <tr><td class="param-name">amsgrad</td><td class="param-type">bool</td><td class="param-default">False</td><td>Use AMSGrad variant — keeps running max of squared gradients for convergence guarantees.</td></tr>
+        <tr><td class="param-name">weight_decay</td><td class="param-type">float</td><td class="param-default">None</td><td>L2 weight decay (AdamW behavior when set). Decouples weight decay from gradient update.</td></tr>
+        <tr><td class="param-name">clipnorm</td><td class="param-type">float</td><td class="param-default">None</td><td>Clip gradients by global norm. Prevents exploding gradients in RNNs. Typical: 1.0.</td></tr>
+        <tr><td class="param-name">clipvalue</td><td class="param-type">float</td><td class="param-default">None</td><td>Clip each gradient individually to [-clipvalue, clipvalue].</td></tr>
+        <tr><td class="param-name">global_clipnorm</td><td class="param-type">float</td><td class="param-default">None</td><td>Clip by global norm across all gradients simultaneously (stronger regularization).</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="box">
+      <div class="box-title" style="color:var(--B)">SGD — Stochastic Gradient Descent</div>
+      <table class="param-table">
+        <tr><th>Parameter</th><th>Default</th><th>Description</th></tr>
+        <tr><td class="param-name">learning_rate</td><td class="param-default">0.01</td><td>Step size. Usually higher than Adam (0.01–0.1).</td></tr>
+        <tr><td class="param-name">momentum</td><td class="param-default">0.0</td><td>Accumulates gradient direction. 0.9 typical. Helps escape local minima.</td></tr>
+        <tr><td class="param-name">nesterov</td><td class="param-default">False</td><td>Nesterov Accelerated Gradient — "lookahead" momentum. Often better than standard momentum.</td></tr>
+        <tr><td class="param-name">weight_decay</td><td class="param-default">None</td><td>L2 weight decay (regularization).</td></tr>
+      </table>
+    </div>
+    <div class="box">
+      <div class="box-title" style="color:var(--A)">Learning Rate Schedules</div>
+      <table class="param-table">
+        <tr><th>Schedule</th><th>Description</th></tr>
+        <tr><td class="param-name">ExponentialDecay</td><td>lr × decay_rate^(step/decay_steps). Smoothly decreasing LR.</td></tr>
+        <tr><td class="param-name">CosineDecay</td><td>Cosine annealing — warm restarts. Widely used in transformers.</td></tr>
+        <tr><td class="param-name">PolynomialDecay</td><td>Linear to zero or any polynomial. Good for fine-tuning.</td></tr>
+        <tr><td class="param-name">WarmupCosineDecay</td><td>Linearly increase LR first, then cosine decay. Standard for transformers.</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     CHAPTER 5 — TRAINING PROCESS
+═══════════════════════════════════════════ -->
+<div class="chapter-divider"><span>⬡ Chapter 05 — Training Process</span></div>
+
+<div class="section" id="compile">
+  <div class="sec-num">CONCEPT 16</div>
+  <div class="sec-title">model.compile() — <em>Every Parameter</em></div>
+  <div class="sec-desc">Configures the model for training. This is where you connect the optimizer, loss function, and metrics. Must be called before <code>model.fit()</code>.</div>
+
+  <div class="box">
+    <div class="box-title" style="color:var(--C)">model.compile() — All Parameters</div>
+    <div class="tbl-wrap">
+      <table class="param-table">
+        <tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr>
+        <tr><td class="param-name">optimizer</td><td class="param-type">str / Optimizer</td><td class="param-default">required</td><td>The optimization algorithm. <code>"adam"</code>, <code>"sgd"</code>, <code>"rmsprop"</code> as strings, or an Optimizer object for custom config.</td></tr>
+        <tr><td class="param-name">loss</td><td class="param-type">str / Loss / callable</td><td class="param-default">None</td><td>Loss function to minimize. <code>"mse"</code>, <code>"binary_crossentropy"</code>, <code>"sparse_categorical_crossentropy"</code>. Can be a dict for multi-output models.</td></tr>
+        <tr><td class="param-name">metrics</td><td class="param-type">list / dict</td><td class="param-default">None</td><td>Metrics to monitor: <code>["accuracy"]</code>, <code>[keras.metrics.AUC()]</code>. Use dict for multi-output: <code>{"out1": ["accuracy"]}</code>.</td></tr>
+        <tr><td class="param-name">loss_weights</td><td class="param-type">list / dict</td><td class="param-default">None</td><td>Weights for each output's loss in multi-output models. <code>[1.0, 0.2]</code> or <code>{"main": 1.0, "aux": 0.3}</code>.</td></tr>
+        <tr><td class="param-name">weighted_metrics</td><td class="param-type">list</td><td class="param-default">None</td><td>Metrics weighted by sample_weight. Differs from metrics when using per-sample weights.</td></tr>
+        <tr><td class="param-name">run_eagerly</td><td class="param-type">bool</td><td class="param-default">False</td><td>If True, runs in eager mode (slow but debuggable). Use for debugging NaN losses or shape errors.</td></tr>
+        <tr><td class="param-name">jit_compile</td><td class="param-type">bool</td><td class="param-default">False</td><td>Use XLA JIT compilation (GPU/TPU). Major speedup but limited op support. Try if model is large.</td></tr>
+        <tr><td class="param-name">steps_per_execution</td><td class="param-type">int</td><td class="param-default">1</td><td>Number of batches per tf.function call. Increase to 50-100 for TPU speedup.</td></tr>
+      </table>
+    </div>
+    <pre><code><span class="cm"># ── Basic compile ────────────────────────────</span>
+model.<span class="fn">compile</span>(
+    optimizer=keras.optimizers.<span class="fn">Adam</span>(learning_rate=<span class="nm">1e-3</span>),
+    loss=keras.losses.<span class="fn">SparseCategoricalCrossentropy</span>(from_logits=<span class="kw">True</span>),
+    metrics=[<span class="st">"accuracy"</span>, keras.metrics.<span class="fn">TopKCategoricalAccuracy</span>(k=<span class="nm">5</span>)]
+)
+
+<span class="cm"># ── Multi-output compile ─────────────────────</span>
+model.<span class="fn">compile</span>(
+    optimizer=<span class="st">"adam"</span>,
+    loss={<span class="st">"class_out"</span>: <span class="st">"categorical_crossentropy"</span>, <span class="st">"bbox_out"</span>: <span class="st">"mse"</span>},
+    loss_weights={<span class="st">"class_out"</span>: <span class="nm">1.0</span>, <span class="st">"bbox_out"</span>: <span class="nm">5.0</span>},
+    metrics={<span class="st">"class_out"</span>: [<span class="st">"accuracy"</span>], <span class="st">"bbox_out"</span>: [<span class="st">"mae"</span>]}
+)
+
+<span class="cm"># ── Debug mode ───────────────────────────────</span>
+model.<span class="fn">compile</span>(optimizer=<span class="st">"adam"</span>, loss=<span class="st">"mse"</span>, run_eagerly=<span class="kw">True</span>)</code></pre>
+  </div>
+</div>
+
+<hr class="div">
+
+<div class="section" id="fit">
+  <div class="sec-num">CONCEPT 17</div>
+  <div class="sec-title">model.fit() — <em>Every Parameter</em></div>
+  <div class="sec-desc">Trains the model for a fixed number of epochs. Handles the training loop, validation, callbacks, and history logging automatically.</div>
+
+  <div class="box">
+    <div class="box-title" style="color:var(--B)">model.fit() — All Parameters</div>
+    <div class="tbl-wrap">
+      <table class="param-table">
+        <tr><th>Parameter</th><th>Type</th><th>Default</th><th>Description</th></tr>
+        <tr><td class="param-name">x</td><td class="param-type">array / Dataset / generator</td><td class="param-default">required</td><td>Training input. Numpy array, TF tensor, tf.data.Dataset, keras.utils.Sequence, or generator.</td></tr>
+        <tr><td class="param-name">y</td><td class="param-type">array / None</td><td class="param-default">None</td><td>Training labels. Not needed if x is a Dataset (Dataset yields (x,y) pairs).</td></tr>
+        <tr><td class="param-name">batch_size</td><td class="param-type">int</td><td class="param-default">32</td><td>Samples per gradient update. Larger = faster but more memory, noisier gradients. Common: 16–512.</td></tr>
+        <tr><td class="param-name">epochs</td><td class="param-type">int</td><td class="param-default">1</td><td>Number of full passes over training data. Use EarlyStopping to auto-stop.</td></tr>
+        <tr><td class="param-name">verbose</td><td class="param-type">int/str</td><td class="param-default">1</td><td>0=silent, 1=progress bar, 2=one line per epoch, "auto"=auto-select based on environment.</td></tr>
+        <tr><td class="param-name">callbacks</td><td class="param-type">list</td><td class="param-default">None</td><td>List of Callback objects. See Callbacks section below.</td></tr>
+        <tr><td class="param-name">validation_split</td><td class="param-type">float</td><td class="param-default">0.0</td><td>Fraction of data for validation (0.0–1.0). Takes from END of data. Not shuffled.</td></tr>
+        <tr><td class="param-name">validation_data</td><td class="param-type">tuple / Dataset</td><td class="param-default">None</td><td>Explicit validation data. Overrides validation_split. Use (x_val, y_val) or a Dataset.</td></tr>
+        <tr><td class="param-name">shuffle</td><td class="param-type">bool</td><td class="param-default">True</td><td>Shuffle training data each epoch. Set False for time-series data.</td></tr>
+        <tr><td class="param-name">class_weight</td><td class="param-type">dict</td><td class="param-default">None</td><td>Weights for each class: <code>{0: 1.0, 1: 5.0}</code>. Upweights rare class samples in loss.</td></tr>
+        <tr><td class="param-name">sample_weight</td><td class="param-type">array</td><td class="param-default">None</td><td>Per-sample weights array. Shape (n_samples,). Higher weight = more impact on loss.</td></tr>
+        <tr><td class="param-name">initial_epoch</td><td class="param-type">int</td><td class="param-default">0</td><td>Start epoch for resuming training from checkpoint. History logged from this epoch.</td></tr>
+        <tr><td class="param-name">steps_per_epoch</td><td class="param-type">int</td><td class="param-default">None</td><td>Steps (batches) per epoch. Required for infinite generators. Default: ceil(n_samples/batch_size).</td></tr>
+        <tr><td class="param-name">validation_steps</td><td class="param-type">int</td><td class="param-default">None</td><td>Steps for validation. Required when validation_data is an infinite generator.</td></tr>
+        <tr><td class="param-name">validation_freq</td><td class="param-type">int / list</td><td class="param-default">1</td><td>How often to validate. 5 = validate every 5 epochs. List: [1, 5, 10] = validate at those epochs.</td></tr>
+      </table>
+    </div>
+    <pre><code>history = model.<span class="fn">fit</span>(
+    x=X_train, y=y_train,
+    batch_size=<span class="nm">64</span>,
+    epochs=<span class="nm">100</span>,
+    validation_data=(X_val, y_val),
+    callbacks=[
+        keras.callbacks.<span class="fn">EarlyStopping</span>(patience=<span class="nm">5</span>, restore_best_weights=<span class="kw">True</span>),
+        keras.callbacks.<span class="fn">ModelCheckpoint</span>(<span class="st">"best_model.keras"</span>, save_best_only=<span class="kw">True</span>),
+        keras.callbacks.<span class="fn">ReduceLROnPlateau</span>(factor=<span class="nm">0.5</span>, patience=<span class="nm">3</span>),
+    ],
+    class_weight={<span class="nm">0</span>: <span class="nm">1.0</span>, <span class="nm">1</span>: <span class="nm">5.0</span>},  <span class="cm"># handle class imbalance</span>
+    shuffle=<span class="kw">True</span>,
+    verbose=<span class="nm">1</span>
+)
+
+<span class="cm"># Access training history</span>
+<span class="fn">print</span>(history.history.keys())  <span class="cm"># ['loss', 'val_loss', 'accuracy', 'val_accuracy']</span></code></pre>
+  </div>
+
+  <!-- Callbacks -->
+  <div class="box">
+    <div class="box-title" style="color:var(--D)">Callbacks — Complete Reference</div>
+    <div class="tbl-wrap">
+      <table class="param-table">
+        <tr><th>Callback</th><th>Key Parameters</th><th>Use Case</th></tr>
+        <tr>
+          <td class="param-name">EarlyStopping</td>
+          <td><code>monitor="val_loss"</code>, <code>patience=5</code>, <code>min_delta=0.001</code>, <code>restore_best_weights=True</code>, <code>mode="min"/"max"</code></td>
+          <td>Stop when metric stops improving. Prevents overfitting.</td>
+        </tr>
+        <tr>
+          <td class="param-name">ModelCheckpoint</td>
+          <td><code>filepath</code>, <code>monitor="val_loss"</code>, <code>save_best_only=True</code>, <code>save_weights_only=False</code>, <code>period=1</code></td>
+          <td>Save model at best epoch. Use <code>.keras</code> extension.</td>
+        </tr>
+        <tr>
+          <td class="param-name">ReduceLROnPlateau</td>
+          <td><code>monitor</code>, <code>factor=0.5</code>, <code>patience=3</code>, <code>min_lr=1e-7</code>, <code>cooldown=0</code></td>
+          <td>Reduce LR when val_loss stagnates. Very effective.</td>
+        </tr>
+        <tr>
+          <td class="param-name">TensorBoard</td>
+          <td><code>log_dir</code>, <code>histogram_freq=0</code>, <code>update_freq="epoch"</code>, <code>write_graph=True</code>, <code>profile_batch=0</code></td>
+          <td>Visualize loss curves, model graph, weight histograms.</td>
+        </tr>
+        <tr>
+          <td class="param-name">LearningRateScheduler</td>
+          <td><code>schedule</code> (function), <code>verbose=0</code></td>
+          <td>Custom LR schedule as Python function: <code>lambda epoch, lr: lr * 0.95</code></td>
+        </tr>
+        <tr>
+          <td class="param-name">CSVLogger</td>
+          <td><code>filename</code>, <code>separator=","</code>, <code>append=False</code></td>
+          <td>Log epoch-by-epoch metrics to CSV file for later analysis.</td>
+        </tr>
+        <tr>
+          <td class="param-name">TerminateOnNaN</td>
+          <td>(no parameters)</td>
+          <td>Stop training immediately if loss becomes NaN. Saves time.</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<hr class="div">
+
+<div class="section" id="predict">
+  <div class="sec-num">CONCEPT 18</div>
+  <div class="sec-title">evaluate() <em>&amp; predict()</em></div>
+
+  <div class="two-col">
+    <div class="box">
+      <div class="box-title" style="color:var(--A)">model.evaluate() — Parameters</div>
+      <table class="param-table">
+        <tr><th>Parameter</th><th>Default</th><th>Description</th></tr>
+        <tr><td class="param-name">x, y</td><td class="param-default">required</td><td>Test data and labels.</td></tr>
+        <tr><td class="param-name">batch_size</td><td class="param-default">32</td><td>Evaluation batch size. Larger = faster.</td></tr>
+        <tr><td class="param-name">verbose</td><td class="param-default">1</td><td>0=silent, 1=progress bar.</td></tr>
+        <tr><td class="param-name">return_dict</td><td class="param-default">False</td><td>If True, returns dict {"loss": 0.3, "accuracy": 0.9}. Else returns list.</td></tr>
+        <tr><td class="param-name">steps</td><td class="param-default">None</td><td>Total evaluation steps (for generators).</td></tr>
+      </table>
+    </div>
+    <div class="box">
+      <div class="box-title" style="color:var(--B)">model.predict() — Parameters</div>
+      <table class="param-table">
+        <tr><th>Parameter</th><th>Default</th><th>Description</th></tr>
+        <tr><td class="param-name">x</td><td class="param-default">required</td><td>Input data to predict on.</td></tr>
+        <tr><td class="param-name">batch_size</td><td class="param-default">32</td><td>Prediction batch size.</td></tr>
+        <tr><td class="param-name">verbose</td><td class="param-default">0</td><td>Progress bar display.</td></tr>
+        <tr><td class="param-name">steps</td><td class="param-default">None</td><td>Steps for generators.</td></tr>
+        <tr><td class="param-name">callbacks</td><td class="param-default">None</td><td>Callbacks during prediction (e.g., custom progress).</td></tr>
+      </table>
+      <div class="callout co-warn" style="margin-top:8px;">
+        <div class="callout-icon">⚠️</div>
+        <div class="callout-text"><b>predict() returns probabilities.</b> For class labels: <code>np.argmax(model.predict(x), axis=1)</code>.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     tf.data
+═══════════════════════════════════════════ -->
+<div class="chapter-divider"><span>⬡ Chapter 06 — Data Pipeline</span></div>
+
+<div class="section" id="tfdata">
+  <div class="sec-num">CONCEPT 20 + 21</div>
+  <div class="sec-title">tf.data <em>Dataset</em></div>
+  <div class="sec-desc">Build fast, scalable data pipelines. tf.data handles loading, shuffling, batching, augmentation, and prefetching — all lazily and in parallel.</div>
+
+  <div class="box">
+    <div class="box-title" style="color:var(--A)">Core tf.data Operations</div>
+    <div class="tbl-wrap">
+      <table class="param-table">
+        <tr><th>Method</th><th>Key Parameters</th><th>Description</th></tr>
+        <tr><td class="param-name">tf.data.Dataset.from_tensor_slices(tensors)</td><td>tensors: array, dict, or tuple</td><td>Create dataset from in-memory data. Each call to iterator yields one sample.</td></tr>
+        <tr><td class="param-name">.map(fn, num_parallel_calls)</td><td><code>num_parallel_calls=tf.data.AUTOTUNE</code></td><td>Apply transformation to each element. Use AUTOTUNE for parallel processing.</td></tr>
+        <tr><td class="param-name">.batch(batch_size, drop_remainder)</td><td><code>drop_remainder=False</code></td><td>Group into batches. drop_remainder=True for fixed-shape batches (required for TPU).</td></tr>
+        <tr><td class="param-name">.shuffle(buffer_size, seed)</td><td><code>reshuffle_each_iteration=True</code></td><td>Randomly shuffle. buffer_size ≥ dataset size for perfect shuffle. Smaller = faster but less random.</td></tr>
+        <tr><td class="param-name">.prefetch(buffer_size)</td><td><code>tf.data.AUTOTUNE</code></td><td>Overlap data preparation with model training. Always add at end of pipeline!</td></tr>
+        <tr><td class="param-name">.cache(filename)</td><td>filename: "" = memory</td><td>Cache after first epoch. Huge speedup when data fits in memory or when .map() is expensive.</td></tr>
+        <tr><td class="param-name">.repeat(count)</td><td>count=None → infinite</td><td>Repeat dataset count times. Use when steps_per_epoch < actual data steps.</td></tr>
+        <tr><td class="param-name">.filter(predicate)</td><td>predicate: function → bool</td><td>Keep only elements matching condition.</td></tr>
+        <tr><td class="param-name">.take(count)</td><td>count: int</td><td>Take first n elements. Great for debugging/preview.</td></tr>
+        <tr><td class="param-name">.skip(count)</td><td>count: int</td><td>Skip first n elements (train/val split).</td></tr>
+        <tr><td class="param-name">.flat_map(fn)</td><td>fn → Dataset</td><td>Map then flatten. Used for expanding variable-length sequences.</td></tr>
+        <tr><td class="param-name">.zip((ds1, ds2))</td><td></td><td>Zip multiple datasets together (e.g., features + labels from separate files).</td></tr>
+      </table>
+    </div>
+    <pre><code><span class="cm"># ── Optimal Pipeline Pattern ──────────────────</span>
+dataset = (
+    tf.data.Dataset.<span class="fn">from_tensor_slices</span>((X_train, y_train))
+    .<span class="fn">shuffle</span>(buffer_size=<span class="nm">10000</span>, seed=<span class="nm">42</span>)
+    .<span class="fn">map</span>(augment_fn, num_parallel_calls=tf.data.AUTOTUNE)  <span class="cm"># augmentation</span>
+    .<span class="fn">batch</span>(<span class="nm">64</span>, drop_remainder=<span class="kw">True</span>)
+    .<span class="fn">cache</span>()                      <span class="cm"># cache AFTER batching</span>
+    .<span class="fn">prefetch</span>(tf.data.AUTOTUNE)   <span class="cm"># always last!</span>
+)
+
+<span class="cm"># ── Load from files ───────────────────────────</span>
+ds = tf.data.Dataset.<span class="fn">list_files</span>(<span class="st">"data/*.tfrecord"</span>).<span class="fn">flat_map</span>(
+    tf.data.<span class="fn">TFRecordDataset</span>
+)
+
+<span class="cm"># ── train/val split without validation_split ─</span>
+val_ds   = full_ds.<span class="fn">take</span>(<span class="nm">1000</span>)
+train_ds = full_ds.<span class="fn">skip</span>(<span class="nm">1000</span>)</code></pre>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     CUSTOM TRAINING LOOP
+═══════════════════════════════════════════ -->
+<div class="chapter-divider"><span>⬡ Chapter 07 — Advanced Training</span></div>
+
+<div class="section" id="custom-loop">
+  <div class="sec-num">CONCEPT 25</div>
+  <div class="sec-title">Custom <em>Training Loop</em></div>
+  <div class="sec-desc">Replace model.fit() with your own loop for maximum control — research architectures, GANs, reinforcement learning, custom gradient manipulation.</div>
+
+  <pre><code><span class="cm"># ── The complete custom training loop ────────</span>
+optimizer = keras.optimizers.<span class="fn">Adam</span>(<span class="nm">1e-3</span>)
+loss_fn   = keras.losses.<span class="fn">SparseCategoricalCrossentropy</span>(from_logits=<span class="kw">True</span>)
+train_acc = keras.metrics.<span class="fn">SparseCategoricalAccuracy</span>()
+
+@tf.<span class="fn">function</span>  <span class="cm"># compile for speed!</span>
+<span class="kw">def</span> <span class="fn">train_step</span>(x_batch, y_batch):
+    <span class="kw">with</span> tf.<span class="fn">GradientTape</span>() <span class="kw">as</span> tape:
+        logits = model(x_batch, training=<span class="kw">True</span>)   <span class="cm"># forward pass</span>
+        loss   = loss_fn(y_batch, logits)           <span class="cm"># compute loss</span>
+        loss  += <span class="fn">sum</span>(model.losses)                 <span class="cm"># add regularization losses!</span>
+
+    grads = tape.<span class="fn">gradient</span>(loss, model.trainable_variables)
+    optimizer.<span class="fn">apply_gradients</span>(<span class="fn">zip</span>(grads, model.trainable_variables))
+    train_acc.<span class="fn">update_state</span>(y_batch, logits)
+    <span class="kw">return</span> loss
+
+<span class="kw">for</span> epoch <span class="kw">in</span> <span class="fn">range</span>(<span class="nm">50</span>):
+    train_acc.<span class="fn">reset_state</span>()
+    <span class="kw">for</span> x_batch, y_batch <span class="kw">in</span> train_dataset:
+        loss = <span class="fn">train_step</span>(x_batch, y_batch)
+
+    <span class="fn">print</span>(f<span class="st">"Epoch {epoch}: loss={loss:.3f}, acc={train_acc.result():.3f}"</span>)</code></pre>
+
+  <div class="box" style="margin-top:24px;">
+    <div class="box-title" style="color:var(--B)">optimizer.apply_gradients() — Parameters</div>
+    <table class="param-table">
+      <tr><th>Parameter</th><th>Default</th><th>Description</th></tr>
+      <tr><td class="param-name">grads_and_vars</td><td class="param-default">required</td><td>Iterable of (gradient, variable) pairs. zip(grads, model.trainable_variables).</td></tr>
+      <tr><td class="param-name">name</td><td class="param-default">None</td><td>Optional name for the operation (TensorBoard).</td></tr>
+      <tr><td class="param-name">skip_gradients_aggregation</td><td class="param-default">False</td><td>Set True in distributed training if you aggregate gradients manually.</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     TRANSFORMERS
+═══════════════════════════════════════════ -->
+<div class="chapter-divider"><span>⬡ Chapter 08 — NLP &amp; Transformers</span></div>
+
+<div class="section" id="transformers">
+  <div class="sec-num">CONCEPT 37–39</div>
+  <div class="sec-title">Transformer <em>Architecture</em></div>
+  <div class="sec-desc">The dominant architecture for NLP (and increasingly vision). Built from Multi-Head Attention + Feed-Forward blocks with residual connections and layer normalization.</div>
+
+  <div class="arch-flow" style="flex-wrap:wrap;gap:8px;">
+    <div class="arch-block"><div class="arch-name">Token IDs</div><div class="arch-detail">(batch, seq)</div></div>
+    <div class="arch-arrow">→</div>
+    <div class="arch-block highlight"><div class="arch-name">Embedding</div><div class="arch-detail">word → vector</div></div>
+    <div class="arch-arrow">+</div>
+    <div class="arch-block" style="border-color:var(--D);"><div class="arch-name" style="color:var(--D)">Pos Encoding</div><div class="arch-detail">position info</div></div>
+    <div class="arch-arrow">→</div>
+    <div class="arch-block highlight"><div class="arch-name">MHA</div><div class="arch-detail">attend</div></div>
+    <div class="arch-arrow">→</div>
+    <div class="arch-block"><div class="arch-name">Add+Norm</div><div class="arch-detail">residual</div></div>
+    <div class="arch-arrow">→</div>
+    <div class="arch-block highlight"><div class="arch-name">FFN</div><div class="arch-detail">Dense→GELU→Dense</div></div>
+    <div class="arch-arrow">→</div>
+    <div class="arch-block"><div class="arch-name">Add+Norm</div><div class="arch-detail">residual</div></div>
+    <div class="arch-arrow">→</div>
+    <div class="arch-block"><div class="arch-name">Output</div><div class="arch-detail">logits</div></div>
+  </div>
+
+  <div class="two-col" style="margin-top:24px;">
+    <div class="box">
+      <div class="box-title" style="color:var(--E)">Attention Mechanism — Q, K, V</div>
+      <div class="formula-block"><div class="label">Scaled Dot-Product Attention</div>Attention(Q,K,V) = softmax(QKᵀ / √dₖ) · V</div>
+      <div class="step-flow" style="margin-top:16px;">
+        <div class="step-item">
+          <div class="step-num" style="border-color:var(--C);color:var(--C)">Q</div>
+          <div class="step-body"><div class="step-label">Query</div><div class="step-text">"What am I looking for?" — current token's representation being projected.</div></div>
+        </div>
+        <div class="step-item">
+          <div class="step-num" style="border-color:var(--B);color:var(--B)">K</div>
+          <div class="step-body"><div class="step-label">Key</div><div class="step-text">"What do I have?" — all tokens' keys. QKᵀ → similarity scores.</div></div>
+        </div>
+        <div class="step-item">
+          <div class="step-num" style="border-color:var(--A);color:var(--A)">V</div>
+          <div class="step-body"><div class="step-label">Value</div><div class="step-text">"What do I actually give?" — weighted by softmax(QKᵀ/√dₖ).</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="box">
+      <div class="box-title" style="color:var(--D)">Positional Encoding</div>
+      <div class="formula-block"><div class="label">Sinusoidal (original)</div>PE(pos,2i) = sin(pos / 10000^(2i/d_model))<br>PE(pos,2i+1) = cos(pos / 10000^(2i/d_model))</div>
+      <div class="callout co-info" style="margin-top:12px;">
+        <div class="callout-icon">💡</div>
+        <div class="callout-text"><b>Learned Positional Embeddings</b> (used in BERT, GPT): Just another Embedding layer! <code>tf.Variable(shape=(max_seq_len, d_model))</code> — trainable positions. Often performs better than sinusoidal.</div>
+      </div>
+      <div class="callout co-tip" style="margin-top:8px;">
+        <div class="callout-icon">🔥</div>
+        <div class="callout-text"><b>Masking in Transformers:</b> Causal mask (GPT): upper triangular matrix of -inf to prevent attending to future tokens. Padding mask: -inf for pad tokens to ignore them in attention.</div>
+      </div>
+    </div>
+  </div>
+
+  <pre><code><span class="cm"># ── Full Transformer Encoder Block ───────────</span>
+<span class="kw">class</span> <span class="fn">EncoderBlock</span>(keras.layers.Layer):
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, d_model=<span class="nm">512</span>, num_heads=<span class="nm">8</span>, dff=<span class="nm">2048</span>, dropout=<span class="nm">0.1</span>):
+        <span class="fn">super</span>().<span class="fn">__init__</span>()
+        self.mha   = keras.layers.<span class="fn">MultiHeadAttention</span>(num_heads=num_heads, key_dim=d_model//num_heads, dropout=dropout)
+        self.ffn1  = keras.layers.<span class="fn">Dense</span>(dff, activation=<span class="st">"gelu"</span>)
+        self.ffn2  = keras.layers.<span class="fn">Dense</span>(d_model)
+        self.norm1 = keras.layers.<span class="fn">LayerNormalization</span>(epsilon=<span class="nm">1e-6</span>)
+        self.norm2 = keras.layers.<span class="fn">LayerNormalization</span>(epsilon=<span class="nm">1e-6</span>)
+        self.drop1 = keras.layers.<span class="fn">Dropout</span>(dropout)
+        self.drop2 = keras.layers.<span class="fn">Dropout</span>(dropout)
+
+    <span class="kw">def</span> <span class="fn">call</span>(self, x, mask=<span class="kw">None</span>, training=<span class="kw">False</span>):
+        <span class="cm"># 1. Multi-Head Self-Attention</span>
+        attn = self.mha(x, x, attention_mask=mask, training=training)
+        x = self.norm1(x + self.drop1(attn, training=training))   <span class="cm"># Add & Norm</span>
+        <span class="cm"># 2. Feed-Forward Network</span>
+        ffn = self.ffn2(self.ffn1(x))
+        x = self.norm2(x + self.drop2(ffn, training=training))    <span class="cm"># Add & Norm</span>
+        <span class="kw">return</span> x
+
+<span class="cm"># ── Build Causal Mask (for GPT-style decoder) ─</span>
+<span class="kw">def</span> <span class="fn">causal_mask</span>(seq_len):
+    mask = <span class="nm">1</span> - tf.linalg.<span class="fn">band_part</span>(tf.<span class="fn">ones</span>((seq_len, seq_len)), -<span class="nm">1</span>, <span class="nm">0</span>)
+    <span class="kw">return</span> mask * <span class="nm">-1e9</span>   <span class="cm"># large negative → 0 after softmax</span></code></pre>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SAVING + DEBUGGING
+═══════════════════════════════════════════ -->
+<div class="chapter-divider"><span>⬡ Chapter 09 — Saving &amp; Debugging</span></div>
+
+<div class="section" id="debugging">
+  <div class="sec-num">CONCEPT 22 + 40</div>
+  <div class="sec-title">Saving Models <em>&amp; Debugging</em></div>
+
+  <div class="two-col">
+    <div class="box">
+      <div class="box-title" style="color:var(--A)">Model Saving — Parameters</div>
+      <table class="param-table">
+        <tr><th>Method</th><th>Key Args</th><th>Description</th></tr>
+        <tr><td class="param-name">model.save("path.keras")</td><td><code>overwrite=True</code></td><td>Recommended format (Keras v3). Saves architecture + weights + optimizer state.</td></tr>
+        <tr><td class="param-name">model.save("saved_model/")</td><td><code>save_format="tf"</code></td><td>TensorFlow SavedModel format. Best for TF Serving deployment.</td></tr>
+        <tr><td class="param-name">model.save_weights("w.h5")</td><td><code>overwrite=True</code></td><td>Save only weights. Must recreate model architecture to load.</td></tr>
+        <tr><td class="param-name">keras.models.load_model("path")</td><td><code>custom_objects={}</code></td><td>Load full model. Pass custom_objects dict if you have custom layers/losses.</td></tr>
+        <tr><td class="param-name">model.load_weights("w.h5")</td><td><code>by_name=False, skip_mismatch=False</code></td><td>Load weights only. by_name=True for partial loading (transfer learning).</td></tr>
+      </table>
+    </div>
+    <div class="box">
+      <div class="box-title" style="color:var(--C)">Debugging Toolkit</div>
+      <table class="param-table">
+        <tr><th>Tool</th><th>Usage</th></tr>
+        <tr><td class="param-name">tf.debugging.assert_shapes</td><td>Assert tensor shapes match expected. Fails with useful message.</td></tr>
+        <tr><td class="param-name">tf.debugging.check_numerics</td><td>Raise if tensor has NaN or Inf values. Wrap suspicious ops.</td></tr>
+        <tr><td class="param-name">tf.debugging.assert_equal</td><td>Assert two tensors are equal element-wise.</td></tr>
+        <tr><td class="param-name">tf.print()</td><td>Print tensor values INSIDE tf.function (unlike Python print!).</td></tr>
+        <tr><td class="param-name">run_eagerly=True</td><td>In compile(): run in eager mode, use regular Python print/debugger.</td></tr>
+        <tr><td class="param-name">model.summary()</td><td>Print all layers, output shapes, parameter counts.</td></tr>
+        <tr><td class="param-name">keras.utils.plot_model</td><td>Visualize model graph as image.</td></tr>
+        <tr><td class="param-name">tf.config.run_functions_eagerly(True)</td><td>Global eager mode — disables all tf.function compilation.</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <pre><code><span class="cm"># ── NaN debugging flow ────────────────────────</span>
+<span class="kw">import</span> tensorflow <span class="kw">as</span> tf
+
+<span class="cm"># Enable numeric checks globally</span>
+tf.debugging.<span class="fn">enable_check_numerics</span>()  <span class="cm"># raises immediately on NaN/Inf</span>
+
+<span class="cm"># Or check at specific points</span>
+<span class="kw">with</span> tf.<span class="fn">GradientTape</span>() <span class="kw">as</span> tape:
+    logits = model(x)
+    tf.debugging.<span class="fn">check_numerics</span>(logits, message=<span class="st">"NaN in logits!"</span>)
+    loss = loss_fn(y, logits)
+    tf.debugging.<span class="fn">check_numerics</span>(loss, message=<span class="st">"NaN in loss!"</span>)
+
+<span class="cm"># ── Shape debugging ───────────────────────────</span>
+tf.debugging.<span class="fn">assert_shapes</span>([
+    (x,    (<span class="st">"B"</span>, <span class="nm">784</span>)),     <span class="cm"># batch x 784</span>
+    (logits, (<span class="st">"B"</span>, <span class="nm">10</span>)),   <span class="cm"># batch x 10 classes</span>
+])
+
+<span class="cm"># ── Print inside @tf.function ─────────────────</span>
+@tf.<span class="fn">function</span>
+<span class="kw">def</span> <span class="fn">debug_step</span>(x):
+    out = model(x)
+    tf.<span class="fn">print</span>(<span class="st">"Output stats: min="</span>, tf.<span class="fn">reduce_min</span>(out), <span class="st">" max="</span>, tf.<span class="fn">reduce_max</span>(out))
+    <span class="kw">return</span> out</code></pre>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     QUICK REFERENCE
+═══════════════════════════════════════════ -->
+<div class="chapter-divider"><span>⬡ Quick Reference Card</span></div>
+
+<div class="section">
+  <div class="sec-num">SUMMARY</div>
+  <div class="sec-title">The <em>Cheat Sheet</em></div>
+
+  <div class="three-col">
+    <div class="box">
+      <div class="box-title" style="color:var(--A)">Initialization Guide</div>
+      <table class="param-table">
+        <tr><th>Situation</th><th>Use</th></tr>
+        <tr><td>ReLU hidden layers</td><td class="tok-cell">he_normal</td></tr>
+        <tr><td>Sigmoid / Tanh</td><td class="tok-cell">glorot_uniform</td></tr>
+        <tr><td>LSTM gates</td><td class="tok-cell">glorot_uniform</td></tr>
+        <tr><td>Output layer bias</td><td class="tok-cell">zeros</td></tr>
+        <tr><td>Attention projections</td><td class="tok-cell">glorot_uniform</td></tr>
+      </table>
+    </div>
+    <div class="box">
+      <div class="box-title" style="color:var(--B)">Activation Selector</div>
+      <table class="param-table">
+        <tr><th>Task</th><th>Activation</th></tr>
+        <tr><td>Hidden layers</td><td class="tok-cell">relu / gelu</td></tr>
+        <tr><td>Binary output</td><td class="tok-cell">sigmoid</td></tr>
+        <tr><td>Multi-class output</td><td class="tok-cell">softmax</td></tr>
+        <tr><td>Transformer blocks</td><td class="tok-cell">gelu</td></tr>
+        <tr><td>Regression output</td><td class="tok-cell">None (linear)</td></tr>
+      </table>
+    </div>
+    <div class="box">
+      <div class="box-title" style="color:var(--C)">Loss + Output Pairs</div>
+      <table class="param-table">
+        <tr><th>Problem</th><th>Output + Loss</th></tr>
+        <tr><td>Binary class</td><td class="tok-cell">sigmoid + BCE</td></tr>
+        <tr><td>Multi-class</td><td class="tok-cell">softmax + SparseCCE</td></tr>
+        <tr><td>Regression</td><td class="tok-cell">linear + MSE</td></tr>
+        <tr><td>Language model</td><td class="tok-cell">softmax + SparseCCE</td></tr>
+        <tr><td>Multi-label</td><td class="tok-cell">sigmoid + BCE</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="callout co-tip" style="margin-top:24px;">
+    <div class="callout-icon">🚀</div>
+    <div class="callout-text"><b>TensorFlow Learning Path:</b> Start with tf.constant → tf.Variable → GradientTape → Sequential model → compile()+fit() → tf.data pipeline → Functional API → Custom loops → Transformers. Each concept builds on the previous.</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     NORMALIZATION LAYERS
+═══════════════════════════════════════════ -->
+<div class="chapter-divider"><span>⬡ Chapter 10 — Normalization &amp; Regularization</span></div>
+
+<div class="section" id="normalization">
+  <div class="sec-num">CONCEPT 11 + 26</div>
+  <div class="sec-title">Normalization <em>&amp; Regularization</em></div>
+  <div class="sec-desc">Normalization stabilizes training by keeping activations in a healthy range. Regularization prevents overfitting by penalizing complexity.</div>
+
+  <div class="three-col">
+    <div class="box">
+      <div class="box-title" style="color:var(--B)">BatchNormalization</div>
+      <div class="formula-block"><div class="label">Formula</div>x̂ = (x − μ_batch) / √(σ²_batch + ε)<br>y = γ·x̂ + β</div>
+      <table class="param-table" style="margin-top:12px;">
+        <tr><th>Parameter</th><th>Default</th><th>Description</th></tr>
+        <tr><td class="param-name">axis</td><td class="param-default">-1</td><td>Feature axis to normalize. For Conv2D use axis=-1 (channels last) or axis=1 (channels first).</td></tr>
+        <tr><td class="param-name">momentum</td><td class="param-default">0.99</td><td>Momentum for the moving mean/variance update during training. Higher = slower update.</td></tr>
+        <tr><td class="param-name">epsilon</td><td class="param-default">0.001</td><td>Prevents div-by-zero. Increase to 1e-3 for small batch sizes.</td></tr>
+        <tr><td class="param-name">center</td><td class="param-default">True</td><td>Learn β shift parameter.</td></tr>
+        <tr><td class="param-name">scale</td><td class="param-default">True</td><td>Learn γ scale parameter. Set False if followed by activation with its own scale.</td></tr>
+        <tr><td class="param-name">trainable</td><td class="param-default">True</td><td>Set False to freeze BN during fine-tuning (use stored running stats).</td></tr>
+        <tr><td class="param-name">virtual_batch_size</td><td class="param-default">None</td><td>Ghost batch norm: normalize sub-batches for better stats with large batch sizes.</td></tr>
+      </table>
+      <div class="callout co-warn" style="margin-top:12px;">
+        <div class="callout-icon">⚠️</div>
+        <div class="callout-text"><b>BN + Freezing:</b> When fine-tuning, always set BN layers <code>layer.trainable = False</code> AND call model in inference mode. Otherwise running stats drift. Use <code>training=False</code> explicitly.</div>
+      </div>
+    </div>
+    <div class="box">
+      <div class="box-title" style="color:var(--A)">BN vs LayerNorm vs GroupNorm</div>
+      <div class="compare-row" style="grid-template-columns:1fr;">
+        <div class="compare-cell" style="border-bottom:1px solid var(--border);">
+          <div class="compare-head" style="color:var(--B)">BatchNorm</div>
+          <ul><li>Normalizes across batch dimension</li><li>Great for CNNs with large batches</li><li>Bad for small batches (&lt;16) or RNNs</li><li>Different behavior train vs inference</li></ul>
+        </div>
+        <div class="compare-cell" style="border-bottom:1px solid var(--border);">
+          <div class="compare-head" style="color:var(--C)">LayerNorm</div>
+          <ul><li>Normalizes across feature dimension</li><li>Same behavior train and inference</li><li>Standard in Transformers/NLP</li><li>Works with any batch size, even 1</li></ul>
+        </div>
+        <div class="compare-cell">
+          <div class="compare-head" style="color:var(--D)">GroupNorm</div>
+          <ul><li>Divides channels into groups, normalizes each</li><li>Good middle ground for small batches</li><li>Used in detection models (Mask R-CNN)</li></ul>
+        </div>
+      </div>
+    </div>
+    <div class="box">
+      <div class="box-title" style="color:var(--C)">Regularization Methods</div>
+      <table class="param-table">
+        <tr><th>Method</th><th>Usage</th><th>Effect</th></tr>
+        <tr><td class="param-name">L1 (Lasso)</td><td><code>keras.regularizers.L1(0.01)</code></td><td>Penalizes |w|. Produces sparse weights. Good for feature selection.</td></tr>
+        <tr><td class="param-name">L2 (Ridge)</td><td><code>keras.regularizers.L2(0.01)</code></td><td>Penalizes w². Keeps weights small, prevents explosion. Most common.</td></tr>
+        <tr><td class="param-name">L1L2</td><td><code>keras.regularizers.L1L2(l1=0.01, l2=0.01)</code></td><td>Elastic net — combines both penalties.</td></tr>
+        <tr><td class="param-name">Dropout</td><td><code>Dropout(rate=0.3)</code></td><td>Randomly zeros activations. Forces redundancy. Most effective.</td></tr>
+        <tr><td class="param-name">Weight Decay</td><td><code>optimizer weight_decay=1e-4</code></td><td>Decoupled L2 in optimizer (AdamW style). More stable than kernel_regularizer.</td></tr>
+        <tr><td class="param-name">Gradient Clipping</td><td><code>clipnorm=1.0</code></td><td>Clip gradient norm. Prevents exploding gradients. Essential for RNNs.</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <pre><code><span class="cm"># ── BatchNorm placement: BEFORE or AFTER activation? ────</span>
+<span class="cm"># Original paper: Conv → BN → Activation (before)</span>
+x = keras.layers.<span class="fn">Conv2D</span>(<span class="nm">64</span>, <span class="nm">3</span>, use_bias=<span class="kw">False</span>)(x)  <span class="cm"># no bias (BN has its own)</span>
+x = keras.layers.<span class="fn">BatchNormalization</span>()(x)
+x = keras.layers.<span class="fn">ReLU</span>()(x)
+
+<span class="cm"># Modern preference: Conv → Activation → BN (after)</span>
+<span class="cm"># Empirically similar, slightly better in some cases.</span>
+
+<span class="cm"># ── L2 Regularization ─────────────────────────────────</span>
+reg = keras.regularizers.<span class="fn">L2</span>(<span class="nm">1e-4</span>)
+layer = keras.layers.<span class="fn">Dense</span>(<span class="nm">256</span>, kernel_regularizer=reg, activation=<span class="st">"relu"</span>)
+
+<span class="cm"># ── The regularization loss is in model.losses ────────</span>
+<span class="kw">with</span> tf.<span class="fn">GradientTape</span>() <span class="kw">as</span> tape:
+    out  = model(x, training=<span class="kw">True</span>)
+    loss = loss_fn(y, out) + <span class="fn">sum</span>(model.losses)  <span class="cm"># ← don't forget this!</span></code></pre>
+</div>
+
+<hr class="div">
+
+<!-- ═══════════════════════════════════════════
+     METRICS
+═══════════════════════════════════════════ -->
+<div class="section" id="metrics">
+  <div class="sec-num">CONCEPT 19</div>
+  <div class="sec-title">Metrics — <em>Measuring Performance</em></div>
+  <div class="sec-desc">Keras metrics are stateful objects that accumulate values across batches and compute a final result. They are reset at the start of each epoch.</div>
+
+  <div class="two-col">
+    <div class="box">
+      <div class="box-title" style="color:var(--A)">Built-in Metrics Reference</div>
+      <table class="param-table">
+        <tr><th>Metric</th><th>Key Params</th><th>Use Case</th></tr>
+        <tr><td class="param-name">Accuracy</td><td><code>name, dtype</code></td><td>Simple accuracy for integer labels + integer predictions.</td></tr>
+        <tr><td class="param-name">BinaryAccuracy</td><td><code>threshold=0.5</code></td><td>Binary classification. Threshold determines positive class cutoff.</td></tr>
+        <tr><td class="param-name">CategoricalAccuracy</td><td>—</td><td>Multi-class with one-hot labels.</td></tr>
+        <tr><td class="param-name">SparseCategoricalAccuracy</td><td>—</td><td>Multi-class with integer labels (most common!).</td></tr>
+        <tr><td class="param-name">TopKCategoricalAccuracy</td><td><code>k=5</code></td><td>Is correct class in top-k predictions? Standard for ImageNet (top-5).</td></tr>
+        <tr><td class="param-name">AUC</td><td><code>num_thresholds=200, curve="ROC"/"PR"</code></td><td>Area under ROC or PR curve. Great for imbalanced datasets.</td></tr>
+        <tr><td class="param-name">Precision</td><td><code>thresholds=None, class_id=None</code></td><td>TP / (TP + FP). High precision = few false positives.</td></tr>
+        <tr><td class="param-name">Recall</td><td><code>thresholds=None, class_id=None</code></td><td>TP / (TP + FN). High recall = few false negatives (medical!).</td></tr>
+        <tr><td class="param-name">F1Score</td><td><code>average="micro"/"macro"/"weighted"</code></td><td>Harmonic mean of precision+recall. Balanced measure.</td></tr>
+        <tr><td class="param-name">MeanIoU</td><td><code>num_classes</code></td><td>Intersection over Union for segmentation tasks.</td></tr>
+        <tr><td class="param-name">MeanSquaredError</td><td>—</td><td>Average squared error for regression.</td></tr>
+        <tr><td class="param-name">MeanAbsoluteError</td><td>—</td><td>Average absolute error — less sensitive to outliers.</td></tr>
+        <tr><td class="param-name">CosineSimilarity</td><td><code>axis=-1</code></td><td>Cosine similarity between y_true and y_pred vectors.</td></tr>
+      </table>
+    </div>
+    <div class="box">
+      <div class="box-title" style="color:var(--B)">Custom Metric Class</div>
+      <pre style="margin:0;"><code><span class="kw">class</span> <span class="fn">F1Score</span>(keras.metrics.Metric):
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, name=<span class="st">"f1"</span>, **kwargs):
+        <span class="fn">super</span>().<span class="fn">__init__</span>(name=name, **kwargs)
+        <span class="cm"># add_weight: creates a Variable tracked by metric</span>
+        self.tp = self.<span class="fn">add_weight</span>(name=<span class="st">"tp"</span>, initializer=<span class="st">"zeros"</span>)
+        self.fp = self.<span class="fn">add_weight</span>(name=<span class="st">"fp"</span>, initializer=<span class="st">"zeros"</span>)
+        self.fn = self.<span class="fn">add_weight</span>(name=<span class="st">"fn"</span>, initializer=<span class="st">"zeros"</span>)
+
+    <span class="kw">def</span> <span class="fn">update_state</span>(self, y_true, y_pred, sample_weight=<span class="kw">None</span>):
+        <span class="cm"># Called every batch — accumulate counts</span>
+        y_pred = tf.<span class="fn">cast</span>(y_pred > <span class="nm">0.5</span>, tf.float32)
+        y_true = tf.<span class="fn">cast</span>(y_true, tf.float32)
+        self.tp.<span class="fn">assign_add</span>(tf.<span class="fn">reduce_sum</span>(y_true * y_pred))
+        self.fp.<span class="fn">assign_add</span>(tf.<span class="fn">reduce_sum</span>((<span class="nm">1</span>-y_true)*y_pred))
+        self.fn.<span class="fn">assign_add</span>(tf.<span class="fn">reduce_sum</span>(y_true*(<span class="nm">1</span>-y_pred)))
+
+    <span class="kw">def</span> <span class="fn">result</span>(self):
+        <span class="cm"># Called at end of epoch — compute final value</span>
+        precision = self.tp / (self.tp + self.fp + <span class="nm">1e-7</span>)
+        recall    = self.tp / (self.tp + self.fn + <span class="nm">1e-7</span>)
+        <span class="kw">return</span> <span class="nm">2</span> * precision * recall / (precision + recall + <span class="nm">1e-7</span>)
+
+    <span class="kw">def</span> <span class="fn">reset_state</span>(self):
+        <span class="cm"># Called at start of each epoch — reset accumulators</span>
+        self.tp.<span class="fn">assign</span>(<span class="nm">0</span>); self.fp.<span class="fn">assign</span>(<span class="nm">0</span>); self.fn.<span class="fn">assign</span>(<span class="nm">0</span>)</code></pre>
+    </div>
+  </div>
+</div>
+
+<hr class="div">
+
+<!-- ═══════════════════════════════════════════
+     CNN
+═══════════════════════════════════════════ -->
+<div class="chapter-divider"><span>⬡ Chapter 11 — Specialized Architectures</span></div>
+
+<div class="section" id="cnn">
+  <div class="sec-num">CONCEPT 31</div>
+  <div class="sec-title">CNN — <em>Convolutional Neural Networks</em></div>
+  <div class="sec-desc">CNNs use learnable filters that slide over input images, detecting local patterns. Translation-invariant by design. The workhorse of computer vision.</div>
+
+  <div class="arch-flow">
+    <div class="arch-block"><div class="arch-name">Input</div><div class="arch-detail">224×224×3</div></div>
+    <div class="arch-arrow">→</div>
+    <div class="arch-block highlight"><div class="arch-name">Conv2D</div><div class="arch-detail">32 filters 3×3</div></div>
+    <div class="arch-arrow">→</div>
+    <div class="arch-block highlight"><div class="arch-name">MaxPool</div><div class="arch-detail">2×2 stride 2</div></div>
+    <div class="arch-arrow">→</div>
+    <div class="arch-block highlight"><div class="arch-name">Conv2D</div><div class="arch-detail">64 filters 3×3</div></div>
+    <div class="arch-arrow">→</div>
+    <div class="arch-block highlight"><div class="arch-name">GlobalAvgPool</div><div class="arch-detail">→ (64,)</div></div>
+    <div class="arch-arrow">→</div>
+    <div class="arch-block highlight"><div class="arch-name">Dense</div><div class="arch-detail">softmax</div></div>
+  </div>
+
+  <div class="two-col" style="margin-top:24px;">
+    <div class="box">
+      <div class="box-title" style="color:var(--B)">Conv2D — All Parameters</div>
+      <table class="param-table">
+        <tr><th>Parameter</th><th>Default</th><th>Description</th></tr>
+        <tr><td class="param-name">filters</td><td class="param-default">required</td><td>Number of output feature maps (learnable filters). Doubles per block is common: 32→64→128.</td></tr>
+        <tr><td class="param-name">kernel_size</td><td class="param-default">required</td><td>Filter size: int or (h,w). Use 3 (3×3) — almost always. 1×1 for channel mixing. 7×7 for first layer.</td></tr>
+        <tr><td class="param-name">strides</td><td class="param-default">(1,1)</td><td>Step size of filter. (2,2) = downsample by 2× (replaces MaxPool). (1,1) = full overlap.</td></tr>
+        <tr><td class="param-name">padding</td><td class="param-default">"valid"</td><td><code>"valid"</code>: no padding, output smaller. <code>"same"</code>: zero-pad, output same spatial size. Almost always use "same".</td></tr>
+        <tr><td class="param-name">activation</td><td class="param-default">None</td><td>Apply activation after convolution. Usually "relu". Set None if using BN after.</td></tr>
+        <tr><td class="param-name">dilation_rate</td><td class="param-default">(1,1)</td><td>Dilated/atrous convolution. (2,2) = 5×5 receptive field with 3×3 kernel. Used in segmentation.</td></tr>
+        <tr><td class="param-name">groups</td><td class="param-default">1</td><td>Grouped convolution. groups=filters = depthwise conv (MobileNet). Reduces parameters.</td></tr>
+        <tr><td class="param-name">use_bias</td><td class="param-default">True</td><td>Set False if followed by BatchNorm (BN has its own bias).</td></tr>
+        <tr><td class="param-name">data_format</td><td class="param-default">"channels_last"</td><td><code>"channels_last"</code>: (batch,H,W,C). <code>"channels_first"</code>: (batch,C,H,W) for older GPUs.</td></tr>
+      </table>
+    </div>
+    <div class="box">
+      <div class="box-title" style="color:var(--A)">Pooling Layers</div>
+      <table class="param-table">
+        <tr><th>Layer</th><th>Key Params</th><th>Description</th></tr>
+        <tr><td class="param-name">MaxPooling2D</td><td><code>pool_size=(2,2), strides=None, padding="valid"</code></td><td>Takes maximum in each window. Keeps strongest activations. Most common.</td></tr>
+        <tr><td class="param-name">AveragePooling2D</td><td><code>pool_size=(2,2), strides=None</code></td><td>Averages window values. Softer than max, used in some architectures.</td></tr>
+        <tr><td class="param-name">GlobalMaxPooling2D</td><td><code>data_format</code></td><td>Collapses entire feature map to single value per channel: (B,H,W,C)→(B,C). No parameters.</td></tr>
+        <tr><td class="param-name">GlobalAveragePooling2D</td><td><code>data_format, keepdims=False</code></td><td>Average over spatial dims. Preferred over Flatten for final layer — fewer params, less overfitting.</td></tr>
+      </table>
+      <div class="callout co-info" style="margin-top:12px;">
+        <div class="callout-icon">📐</div>
+        <div class="callout-text"><b>Output size formula:</b><br><code>out = floor((in + 2p − k) / s) + 1</code><br>where p=padding, k=kernel_size, s=stride. With padding="same": out = ceil(in/s).</div>
+      </div>
+      <pre style="margin-top:12px;"><code><span class="cm"># ── Simple CNN ────────────────────────────────</span>
+model = keras.<span class="fn">Sequential</span>([
+    keras.layers.<span class="fn">Input</span>((<span class="nm">32</span>,<span class="nm">32</span>,<span class="nm">3</span>)),
+    keras.layers.<span class="fn">Conv2D</span>(<span class="nm">32</span>, <span class="nm">3</span>, padding=<span class="st">"same"</span>, activation=<span class="st">"relu"</span>),
+    keras.layers.<span class="fn">Conv2D</span>(<span class="nm">32</span>, <span class="nm">3</span>, padding=<span class="st">"same"</span>, activation=<span class="st">"relu"</span>),
+    keras.layers.<span class="fn">MaxPooling2D</span>(<span class="nm">2</span>),        <span class="cm"># 32x32 → 16x16</span>
+    keras.layers.<span class="fn">Conv2D</span>(<span class="nm">64</span>, <span class="nm">3</span>, padding=<span class="st">"same"</span>, activation=<span class="st">"relu"</span>),
+    keras.layers.<span class="fn">GlobalAveragePooling2D</span>(),  <span class="cm"># → (64,)</span>
+    keras.layers.<span class="fn">Dense</span>(<span class="nm">10</span>, activation=<span class="st">"softmax"</span>)
+])</code></pre>
+    </div>
+  </div>
+</div>
+
+<hr class="div">
+
+<!-- ═══════════════════════════════════════════
+     RNN / LSTM / GRU
+═══════════════════════════════════════════ -->
+<div class="section" id="rnn">
+  <div class="sec-num">CONCEPT 32</div>
+  <div class="sec-title">RNN / LSTM / <em>GRU</em></div>
+  <div class="sec-desc">Recurrent networks process sequences step-by-step, maintaining a hidden state. LSTM and GRU solve vanishing gradients with gating mechanisms.</div>
+
+  <div class="two-col">
+    <div class="box">
+      <div class="box-title" style="color:var(--C)">LSTM — All Parameters</div>
+      <table class="param-table">
+        <tr><th>Parameter</th><th>Default</th><th>Description</th></tr>
+        <tr><td class="param-name">units</td><td class="param-default">required</td><td>Dimensionality of hidden state (and cell state). The "memory size" of the LSTM.</td></tr>
+        <tr><td class="param-name">activation</td><td class="param-default">"tanh"</td><td>Activation for cell state candidate. Usually tanh.</td></tr>
+        <tr><td class="param-name">recurrent_activation</td><td class="param-default">"sigmoid"</td><td>Activation for gates (input, forget, output). Always sigmoid.</td></tr>
+        <tr><td class="param-name">return_sequences</td><td class="param-default">False</td><td><b>Critical!</b> False = return only final hidden state (B, units). True = return all timesteps (B, T, units). Set True when stacking LSTM layers or using attention.</td></tr>
+        <tr><td class="param-name">return_state</td><td class="param-default">False</td><td>If True, returns (output, h_state, c_state). Needed for encoder-decoder architectures.</td></tr>
+        <tr><td class="param-name">stateful</td><td class="param-default">False</td><td>If True, last batch's hidden state becomes initial state of next batch. For very long sequences split across batches.</td></tr>
+        <tr><td class="param-name">go_backwards</td><td class="param-default">False</td><td>Process sequence in reverse. Used in Bidirectional wrapper.</td></tr>
+        <tr><td class="param-name">dropout</td><td class="param-default">0.0</td><td>Dropout on input connections. Applied to inputs x_t at each timestep.</td></tr>
+        <tr><td class="param-name">recurrent_dropout</td><td class="param-default">0.0</td><td>Dropout on recurrent connections h_{t-1}. More effective than input dropout for RNNs.</td></tr>
+        <tr><td class="param-name">unroll</td><td class="param-default">False</td><td>Unroll the network (faster for short sequences, more memory). True for seq_len &lt; 100.</td></tr>
+      </table>
+    </div>
+    <div class="box">
+      <div class="box-title" style="color:var(--B)">LSTM Gates — Internals</div>
+      <div class="formula-block">
+        <div class="label">LSTM equations</div>
+        f_t = σ(W_f·[h_{t-1}, x_t] + b_f)  <span style="color:var(--ink3)">← forget gate</span><br>
+        i_t = σ(W_i·[h_{t-1}, x_t] + b_i)  <span style="color:var(--ink3)">← input gate</span><br>
+        C̃_t = tanh(W_C·[h_{t-1}, x_t] + b_C) <span style="color:var(--ink3)">← candidate</span><br>
+        C_t = f_t·C_{t-1} + i_t·C̃_t         <span style="color:var(--ink3)">← cell state</span><br>
+        o_t = σ(W_o·[h_{t-1}, x_t] + b_o)   <span style="color:var(--ink3)">← output gate</span><br>
+        h_t = o_t · tanh(C_t)               <span style="color:var(--ink3)">← hidden state</span>
+      </div>
+      <pre style="margin-top:12px;"><code><span class="cm"># ── Stacked Bidirectional LSTM ────────────────</span>
+model = keras.<span class="fn">Sequential</span>([
+    keras.layers.<span class="fn">Embedding</span>(<span class="nm">10000</span>, <span class="nm">128</span>, mask_zero=<span class="kw">True</span>),
+    keras.layers.<span class="fn">Bidirectional</span>(
+        keras.layers.<span class="fn">LSTM</span>(<span class="nm">128</span>, return_sequences=<span class="kw">True</span>, recurrent_dropout=<span class="nm">0.1</span>)
+    ),
+    keras.layers.<span class="fn">Bidirectional</span>(
+        keras.layers.<span class="fn">LSTM</span>(<span class="nm">64</span>, return_sequences=<span class="kw">False</span>)
+    ),
+    keras.layers.<span class="fn">Dense</span>(<span class="nm">1</span>, activation=<span class="st">"sigmoid"</span>)
+])
+
+<span class="cm"># ── GRU — fewer parameters than LSTM ─────────</span>
+<span class="cm"># GRU merges cell & hidden state. Often comparable to LSTM.</span>
+gru = keras.layers.<span class="fn">GRU</span>(<span class="nm">256</span>, return_sequences=<span class="kw">True</span>, reset_after=<span class="kw">True</span>)
+
+<span class="cm"># ── Encoder-Decoder with return_state ─────────</span>
+enc_out, h, c = keras.layers.<span class="fn">LSTM</span>(<span class="nm">256</span>, return_state=<span class="kw">True</span>)(encoder_input)
+dec_out = keras.layers.<span class="fn">LSTM</span>(<span class="nm">256</span>)(decoder_input, initial_state=[h, c])</code></pre>
+    </div>
+  </div>
+</div>
+
+<hr class="div">
+
+<!-- ═══════════════════════════════════════════
+     TRANSFER LEARNING
+═══════════════════════════════════════════ -->
+<div class="section" id="transfer">
+  <div class="sec-num">CONCEPT 33 + 34</div>
+  <div class="sec-title">Transfer Learning <em>&amp; Fine-Tuning</em></div>
+  <div class="sec-desc">Use a model pretrained on millions of images as a feature extractor, then fine-tune it on your smaller dataset. The most practical way to get high accuracy with limited data.</div>
+
+  <div class="box">
+    <div class="box-title" style="color:var(--D)">The 3-Phase Transfer Learning Recipe</div>
+    <div class="step-flow">
+      <div class="step-item">
+        <div class="step-num" style="color:var(--B);border-color:var(--B)">01</div>
+        <div class="step-body">
+          <div class="step-label">Load pretrained base — freeze everything</div>
+          <div class="step-text">Load ResNet/EfficientNet/etc with <code>include_top=False</code>. Set <code>base_model.trainable = False</code>. Only your new head trains. Fast convergence, no catastrophic forgetting.</div>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-num" style="color:var(--A);border-color:var(--A)">02</div>
+        <div class="step-body">
+          <div class="step-label">Train the head — high learning rate</div>
+          <div class="step-text">Compile with <code>lr=1e-3</code>, fit for 10–20 epochs. The head learns to interpret frozen features for your task.</div>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-num" style="color:var(--C);border-color:var(--C)">03</div>
+        <div class="step-body">
+          <div class="step-label">Unfreeze top layers — very small LR</div>
+          <div class="step-text">Set <code>base_model.trainable = True</code>, recompile with <code>lr=1e-5</code> (10-100× smaller). Fine-tune the top N layers. Lower layers keep general features.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="box">
+      <div class="box-title" style="color:var(--B)">Pretrained Model Parameters</div>
+      <table class="param-table">
+        <tr><th>Parameter</th><th>Options</th><th>Description</th></tr>
+        <tr><td class="param-name">weights</td><td><code>"imagenet"</code> / None / path</td><td>"imagenet" = pretrained on 1M images. None = random init. Path = custom weights file.</td></tr>
+        <tr><td class="param-name">include_top</td><td><code>True / False</code></td><td>False = remove final classification layer. Always False for transfer learning to your task.</td></tr>
+        <tr><td class="param-name">input_shape</td><td><code>(H, W, 3)</code></td><td>Override default input size. EfficientNetB0 default: 224×224. Set to your image size.</td></tr>
+        <tr><td class="param-name">pooling</td><td><code>None/"avg"/"max"</code></td><td>Global pooling after last conv block. "avg" → (batch, features). None → keep spatial dims.</td></tr>
+        <tr><td class="param-name">classes</td><td><code>1000</code></td><td>Only used when include_top=True. Set to your number of classes for fine-tuning the top.</td></tr>
+        <tr><td class="param-name">classifier_activation</td><td><code>"softmax"</code></td><td>Final activation when include_top=True. Set None if using from_logits=True in loss.</td></tr>
+      </table>
+    </div>
+    <pre><code><span class="cm"># ── Full Transfer Learning Pipeline ──────────</span>
+<span class="kw">import</span> tensorflow <span class="kw">as</span> tf
+
+<span class="cm"># Phase 1: Feature extraction</span>
+base = tf.keras.applications.<span class="fn">EfficientNetB0</span>(
+    weights=<span class="st">"imagenet"</span>,
+    include_top=<span class="kw">False</span>,
+    input_shape=(<span class="nm">224</span>, <span class="nm">224</span>, <span class="nm">3</span>),
+    pooling=<span class="st">"avg"</span>         <span class="cm"># → (batch, 1280)</span>
+)
+base.trainable = <span class="kw">False</span>   <span class="cm"># freeze all layers</span>
+
+inputs = tf.keras.<span class="fn">Input</span>((<span class="nm">224</span>, <span class="nm">224</span>, <span class="nm">3</span>))
+x = base(inputs, training=<span class="kw">False</span>)  <span class="cm"># ← inference mode for BN!</span>
+x = tf.keras.layers.<span class="fn">Dropout</span>(<span class="nm">0.3</span>)(x)
+outputs = tf.keras.layers.<span class="fn">Dense</span>(<span class="nm">5</span>, activation=<span class="st">"softmax"</span>)(x)
+model = tf.keras.<span class="fn">Model</span>(inputs, outputs)
+
+model.<span class="fn">compile</span>(optimizer=<span class="fn">Adam</span>(<span class="nm">1e-3</span>), loss=<span class="st">"sparse_categorical_crossentropy"</span>, metrics=[<span class="st">"accuracy"</span>])
+model.<span class="fn">fit</span>(train_ds, epochs=<span class="nm">10</span>)
+
+<span class="cm"># Phase 3: Fine-tune top layers</span>
+base.trainable = <span class="kw">True</span>
+<span class="kw">for</span> layer <span class="kw">in</span> base.layers[:<span class="nm">-20</span>]:   <span class="cm"># freeze all except top 20</span>
+    layer.trainable = <span class="kw">False</span>
+
+model.<span class="fn">compile</span>(optimizer=<span class="fn">Adam</span>(<span class="nm">1e-5</span>), loss=<span class="st">"sparse_categorical_crossentropy"</span>)
+model.<span class="fn">fit</span>(train_ds, epochs=<span class="nm">20</span>)</code></pre>
+  </div>
+</div>
+
+<hr class="div">
+
+<!-- ═══════════════════════════════════════════
+     LR SCHEDULE INTERACTIVE
+═══════════════════════════════════════════ -->
+<div class="section" id="lr-schedule">
+  <div class="sec-num">CONCEPT 14B</div>
+  <div class="sec-title">Learning Rate <em>Schedules</em></div>
+  <div class="sec-desc">A fixed learning rate is rarely optimal. Schedules dynamically adjust LR during training — usually starting high (explore) and decaying (converge). Warmup is standard for transformers.</div>
+
+  <div class="interactive-demo">
+    <div class="demo-title">⚡ LR Schedule Visualizer</div>
+    <div class="demo-controls" id="lr-btns">
+      <button class="fn-btn active" style="color:#1a5fd4;background:#1a5fd4;color:white;" onclick="setLRSchedule('cosine',this)">Cosine Decay</button>
+      <button class="fn-btn" style="color:#007a3d;" onclick="setLRSchedule('warmup_cosine',this)">Warmup + Cosine</button>
+      <button class="fn-btn" style="color:#c0185a;" onclick="setLRSchedule('exp',this)">Exponential</button>
+      <button class="fn-btn" style="color:#a07000;" onclick="setLRSchedule('step',this)">Step Decay</button>
+      <button class="fn-btn" style="color:#7b00c8;" onclick="setLRSchedule('cyclic',this)">Cyclic</button>
+    </div>
+    <canvas id="lr-canvas" height="180" style="width:100%;border-radius:8px;border:1px solid var(--border);display:block;margin-top:12px;"></canvas>
+    <div class="demo-output" id="lr-desc" style="margin-top:12px;"></div>
+  </div>
+
+  <div class="two-col" style="margin-top:24px;">
+    <div class="box">
+      <div class="box-title" style="color:var(--B)">CosineDecay — Parameters</div>
+      <table class="param-table">
+        <tr><th>Parameter</th><th>Default</th><th>Description</th></tr>
+        <tr><td class="param-name">initial_learning_rate</td><td class="param-default">required</td><td>Starting LR value. Peak learning rate before decay begins.</td></tr>
+        <tr><td class="param-name">decay_steps</td><td class="param-default">required</td><td>Total number of steps over which LR decays. Usually = total_epochs × steps_per_epoch.</td></tr>
+        <tr><td class="param-name">alpha</td><td class="param-default">0.0</td><td>Minimum learning rate as a fraction of initial_lr. 0.0 = decay to zero. 0.1 = decay to 10%.</td></tr>
+        <tr><td class="param-name">warmup_target</td><td class="param-default">None</td><td>(Keras 3+) Peak LR during warmup. Enables linear warmup before cosine decay.</td></tr>
+        <tr><td class="param-name">warmup_steps</td><td class="param-default">0</td><td>Number of linear warmup steps. Typical: 5–10% of total steps for transformers.</td></tr>
+      </table>
+    </div>
+    <div class="box">
+      <div class="box-title" style="color:var(--A)">ExponentialDecay — Parameters</div>
+      <table class="param-table">
+        <tr><th>Parameter</th><th>Default</th><th>Description</th></tr>
+        <tr><td class="param-name">initial_learning_rate</td><td class="param-default">required</td><td>Starting LR.</td></tr>
+        <tr><td class="param-name">decay_steps</td><td class="param-default">required</td><td>How often to decay: every N steps. LR = lr₀ × decay_rate^(step/decay_steps).</td></tr>
+        <tr><td class="param-name">decay_rate</td><td class="param-default">required</td><td>Multiplicative factor per decay_steps. 0.96 = 4% reduction every decay_steps.</td></tr>
+        <tr><td class="param-name">staircase</td><td class="param-default">False</td><td>If True, decay is discrete (step function). If False, continuous smooth decay.</td></tr>
+      </table>
+      <pre style="margin-top:12px;"><code><span class="cm"># ── Warmup + Cosine (Transformer standard) ────</span>
+lr_schedule = keras.optimizers.schedules.<span class="fn">CosineDecay</span>(
+    initial_learning_rate=<span class="nm">0.0</span>,   <span class="cm"># start from 0</span>
+    decay_steps=total_steps,
+    warmup_target=<span class="nm">1e-3</span>,           <span class="cm"># peak LR</span>
+    warmup_steps=warmup_steps      <span class="cm"># linear increase phase</span>
+)
+optimizer = keras.optimizers.<span class="fn">Adam</span>(learning_rate=lr_schedule)</code></pre>
+    </div>
+  </div>
+</div>
+
+<hr class="div">
+
+<!-- ═══════════════════════════════════════════
+     MIXED PRECISION + MULTI-GPU
+═══════════════════════════════════════════ -->
+<div class="section" id="advanced-training">
+  <div class="sec-num">CONCEPT 29 + 30</div>
+  <div class="sec-title">Mixed Precision <em>&amp; Multi-GPU</em></div>
+
+  <div class="two-col">
+    <div class="box">
+      <div class="box-title" style="color:var(--E)">Mixed Precision Training</div>
+      <div class="sec-desc" style="margin-bottom:16px;">Use float16 for forward/backward pass (faster, less memory), but keep float32 for weight updates (precision). 2–3× speedup on modern GPUs with Tensor Cores.</div>
+      <div class="step-flow">
+        <div class="step-item">
+          <div class="step-num" style="color:var(--E);border-color:var(--E)">1</div>
+          <div class="step-body"><div class="step-label">Set global policy</div><div class="step-text"><code>keras.mixed_precision.set_global_policy("mixed_float16")</code> — affects all new layers.</div></div>
+        </div>
+        <div class="step-item">
+          <div class="step-num" style="color:var(--E);border-color:var(--E)">2</div>
+          <div class="step-body"><div class="step-label">Use float32 output layer</div><div class="step-text">Final Dense must use float32: <code>Dense(10, activation="softmax", dtype="float32")</code>. Prevents underflow in softmax.</div></div>
+        </div>
+        <div class="step-item">
+          <div class="step-num" style="color:var(--E);border-color:var(--E)">3</div>
+          <div class="step-body"><div class="step-label">Wrap optimizer</div><div class="step-text"><code>LossScaleOptimizer(optimizer)</code> scales loss up to prevent float16 gradient underflow, then scales back.</div></div>
+        </div>
+      </div>
+      <pre style="margin-top:12px;"><code><span class="kw">from</span> tensorflow.keras <span class="kw">import</span> mixed_precision
+
+<span class="cm"># Set globally — all layers now use float16 compute</span>
+mixed_precision.<span class="fn">set_global_policy</span>(<span class="st">"mixed_float16"</span>)
+
+model = keras.<span class="fn">Sequential</span>([
+    keras.layers.<span class="fn">Dense</span>(<span class="nm">512</span>, activation=<span class="st">"relu"</span>),  <span class="cm"># float16</span>
+    keras.layers.<span class="fn">Dense</span>(<span class="nm">10</span>, activation=<span class="st">"softmax"</span>, dtype=<span class="st">"float32"</span>)  <span class="cm"># float32!</span>
+])
+
+optimizer = keras.optimizers.<span class="fn">Adam</span>(<span class="nm">1e-3</span>)
+optimizer = mixed_precision.<span class="fn">LossScaleOptimizer</span>(optimizer)</code></pre>
+    </div>
+    <div class="box">
+      <div class="box-title" style="color:var(--F)">Multi-GPU: MirroredStrategy</div>
+      <div class="sec-desc" style="margin-bottom:16px;">Synchronous data parallelism. Each GPU gets a copy of the model and a different batch slice. Gradients are aggregated (AllReduce) and applied identically to all GPUs.</div>
+      <table class="param-table">
+        <tr><th>Strategy</th><th>Use Case</th></tr>
+        <tr><td class="param-name">MirroredStrategy</td><td>Multiple GPUs on single machine. Most common. Automatic AllReduce.</td></tr>
+        <tr><td class="param-name">MultiWorkerMirroredStrategy</td><td>Multiple machines, each with GPUs. For very large distributed training.</td></tr>
+        <tr><td class="param-name">TPUStrategy</td><td>Google Cloud TPUs. Requires TPU runtime.</td></tr>
+        <tr><td class="param-name">ParameterServerStrategy</td><td>Async training with parameter servers. For heterogeneous clusters.</td></tr>
+      </table>
+      <pre style="margin-top:12px;"><code><span class="cm"># ── MirroredStrategy — single machine ────────</span>
+strategy = tf.distribute.<span class="fn">MirroredStrategy</span>()
+<span class="fn">print</span>(f<span class="st">"Devices: {strategy.num_replicas_in_sync}"</span>)
+
+<span class="kw">with</span> strategy.<span class="fn">scope</span>():        <span class="cm"># ALL model/optimizer creation here!</span>
+    model = <span class="fn">build_model</span>()
+    model.<span class="fn">compile</span>(
+        optimizer=<span class="fn">Adam</span>(<span class="nm">1e-3</span>),
+        loss=<span class="st">"sparse_categorical_crossentropy"</span>
+    )
+
+<span class="cm"># Batch size scales with number of GPUs!</span>
+BATCH_PER_GPU = <span class="nm">64</span>
+GLOBAL_BATCH = BATCH_PER_GPU * strategy.num_replicas_in_sync
+model.<span class="fn">fit</span>(train_ds.<span class="fn">batch</span>(GLOBAL_BATCH), epochs=<span class="nm">50</span>)</code></pre>
+    </div>
+  </div>
+</div>
+
+<hr class="div">
+
+<!-- ═══════════════════════════════════════════
+     DATA AUGMENTATION
+═══════════════════════════════════════════ -->
+<div class="section" id="augmentation">
+  <div class="sec-num">CONCEPT 27</div>
+  <div class="sec-title">Data <em>Augmentation</em></div>
+  <div class="sec-desc">Artificially expand your training set by applying random transformations. Images that look different but contain the same information. Critical to prevent overfitting on small datasets.</div>
+
+  <div class="box">
+    <div class="box-title" style="color:var(--G)">Keras Augmentation Layers — Parameters</div>
+    <div class="tbl-wrap">
+      <table class="param-table">
+        <tr><th>Layer</th><th>Key Parameters</th><th>Description</th></tr>
+        <tr><td class="param-name">RandomFlip</td><td><code>mode="horizontal"/"vertical"/"horizontal_and_vertical"</code></td><td>Randomly flip images. "horizontal" is almost always safe. Vertical only for satellite/medical.</td></tr>
+        <tr><td class="param-name">RandomRotation</td><td><code>factor=0.1</code> (fraction of 2π), <code>fill_mode="reflect"/"wrap"/"constant"</code></td><td>Rotate by random angle up to factor×360°. factor=0.1 = ±36°.</td></tr>
+        <tr><td class="param-name">RandomZoom</td><td><code>height_factor=0.1, width_factor=None</code></td><td>Randomly zoom in or out. Negative values = zoom in, positive = zoom out.</td></tr>
+        <tr><td class="param-name">RandomTranslation</td><td><code>height_factor, width_factor, fill_mode</code></td><td>Shift image up/down/left/right randomly. Helps with off-center objects.</td></tr>
+        <tr><td class="param-name">RandomContrast</td><td><code>factor=0.2</code></td><td>Randomly adjust contrast: contrast_factor ∈ [1-f, 1+f].</td></tr>
+        <tr><td class="param-name">RandomBrightness</td><td><code>factor=0.2, value_range=(0,1)</code></td><td>Add random brightness offset. value_range should match your image normalization.</td></tr>
+        <tr><td class="param-name">RandomCrop</td><td><code>height, width</code></td><td>Crop to fixed size at random location. Good for images larger than model input.</td></tr>
+        <tr><td class="param-name">Rescaling</td><td><code>scale=1/255., offset=0.0</code></td><td>Normalize pixel values. scale=1/255 maps [0,255]→[0,1]. offset=-1 with scale=1/127.5 → [-1,1].</td></tr>
+        <tr><td class="param-name">RandomCutout</td><td><code>height_factor, width_factor</code></td><td>Zero out random rectangular patches. Strong regularization.</td></tr>
+        <tr><td class="param-name">MixUp / CutMix</td><td>via custom layer</td><td>Advanced: blend two images and their labels. State-of-the-art for ImageNet training.</td></tr>
+      </table>
+    </div>
+    <pre><code><span class="cm"># ── Augmentation as part of model (best practice) ─────</span>
+data_augmentation = keras.<span class="fn">Sequential</span>([
+    keras.layers.<span class="fn">RandomFlip</span>(<span class="st">"horizontal"</span>),
+    keras.layers.<span class="fn">RandomRotation</span>(<span class="nm">0.05</span>),
+    keras.layers.<span class="fn">RandomZoom</span>(<span class="nm">0.1</span>),
+    keras.layers.<span class="fn">RandomContrast</span>(<span class="nm">0.1</span>),
+], name=<span class="st">"augmentation"</span>)
+
+<span class="cm"># These layers are ONLY active during training=True</span>
+inputs = keras.<span class="fn">Input</span>((<span class="nm">224</span>, <span class="nm">224</span>, <span class="nm">3</span>))
+x = data_augmentation(inputs, training=<span class="kw">True</span>)  <span class="cm"># augment on GPU</span>
+x = keras.layers.<span class="fn">Rescaling</span>(<span class="nm">1.</span>/<span class="nm">255</span>)(x)
+outputs = base_model(x)
+
+<span class="cm"># Alternative: augment in tf.data pipeline (CPU)</span>
+train_ds = train_ds.<span class="fn">map</span>(
+    <span class="kw">lambda</span> x, y: (data_augmentation(x, training=<span class="kw">True</span>), y),
+    num_parallel_calls=tf.data.AUTOTUNE
+)</code></pre>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     QUICK REFERENCE (existing) + TF HUB
+═══════════════════════════════════════════ -->
+<div class="chapter-divider"><span>⬡ Chapter 12 — TF Hub &amp; Deployment</span></div>
+
+<div class="section" id="tfhub">
+  <div class="sec-num">CONCEPT 22 + 24</div>
+  <div class="sec-title">TF Hub <em>&amp; TFLite</em></div>
+
+  <div class="two-col">
+    <div class="box">
+      <div class="box-title" style="color:var(--B)">TensorFlow Hub</div>
+      <div class="sec-desc" style="margin-bottom:16px;">Pretrained model components from Google and the community. Drop-in Keras layers for BERT, image classifiers, text embeddings, and more.</div>
+      <pre><code><span class="kw">import</span> tensorflow_hub <span class="kw">as</span> hub
+
+<span class="cm"># ── Image feature extractor ───────────────────</span>
+feature_extractor = hub.<span class="fn">KerasLayer</span>(
+    <span class="st">"https://tfhub.dev/google/efficientnet/b0/feature-vector/1"</span>,
+    input_shape=(<span class="nm">224</span>, <span class="nm">224</span>, <span class="nm">3</span>),
+    trainable=<span class="kw">False</span>    <span class="cm"># freeze hub layer</span>
+)
+
+model = keras.<span class="fn">Sequential</span>([
+    feature_extractor,
+    keras.layers.<span class="fn">Dense</span>(<span class="nm">5</span>, activation=<span class="st">"softmax"</span>)
+])
+
+<span class="cm"># ── BERT text encoder ─────────────────────────</span>
+bert_preprocess = hub.<span class="fn">KerasLayer</span>(<span class="st">"https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3"</span>)
+bert_encoder    = hub.<span class="fn">KerasLayer</span>(<span class="st">"https://tfhub.dev/tensorflow/bert_en_uncased_L-12_H-768_A-12/4"</span>)
+
+text_input = keras.<span class="fn">Input</span>(shape=(), dtype=tf.string)
+preprocessed = bert_preprocess(text_input)
+outputs = bert_encoder(preprocessed)
+pooled = outputs[<span class="st">"pooled_output"</span>]   <span class="cm"># (batch, 768)</span></code></pre>
+    </div>
+    <div class="box">
+      <div class="box-title" style="color:var(--A)">TFLite Conversion</div>
+      <div class="sec-desc" style="margin-bottom:16px;">Convert trained models to run on mobile/edge devices. TFLite is optimized for low latency and small binary size.</div>
+      <table class="param-table">
+        <tr><th>Option</th><th>Size</th><th>Accuracy</th><th>Use Case</th></tr>
+        <tr><td class="param-name">No quantization</td><td>float32</td><td>Full</td><td>Desktop/cloud deployment</td></tr>
+        <tr><td class="param-name">Dynamic range</td><td>4× smaller</td><td>~Same</td><td>Quick mobile deploy</td></tr>
+        <tr><td class="param-name">Full int8</td><td>4× smaller</td><td>Slight drop</td><td>Microcontrollers, edge</td></tr>
+        <tr><td class="param-name">float16</td><td>2× smaller</td><td>~Same</td><td>GPU-accelerated mobile</td></tr>
+      </table>
+      <pre style="margin-top:12px;"><code><span class="cm"># ── Save → Convert → Quantize → Deploy ───────</span>
+model.<span class="fn">save</span>(<span class="st">"my_model.keras"</span>)
+
+converter = tf.lite.<span class="fn">TFLiteConverter</span>.<span class="fn">from_keras_model</span>(model)
+<span class="cm"># Optional: enable quantization</span>
+converter.optimizations = [tf.lite.Optimize.DEFAULT]
+converter.target_spec.supported_types = [tf.float16]
+
+tflite_model = converter.<span class="fn">convert</span>()
+<span class="kw">with</span> <span class="fn">open</span>(<span class="st">"model.tflite"</span>, <span class="st">"wb"</span>) <span class="kw">as</span> f:
+    f.<span class="fn">write</span>(tflite_model)
+
+<span class="cm"># ── Run inference on device ───────────────────</span>
+interpreter = tf.lite.<span class="fn">Interpreter</span>(model_path=<span class="st">"model.tflite"</span>)
+interpreter.<span class="fn">allocate_tensors</span>()
+input_details  = interpreter.<span class="fn">get_input_details</span>()
+output_details = interpreter.<span class="fn">get_output_details</span>()
+interpreter.<span class="fn">set_tensor</span>(input_details[<span class="nm">0</span>][<span class="st">'index'</span>], input_data)
+interpreter.<span class="fn">invoke</span>()
+output = interpreter.<span class="fn">get_tensor</span>(output_details[<span class="nm">0</span>][<span class="st">'index'</span>])</code></pre>
+    </div>
+  </div>
+</div>
+
+<div class="chapter-divider"><span>⬡ Quick Reference Card</span></div>
+
+<div class="section">
+  <div class="sec-num">SUMMARY</div>
+  <div class="sec-title">The <em>Cheat Sheet</em></div>
+
+  <div class="three-col">
+    <div class="box">
+      <div class="box-title" style="color:var(--A)">Initialization Guide</div>
+      <table class="param-table">
+        <tr><th>Situation</th><th>Use</th></tr>
+        <tr><td>ReLU hidden layers</td><td class="tok-cell">he_normal</td></tr>
+        <tr><td>Sigmoid / Tanh</td><td class="tok-cell">glorot_uniform</td></tr>
+        <tr><td>LSTM gates</td><td class="tok-cell">glorot_uniform</td></tr>
+        <tr><td>Output layer bias</td><td class="tok-cell">zeros</td></tr>
+        <tr><td>Attention projections</td><td class="tok-cell">glorot_uniform</td></tr>
+      </table>
+    </div>
+    <div class="box">
+      <div class="box-title" style="color:var(--B)">Activation Selector</div>
+      <table class="param-table">
+        <tr><th>Task</th><th>Activation</th></tr>
+        <tr><td>Hidden layers</td><td class="tok-cell">relu / gelu</td></tr>
+        <tr><td>Binary output</td><td class="tok-cell">sigmoid</td></tr>
+        <tr><td>Multi-class output</td><td class="tok-cell">softmax</td></tr>
+        <tr><td>Transformer blocks</td><td class="tok-cell">gelu</td></tr>
+        <tr><td>Regression output</td><td class="tok-cell">None (linear)</td></tr>
+      </table>
+    </div>
+    <div class="box">
+      <div class="box-title" style="color:var(--C)">Loss + Output Pairs</div>
+      <table class="param-table">
+        <tr><th>Problem</th><th>Output + Loss</th></tr>
+        <tr><td>Binary class</td><td class="tok-cell">sigmoid + BCE</td></tr>
+        <tr><td>Multi-class</td><td class="tok-cell">softmax + SparseCCE</td></tr>
+        <tr><td>Regression</td><td class="tok-cell">linear + MSE</td></tr>
+        <tr><td>Language model</td><td class="tok-cell">softmax + SparseCCE</td></tr>
+        <tr><td>Multi-label</td><td class="tok-cell">sigmoid + BCE</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="callout co-tip" style="margin-top:24px;">
+    <div class="callout-icon">🚀</div>
+    <div class="callout-text"><b>TensorFlow Learning Path:</b> Start with tf.constant → tf.Variable → GradientTape → Sequential model → compile()+fit() → tf.data pipeline → Functional API → Custom loops → Transformers. Each concept builds on the previous.</div>
+  </div>
+</div>
+
+<footer style="border-top:1px solid var(--border);padding:40px 24px;text-align:center;background:var(--bg2);">
+  <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink3);">
+    ⚡ TensorFlow &amp; Keras — Complete Visual Guide · Beginner to Advanced
+  </div>
+</footer>
+
+<script>
+// ── Tensor Demo ──────────────────────────────────
+function setTensorDemo(type, btn) {
+  document.querySelectorAll('#tensor-demo .demo-btn').forEach(b => b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  const out = document.getElementById('tensor-out');
+  const demos = {
+    scalar: `<b style="color:var(--A)">tf.constant(42)</b>\n\nshape  = ()      ← zero dimensions\nrank   = 0\ndtype  = int32\nsize   = 1\nvalue  = 42`,
+    vector: `<b style="color:var(--B)">tf.constant([1.0, 2.5, 3.7])</b>\n\nshape  = (3,)    ← 1 dimension, 3 elements\nrank   = 1\ndtype  = float32\nsize   = 3\nvalue  = [1.0  2.5  3.7]`,
+    matrix: `<b style="color:var(--C)">tf.constant([[1,2,3],[4,5,6]])</b>\n\nshape  = (2, 3)  ← 2 rows × 3 cols\nrank   = 2\ndtype  = int32\nsize   = 6\nvalue  =\n[[1  2  3]\n [4  5  6]]`,
+    image: `<b style="color:var(--E)">tf.zeros([1, 224, 224, 3])</b>\n\nshape  = (1, 224, 224, 3)\n         ↑   ↑    ↑   ↑\n       batch H    W  channels (RGB)\nrank   = 4\ndtype  = float32\nsize   = 150,528 elements`,
+  };
+  out.innerHTML = `<pre style="margin:0;background:none;border:none;padding:0;font-size:11px;">${demos[type]}</pre>`;
+}
+const firstTensorBtn = document.querySelector('#tensor-demo .demo-btn');
+setTensorDemo('scalar', firstTensorBtn);
+
+// ── Broadcasting Demo ─────────────────────────────
+function setBroadcast(a, b, btn) {
+  document.querySelectorAll('#broadcast-demo .demo-btn').forEach(bn => bn.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  const out = document.getElementById('broadcast-out');
+  const rules = {
+    '3,1|1,4': `A shape: (3, 1)  +  B shape: (1, 4)\n\nStep 1 — Align shapes from right:\n         (3, 1)\n         (1, 4)\nStep 2 — Rule: dims must be equal OR one of them is 1\n  dim -2: 3 vs 1 → expand B to 3  ✓\n  dim -1: 1 vs 4 → expand A to 4  ✓\n\nResult shape: (3, 4)  ✅\n\nMnemory: B's columns broadcast across A's rows.`,
+    '5|3,5':   `A shape: (5,)  +  B shape: (3, 5)\n\nStep 1 — Align shapes from right:\n         (   5)\n         (3, 5)\nStep 2 — Prepend 1 to shorter shape:\n         (1, 5)\n         (3, 5)\nStep 3 — 1 vs 3 → expand A to 3  ✓\n\nResult shape: (3, 5)  ✅\n\nA (vector) is broadcast to match all 3 rows of B.`,
+    '1|4':     `A shape: ()  +  B shape: (4,)\n\nScalar broadcasts to any shape!\n\nStep 1 — () becomes (1,) becomes (4,)\n\nResult shape: (4,)  ✅\n\ntf.constant(2.0) * tf.constant([1,2,3,4])\n→ [2.0, 4.0, 6.0, 8.0]`,
+    '3,2|4':   `A shape: (3, 2)  +  B shape: (4,)\n\nStep 1 — Align from right:\n         (3, 2)\n         (   4)\nStep 2 — dim -1: 2 vs 4 → NEITHER is 1!\n\nResult: ❌ IncompatibleShapes Error\n\nTensorFlow raises:\nInvalidArgumentError: Incompatible shapes: [3,2] vs [4]`,
+  };
+  const key = `${a}|${b}`;
+  out.innerHTML = `<pre style="margin:0;background:none;border:none;padding:0;font-size:11px;">${rules[key]||'Select an example above'}</pre>`;
+}
+const firstBcast = document.querySelector('#broadcast-demo .demo-btn');
+setBroadcast('3,1','1,4', firstBcast);
+
+// ── Activation canvas ─────────────────────────────
+const ACT_FNS = [
+  {key:'relu',    label:'ReLU',    fn:x=>Math.max(0,x),                             color:'#c0185a', active:true},
+  {key:'sigmoid', label:'Sigmoid', fn:x=>1/(1+Math.exp(-x)),                        color:'#007a3d', active:true},
+  {key:'tanh',    label:'Tanh',    fn:x=>Math.tanh(x),                              color:'#1a5fd4', active:true},
+  {key:'gelu',    label:'GELU',    fn:x=>x*0.5*(1+Math.tanh(Math.sqrt(2/Math.PI)*(x+0.044715*x**3))), color:'#7b00c8', active:true},
+  {key:'softplus',label:'Softplus',fn:x=>Math.log(1+Math.exp(x)),                   color:'#a07000', active:false},
+  {key:'leaky',   label:'LeakyReLU',fn:x=>x>=0?x:0.1*x,                            color:'#0e7490', active:false},
+  {key:'swish',   label:'Swish',   fn:x=>x/(1+Math.exp(-x)),                        color:'#b45309', active:false},
+];
+
+function buildActBtns() {
+  const el = document.getElementById('act-btns');
+  if(!el) return;
+  el.innerHTML = ACT_FNS.map(f=>`
+    <button class="fn-btn ${f.active?'active':''}" id="abtn-${f.key}"
+      style="color:${f.color};${f.active?`background:${f.color};color:white;`:''}"
+      onclick="toggleAct('${f.key}')">
+      ${f.label}
+    </button>
+  `).join('');
+}
+
+function toggleAct(key) {
+  const f = ACT_FNS.find(x=>x.key===key);
+  if(!f) return;
+  f.active = !f.active;
+  const btn = document.getElementById(`abtn-${key}`);
+  if(btn){ btn.style.background=f.active?f.color:'white'; btn.style.color=f.active?'white':f.color; }
+  drawActCanvas();
+}
+
+function drawActCanvas() {
+  const canvas = document.getElementById('act-canvas');
+  if(!canvas) return;
+  canvas.width = canvas.offsetWidth || 900;
+  const W=canvas.width, H=canvas.height;
+  const ctx = canvas.getContext('2d');
+  const xMin=-4,xMax=4,yMin=-1.5,yMax=2;
+  const pad={top:20,right:80,bottom:28,left:38};
+  const toX=x=>pad.left+(x-xMin)/(xMax-xMin)*(W-pad.left-pad.right);
+  const toY=y=>pad.top+(yMax-y)/(yMax-yMin)*(H-pad.top-pad.bottom);
+
+  ctx.fillStyle='#f8f9fa'; ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle='rgba(0,0,0,.07)'; ctx.lineWidth=1;
+  for(let gx=-4;gx<=4;gx++){ctx.beginPath();ctx.moveTo(toX(gx),pad.top);ctx.lineTo(toX(gx),H-pad.bottom);ctx.stroke();}
+  [-1,0,1,2].forEach(gy=>{ctx.beginPath();ctx.moveTo(pad.left,toY(gy));ctx.lineTo(W-pad.right,toY(gy));ctx.stroke();ctx.fillStyle='#aaa';ctx.font='9px JetBrains Mono';ctx.textAlign='right';ctx.fillText(gy,pad.left-4,toY(gy)+3);});
+  for(let gx=-4;gx<=4;gx++){ctx.fillStyle='#aaa';ctx.font='9px JetBrains Mono';ctx.textAlign='center';ctx.fillText(gx,toX(gx),H-pad.bottom+14);}
+  ctx.strokeStyle='rgba(0,0,0,.25)'; ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(pad.left,toY(0));ctx.lineTo(W-pad.right,toY(0));ctx.stroke();
+  ctx.beginPath();ctx.moveTo(toX(0),pad.top);ctx.lineTo(toX(0),H-pad.bottom);ctx.stroke();
+
+  ACT_FNS.filter(f=>f.active).forEach(({fn,color,label})=>{
+    ctx.beginPath(); ctx.strokeStyle=color; ctx.lineWidth=2.5; ctx.setLineDash([]);
+    let first=true;
+    for(let i=0;i<=600;i++){
+      const x=xMin+(xMax-xMin)*i/600;
+      let y; try{y=fn(x);}catch(e){first=true;continue;}
+      if(!isFinite(y)||isNaN(y)){first=true;continue;}
+      const cy=toY(Math.max(yMin-.5,Math.min(yMax+.5,y)));
+      if(first){ctx.moveTo(toX(x),cy);first=false;}else ctx.lineTo(toX(x),cy);
+    }
+    ctx.stroke();
+    try{
+      const yVal=fn(3.8);
+      const clampY=Math.max(yMin+.1,Math.min(yMax-.1,yVal));
+      ctx.fillStyle=color; ctx.font='bold 10px JetBrains Mono'; ctx.textAlign='left';
+      ctx.fillText(label,toX(4)+4,toY(clampY)+3);
+    }catch(e){}
+  });
+}
+
+buildActBtns();
+drawActCanvas();
+
+// ── LR Schedule Visualizer ────────────────────────
+const LR_SCHEDULES = {
+  cosine: {
+    label: 'Cosine Decay',
+    color: '#1a5fd4',
+    fn: (step, total) => 0.001 * 0.5 * (1 + Math.cos(Math.PI * step / total)),
+    desc: '📉 <b>CosineDecay</b> — Smoothly decreases LR following a half-cosine curve. Peak at step 0, decays to ~0 (controlled by alpha). Standard for most tasks. Set warmup_steps for transformer-style training.',
+  },
+  warmup_cosine: {
+    label: 'Warmup + Cosine',
+    color: '#007a3d',
+    fn: (step, total) => {
+      const warmup = total * 0.1;
+      if (step < warmup) return (step / warmup) * 0.001;
+      return 0.001 * 0.5 * (1 + Math.cos(Math.PI * (step - warmup) / (total - warmup)));
+    },
+    desc: '🔥 <b>Warmup + CosineDecay</b> — Linear warmup for first 10% of steps, then cosine decay. Standard for all Transformer models (BERT, GPT, ViT). Prevents large gradient updates with cold weights.',
+  },
+  exp: {
+    label: 'Exponential Decay',
+    color: '#c0185a',
+    fn: (step, total) => 0.001 * Math.pow(0.1, step / total),
+    desc: '📊 <b>ExponentialDecay</b> — LR × decay_rate^(step/decay_steps). Fast initial decay then slow tail. Use staircase=True for step-function decay (discrete drops at fixed intervals).',
+  },
+  step: {
+    label: 'Step Decay',
+    color: '#a07000',
+    fn: (step, total) => {
+      const drops = Math.floor(step / (total / 5));
+      return 0.001 * Math.pow(0.5, drops);
+    },
+    desc: '📶 <b>Step Decay</b> — Drop LR by factor at fixed intervals (every N epochs). Simple and intuitive. Implemented via LearningRateScheduler callback: lambda epoch, lr: lr * 0.5 if epoch % 20 == 0 else lr.',
+  },
+  cyclic: {
+    label: 'Cyclic LR',
+    color: '#7b00c8',
+    fn: (step, total) => {
+      const period = total / 4;
+      const cycle = Math.floor(step / period);
+      const t = (step - cycle * period) / period;
+      return t < 0.5
+        ? 0.0001 + (0.001 - 0.0001) * 2 * t
+        : 0.001 - (0.001 - 0.0001) * 2 * (t - 0.5);
+    },
+    desc: '🔄 <b>Cyclic Learning Rate</b> — Oscillates between min_lr and max_lr. Can help escape local minima. Implemented with CyclicLR or LearningRateScheduler. Use triangular (shown) or cosine annealing with warm restarts.',
+  },
+};
+
+let activeLRSchedule = 'cosine';
+
+function setLRSchedule(key, btn) {
+  activeLRSchedule = key;
+  document.querySelectorAll('#lr-btns .fn-btn').forEach(b => {
+    b.classList.remove('active');
+    b.style.background = 'white';
+    b.style.color = b.style.borderColor || '#888';
+  });
+  if (btn) {
+    btn.classList.add('active');
+    const col = LR_SCHEDULES[key].color;
+    btn.style.background = col;
+    btn.style.color = 'white';
+  }
+  drawLRCanvas();
+  const desc = LR_SCHEDULES[key].desc;
+  document.getElementById('lr-desc').innerHTML = `<span style="font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.9;color:var(--ink2);">${desc}</span>`;
+}
+
+function drawLRCanvas() {
+  const canvas = document.getElementById('lr-canvas');
+  if (!canvas) return;
+  canvas.width = canvas.offsetWidth || 900;
+  const W = canvas.width, H = canvas.height;
+  const ctx = canvas.getContext('2d');
+  const sched = LR_SCHEDULES[activeLRSchedule];
+  const STEPS = 200;
+  const values = Array.from({length: STEPS + 1}, (_, i) => sched.fn(i, STEPS));
+  const maxV = Math.max(...values);
+  const pad = {top: 16, right: 20, bottom: 28, left: 52};
+  const toX = i => pad.left + (i / STEPS) * (W - pad.left - pad.right);
+  const toY = v => pad.top + (1 - v / maxV) * (H - pad.top - pad.bottom);
+
+  ctx.fillStyle = '#f8f9fa'; ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = 'rgba(0,0,0,.07)'; ctx.lineWidth = 1;
+  [0, 0.25, 0.5, 0.75, 1.0].forEach(frac => {
+    const y = toY(frac * maxV);
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
+    ctx.fillStyle = '#aaa'; ctx.font = '9px JetBrains Mono'; ctx.textAlign = 'right';
+    ctx.fillText((frac * maxV * 1000).toFixed(1) + 'e-3', pad.left - 4, y + 3);
+  });
+  [0, 25, 50, 75, 100].forEach(pct => {
+    const x = toX(pct * 2);
+    ctx.beginPath(); ctx.moveTo(x, pad.top); ctx.lineTo(x, H - pad.bottom); ctx.stroke();
+    ctx.fillStyle = '#aaa'; ctx.font = '9px JetBrains Mono'; ctx.textAlign = 'center';
+    ctx.fillText(pct + '%', x, H - pad.bottom + 14);
+  });
+
+  ctx.beginPath(); ctx.strokeStyle = sched.color; ctx.lineWidth = 2.5; ctx.setLineDash([]);
+  values.forEach((v, i) => {
+    const x = toX(i), y = toY(v);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+
+  ctx.fillStyle = sched.color; ctx.font = 'bold 10px JetBrains Mono'; ctx.textAlign = 'left';
+  ctx.fillText(sched.label, toX(5), toY(values[5]) - 6);
+}
+
+// Init LR schedule
+const firstLRBtn = document.querySelector('#lr-btns .fn-btn');
+setLRSchedule('cosine', firstLRBtn);
+
+window.addEventListener('resize', () => { drawActCanvas(); drawLRCanvas(); });
+</script>
+</body>
+</html>
