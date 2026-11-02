@@ -1,0 +1,772 @@
+{
+  "id": "py-sets-tuples",
+  "title": "Sets & Tuples",
+  "icon": "🎲",
+  "level": "beginner",
+  "order": 50,
+  "conceptRef": "python-basics.html#s5",
+  "blurb": "Dedupe into sets, read overlap off with algebra, and count pairs by counting the past.",
+  "cells": [
+    {
+      "type": "concept",
+      "title": "Sets answer membership questions",
+      "body": "<p>A set stores each distinct element once and answers 'is this in there?' in one near-constant step — while the same question against a list walks it. That makes sets the natural tool whenever a question is about <b>overlap between collections</b>: who is on both rosters, what is missing from stock, which ids repeat.</p><p>Converting a list to a set is also a one-step deduplication, so the standard pipeline is: deduplicate each collection into a set, then read the answer off with set algebra — intersection for 'both', symmetric difference for 'exactly one', union for 'either'. Building the sets is the honest work; the algebra afterwards is one operator character.</p>",
+      "demo": {
+        "code": "sat = {'ada', 'bo', 'cy'}\nsun = {'bo', 'cy', 'dee'}\nprint(sat & sun, sat | sun, sat ^ sun)\nprint('ada' in sat, 'dee' in sat)\nprint(sorted(sat | sun))"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "Tuples are fixed-shape records",
+      "body": "<p>A tuple is an immutable sequence, and that immutability is what lets tuples be dict keys and what gives them the comparison semantics you want for records: tuples compare <b>lexicographically</b>, so <code>(2, 'bo')</code> sorts before <code>(3, 'ada')</code> — first by count, then by name, without writing any comparator at all.</p><p>Whenever a value has a fixed shape (an index pair, a count plus a label, x-y coordinates), a tuple says so at the type level: readers know it will not grow, and returning it from a function gives the caller a stable shape to unpack.</p>",
+      "demo": {
+        "code": "pairs = [(3, 'ada'), (5, 'bo'), (3, 'cy')]\npairs.sort()\nprint(pairs)\nprint(max(pairs))\nprint(pairs[0][1], len(pairs[0]))"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-sets-tuples-1",
+        "title": "One runner, one spelling",
+        "difficulty": "easy",
+        "tags": [
+          "sets",
+          "normalization"
+        ],
+        "statement": "<p>A race registration desk typed names with inconsistent capitalization: 'Ada', 'ADA' and 'ada' are the same runner. The start list must contain each runner <b>once</b>, spelled the way the name <b>first</b> appeared, in first-registration order.</p><p>Implement <code>register_start_list(names)</code>: return the deduplicated start list (case-insensitive comparison, first-seen spelling kept).</p>",
+        "constraints": [
+          "0 <= len(names) <= 10,000",
+          "names are non-empty strings of letters and spaces"
+        ],
+        "examples": [
+          {
+            "call": "register_start_list(['Ada', 'BO', 'ada', 'bo', 'Cy'])",
+            "why": "'ada' and 'bo' collapse into earlier spellings; 'Cy' registers once",
+            "returns": "['Ada', 'BO', 'Cy']"
+          },
+          {
+            "call": "register_start_list(['ann', 'bob'])",
+            "why": "different runners, no folding needed",
+            "returns": "['ann', 'bob']"
+          }
+        ],
+        "starter": "def register_start_list(names):\n    \"\"\"Deduplicate case-insensitively; keep first spelling.\"\"\"\n    pass\n",
+        "func": "register_start_list",
+        "tests": [
+          {
+            "label": "case folds together",
+            "args": [
+              [
+                "Ada",
+                "BO",
+                "ada",
+                "bo",
+                "Cy"
+              ]
+            ],
+            "expected": [
+              "Ada",
+              "BO",
+              "Cy"
+            ],
+            "hidden": false
+          },
+          {
+            "label": "no folding needed",
+            "args": [
+              [
+                "ann",
+                "bob"
+              ]
+            ],
+            "expected": [
+              "ann",
+              "bob"
+            ],
+            "hidden": false
+          },
+          {
+            "label": "empty desk",
+            "args": [
+              []
+            ],
+            "expected": [],
+            "hidden": true
+          },
+          {
+            "label": "one runner four spellings",
+            "args": [
+              [
+                "kim",
+                "KIM",
+                "Kim",
+                "kIm"
+              ]
+            ],
+            "expected": [
+              "kim"
+            ],
+            "hidden": true
+          },
+          {
+            "label": "distinct runners",
+            "args": [
+              [
+                "ann",
+                "anna"
+              ]
+            ],
+            "expected": [
+              "ann",
+              "anna"
+            ],
+            "hidden": true
+          },
+          {
+            "label": "cities with spaces",
+            "args": [
+              [
+                "New York",
+                "new york",
+                "Boston"
+              ]
+            ],
+            "expected": [
+              "New York",
+              "Boston"
+            ],
+            "hidden": true
+          },
+          {
+            "label": "single name",
+            "args": [
+              [
+                "Zoe"
+              ]
+            ],
+            "expected": [
+              "Zoe"
+            ],
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "Comparison must ignore case, but the OUTPUT must keep the first spelling. Which two containers do you need — one for 'seen in any spelling', one for the answer in order?",
+          "Lowercase each name into a seen-set key; append the original spelling to the answer list only when the key is new.",
+          "seen = set(); out = []; for n in names: k = n.lower(); if k not in seen: seen.add(k); out.append(n); return out."
+        ],
+        "reasoning": "<p>Equality here is defined up to case, so the comparison key (<code>n.lower()</code>) and the stored value (the original spelling) must be different things. The set answers 'have I registered this person in ANY spelling?' in one step, while the list preserves both first-seen order and first-seen spelling — the pair of containers splits the two responsibilities. Folding happens at comparison time only; the output never shows the folded form. The transferable pattern: whenever equality should ignore an aspect of the data (case, whitespace, accents), derive a canonical key, dedupe on the key, and keep the original in the ordered result.</p>",
+        "solution": "def register_start_list(names):\n    seen = set()\n    out = []\n    for n in names:\n        key = n.lower()          # canonical comparison key\n        if key not in seen:\n            seen.add(key)\n            out.append(n)        # original spelling kept\n    return out\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-sets-tuples-2",
+        "title": "Weekend crew algebra",
+        "difficulty": "medium",
+        "tags": [
+          "sets",
+          "algebra"
+        ],
+        "statement": "<p>A food bank runs a Saturday crew and a Sunday crew. Each roster is a list of volunteer names, and a name can appear twice within one day (the roster counts a volunteer once per day it appears on). For the newsletter the coordinator needs three sets: who worked <b>both</b> days, who worked <b>exactly one</b> day, and <b>everyone</b> who helped that weekend.</p><p>Implement <code>crew_summary(saturday, sunday)</code>: return a list of three sets <code>[both, exactly_one, everyone]</code>, in that order.</p>",
+        "constraints": [
+          "0 <= len(saturday), len(sunday) <= 10,000",
+          "names are non-empty lowercase strings",
+          "either roster may be empty"
+        ],
+        "examples": [
+          {
+            "call": "crew_summary(['ada', 'bo', 'cy'], ['bo', 'cy', 'dee'])",
+            "why": "bo and cy worked both days; ada and dee exactly one; all five helped",
+            "returns": "[{'bo', 'cy'}, {'ada', 'dee'}, {'bo', 'ada', 'dee', 'cy'}]"
+          },
+          {
+            "call": "crew_summary(['ann'], ['bob'])",
+            "why": "disjoint one-day crews: nobody worked both, so 'both' is the empty set",
+            "returns": "[set(), {'ann', 'bob'}, {'ann', 'bob'}]"
+          }
+        ],
+        "starter": "def crew_summary(saturday, sunday):\n    \"\"\"Return [both, exactly_one, everyone] as sets.\"\"\"\n    pass\n",
+        "func": "crew_summary",
+        "tests": [
+          {
+            "label": "full mix",
+            "args": [
+              [
+                "ada",
+                "bo",
+                "cy"
+              ],
+              [
+                "bo",
+                "cy",
+                "dee"
+              ]
+            ],
+            "expected": [
+              {
+                "__set__": [
+                  "bo",
+                  "cy"
+                ]
+              },
+              {
+                "__set__": [
+                  "ada",
+                  "dee"
+                ]
+              },
+              {
+                "__set__": [
+                  "ada",
+                  "bo",
+                  "cy",
+                  "dee"
+                ]
+              }
+            ],
+            "hidden": false
+          },
+          {
+            "label": "disjoint crews",
+            "args": [
+              [
+                "ann"
+              ],
+              [
+                "bob"
+              ]
+            ],
+            "expected": [
+              {
+                "__set__": []
+              },
+              {
+                "__set__": [
+                  "ann",
+                  "bob"
+                ]
+              },
+              {
+                "__set__": [
+                  "ann",
+                  "bob"
+                ]
+              }
+            ],
+            "hidden": false
+          },
+          {
+            "label": "saturday only",
+            "args": [
+              [
+                "ann",
+                "bob"
+              ],
+              []
+            ],
+            "expected": [
+              {
+                "__set__": []
+              },
+              {
+                "__set__": [
+                  "ann",
+                  "bob"
+                ]
+              },
+              {
+                "__set__": [
+                  "ann",
+                  "bob"
+                ]
+              }
+            ],
+            "hidden": true
+          },
+          {
+            "label": "identical crews",
+            "args": [
+              [
+                "ada",
+                "bo"
+              ],
+              [
+                "ada",
+                "bo"
+              ]
+            ],
+            "expected": [
+              {
+                "__set__": [
+                  "ada",
+                  "bo"
+                ]
+              },
+              {
+                "__set__": []
+              },
+              {
+                "__set__": [
+                  "ada",
+                  "bo"
+                ]
+              }
+            ],
+            "hidden": true
+          },
+          {
+            "label": "both empty",
+            "args": [
+              [],
+              []
+            ],
+            "expected": [
+              {
+                "__set__": []
+              },
+              {
+                "__set__": []
+              },
+              {
+                "__set__": []
+              }
+            ],
+            "hidden": true
+          },
+          {
+            "label": "duplicates within a day",
+            "args": [
+              [
+                "ada",
+                "ada",
+                "bo"
+              ],
+              [
+                "bo",
+                "bo",
+                "cy"
+              ]
+            ],
+            "expected": [
+              {
+                "__set__": [
+                  "bo"
+                ]
+              },
+              {
+                "__set__": [
+                  "ada",
+                  "cy"
+                ]
+              },
+              {
+                "__set__": [
+                  "ada",
+                  "bo",
+                  "cy"
+                ]
+              }
+            ],
+            "hidden": true
+          },
+          {
+            "label": "one name each, same person",
+            "args": [
+              [
+                "x"
+              ],
+              [
+                "x"
+              ]
+            ],
+            "expected": [
+              {
+                "__set__": [
+                  "x"
+                ]
+              },
+              {
+                "__set__": []
+              },
+              {
+                "__set__": [
+                  "x"
+                ]
+              }
+            ],
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "Each roster must count a volunteer once — what does converting a list to a set do for you before any comparison?",
+          "set(saturday) and set(sunday) deduplicate; then the three answers are exactly the intersection, the symmetric difference, and the union.",
+          "a, b = set(saturday), set(sunday); return [a & b, a ^ b, a | b]. An empty roster becomes the empty set, so every edge case falls out."
+        ],
+        "reasoning": "<p>Set construction already performs the per-day deduplication, so the newsletter numbers become the three classic set operations: intersection ('both'), symmetric difference ('exactly one'), union ('everyone'). Expressing them as <code>&amp;</code>, <code>^</code>, <code>|</code> names the intent in the code, and each operation is near-linear in the roster sizes. The empty-roster cases need no special handling — the empty set is the identity for all three operations here. The transferable habit: when a question is about membership overlap between collections, deduplicate into sets first and read the answer off with set algebra instead of nested loops counting appearances.</p>",
+        "solution": "def crew_summary(saturday, sunday):\n    a, b = set(saturday), set(sunday)\n    return [a & b, a ^ b, a | b]\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-sets-tuples-3",
+        "title": "Morning stock report",
+        "difficulty": "medium",
+        "tags": [
+          "sets",
+          "counting"
+        ],
+        "statement": "<p>A repair shop labels each shelf bin with a part name; the same part can sit in several bins, so the stock list repeats names. The technician works through a checklist (parts also may repeat — one part can serve several jobs). The morning report needs two things: how many <b>distinct</b> checklist items are already on the shelf, and the sorted list of <b>distinct</b> checklist items that are missing.</p><p>Implement <code>stock_report(stock, checklist)</code>: return the pair as a tuple <code>(ok_count, missing_sorted)</code>.</p>",
+        "constraints": [
+          "0 <= len(stock), len(checklist) <= 10,000",
+          "part names are non-empty lowercase words"
+        ],
+        "examples": [
+          {
+            "call": "stock_report(['bolt', 'nut', 'bolt', 'washer'], ['bolt', 'bolt', 'glue', 'nut'])",
+            "why": "distinct checklist items are bolt, glue, nut; bolt and nut are shelved (2 ok); glue is the only missing one",
+            "returns": "(2, ['glue'])"
+          },
+          {
+            "call": "stock_report([], ['bolt', 'glue'])",
+            "why": "an empty shelf means every distinct checklist item is missing, in sorted order",
+            "returns": "(0, ['bolt', 'glue'])"
+          }
+        ],
+        "starter": "def stock_report(stock, checklist):\n    \"\"\"Return (ok_count, missing_sorted) from the two lists.\"\"\"\n    pass\n",
+        "func": "stock_report",
+        "tests": [
+          {
+            "label": "mixed stock",
+            "args": [
+              [
+                "bolt",
+                "nut",
+                "bolt",
+                "washer"
+              ],
+              [
+                "bolt",
+                "bolt",
+                "glue",
+                "nut"
+              ]
+            ],
+            "expected": {
+              "__tuple__": [
+                2,
+                [
+                  "glue"
+                ]
+              ]
+            },
+            "hidden": false
+          },
+          {
+            "label": "everything missing",
+            "args": [
+              [],
+              [
+                "bolt",
+                "glue"
+              ]
+            ],
+            "expected": {
+              "__tuple__": [
+                0,
+                [
+                  "bolt",
+                  "glue"
+                ]
+              ]
+            },
+            "hidden": false
+          },
+          {
+            "label": "everything stocked",
+            "args": [
+              [
+                "a",
+                "b"
+              ],
+              [
+                "b",
+                "a",
+                "b"
+              ]
+            ],
+            "expected": {
+              "__tuple__": [
+                2,
+                []
+              ]
+            },
+            "hidden": true
+          },
+          {
+            "label": "empty checklist",
+            "args": [
+              [
+                "a"
+              ],
+              []
+            ],
+            "expected": {
+              "__tuple__": [
+                0,
+                []
+              ]
+            },
+            "hidden": true
+          },
+          {
+            "label": "both empty",
+            "args": [
+              [],
+              []
+            ],
+            "expected": {
+              "__tuple__": [
+                0,
+                []
+              ]
+            },
+            "hidden": true
+          },
+          {
+            "label": "missing list is sorted",
+            "args": [
+              [
+                "nut"
+              ],
+              [
+                "zeta",
+                "alpha",
+                "zeta"
+              ]
+            ],
+            "expected": {
+              "__tuple__": [
+                0,
+                [
+                  "alpha",
+                  "zeta"
+                ]
+              ]
+            },
+            "hidden": true
+          },
+          {
+            "label": "extra stock is ignored",
+            "args": [
+              [
+                "x",
+                "y",
+                "z"
+              ],
+              [
+                "x"
+              ]
+            ],
+            "expected": {
+              "__tuple__": [
+                1,
+                []
+              ]
+            },
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "Both lists can repeat. What single conversion makes 'which distinct items' a one-step question for each list?",
+          "Turn both lists into sets; then the stocked distinct items are the intersection's size, and the missing ones are the difference, sorted.",
+          "have = set(stock); wanted = set(checklist); return (len(wanted & have), sorted(wanted - have)). Empty lists become empty sets and the formulas still hold."
+        ],
+        "reasoning": "<p>Converting each list to a set is the deduplication step, and after it the report is pure set algebra: the distinct checklist items already shelved are <code>wanted &amp; have</code> (its size is the count), and the missing ones are <code>wanted - have</code>. Sorting the difference turns a set — unordered — into a deterministic list, which is why the report is reproducible even though sets iterate in no guaranteed order. The count cannot be computed from raw list occurrences, which would double-count repeated checklist entries. The transferable habit: when a question asks 'how many distinct X satisfy Y', deduplicate first, then intersect.</p>",
+        "solution": "def stock_report(stock, checklist):\n    have = set(stock)\n    wanted = set(checklist)\n    return (len(wanted & have),\n            sorted(wanted - have))   # sorted: deterministic report\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-sets-tuples-4",
+        "title": "Safe mixing pairs, with a budget",
+        "difficulty": "hard",
+        "tags": [
+          "counting",
+          "efficiency"
+        ],
+        "statement": "<p>A chemistry store lists every bottle's concentration (an integer; concentrations repeat across bottles). A reaction requires exactly two bottles whose concentrations sum to <code>target</code>. The safety office does not want a particular pair — it wants the <b>number of ways</b> to pick such a pair of bottles: two different positions always count as a different way, even when their concentrations are equal.</p><p>Implement <code>count_pairs(concentrations, target)</code>: return the number of index pairs <code>(i, j)</code> with <code>i &lt; j</code> and <code>concentrations[i] + concentrations[j] == target</code>.</p><p>The list arrives as an <code>OpCountList</code>: each element inspection costs 1, and your algorithm may inspect at most <b>2.5 × len(concentrations)</b> elements. Comparing every bottle with every later bottle is quadratic and will blow the budget on the large hidden test.</p>",
+        "constraints": [
+          "0 <= len(concentrations) <= 150,000",
+          "-1,000 <= each concentration <= 1,000",
+          "inspection budget: at most 2.5 × len(concentrations) element inspections (len() is free)"
+        ],
+        "examples": [
+          {
+            "call": "count_pairs([3, 3, 3], 6)",
+            "why": "the three pairs of positions (0,1), (0,2), (1,2) each mix two 3-bottles to 6",
+            "returns": "3"
+          },
+          {
+            "call": "count_pairs([1, 2, 3, 4], 5)",
+            "why": "(0,3): 1+4 and (1,2): 2+3 — two ways",
+            "returns": "2"
+          }
+        ],
+        "starter": "def count_pairs(concentrations, target):\n    \"\"\"Count index pairs (i < j) whose concentrations sum to target.\"\"\"\n    pass\n",
+        "func": "count_pairs",
+        "tests": [
+          {
+            "label": "three equal bottles",
+            "args": [
+              {
+                "__opcount__": {
+                  "data": [
+                    3,
+                    3,
+                    3
+                  ]
+                }
+              },
+              6
+            ],
+            "expected": 3,
+            "hidden": false
+          },
+          {
+            "label": "two ways",
+            "args": [
+              {
+                "__opcount__": {
+                  "data": [
+                    1,
+                    2,
+                    3,
+                    4
+                  ]
+                }
+              },
+              5
+            ],
+            "expected": 2,
+            "hidden": false
+          },
+          {
+            "label": "no bottles",
+            "args": [
+              {
+                "__opcount__": {
+                  "data": []
+                }
+              },
+              7
+            ],
+            "expected": 0,
+            "hidden": true
+          },
+          {
+            "label": "four zeros on target zero",
+            "args": [
+              {
+                "__opcount__": {
+                  "data": [
+                    0,
+                    0,
+                    0,
+                    0
+                  ]
+                }
+              },
+              0
+            ],
+            "expected": 6,
+            "hidden": true
+          },
+          {
+            "label": "negatives allowed",
+            "args": [
+              {
+                "__opcount__": {
+                  "data": [
+                    -2,
+                    2,
+                    -2,
+                    2
+                  ]
+                }
+              },
+              0
+            ],
+            "expected": 4,
+            "hidden": true
+          },
+          {
+            "label": "pair of equal values only",
+            "args": [
+              {
+                "__opcount__": {
+                  "data": [
+                    5,
+                    5
+                  ]
+                }
+              },
+              10
+            ],
+            "expected": 1,
+            "hidden": true
+          },
+          {
+            "label": "no matches at all",
+            "args": [
+              {
+                "__opcount__": {
+                  "data": [
+                    1,
+                    2,
+                    3
+                  ]
+                }
+              },
+              100
+            ],
+            "expected": 0,
+            "hidden": true
+          },
+          {
+            "label": "budget: 12k bottles",
+            "hidden": true,
+            "args": [
+              {
+                "__opcount__": {
+                  "data": {
+                    "__repeat__": {
+                      "item": [
+                        2,
+                        4
+                      ],
+                      "times": 6000
+                    }
+                  }
+                }
+              },
+              6
+            ],
+            "expected": 36000000,
+            "max_ops": 30000
+          }
+        ],
+        "hints": [
+          "When you stand at bottle j, the pairs it completes are exactly the earlier bottles holding target minus its value. What table would tell you HOW MANY such earlier bottles exist?",
+          "Keep a dict value -> how many bottles with that value are already behind you. At each bottle x: add seen.get(target - x, 0) to the total, then increment seen[x].",
+          "seen = {}; total = 0; for x in concentrations: total += seen.get(target - x, 0); seen[x] = seen.get(x, 0) + 1; return total. One pass is about len(concentrations) inspections — inside the 2.5x budget."
+        ],
+        "reasoning": "<p>Split the count by the second bottle: the pairs completed at position j are exactly the earlier bottles whose value is <code>target - x</code>, so a running table 'value → how many bottles with that value have I passed' answers each j in one lookup, and the running total sums them all. Equal concentrations are why the table stores <i>counts</i>, not just presence: three 3-bottles against target 6 contribute 0 + 1 + 2 = 3 pairs, the choose-two of three positions. The order of the two dict operations matters — read the partner count <i>before</i> registering the current bottle, or a bottle could pair with itself. The transferable shape: to count matches without enumerating them, maintain counts of the past, one pass, total at the end.</p>",
+        "solution": "def count_pairs(concentrations, target):\n    seen = {}                       # value -> bottles passed so far\n    total = 0\n    for x in concentrations:\n        total += seen.get(target - x, 0)   # partners behind me\n        seen[x] = seen.get(x, 0) + 1      # register AFTER counting\n    return total\n"
+      }
+    }
+  ]
+}

@@ -1,0 +1,1809 @@
+{
+  "id": "pd-select",
+  "title": "Selecting & Filtering",
+  "icon": "🎯",
+  "level": "beginner",
+  "order": 10,
+  "conceptRef": "pandas.html#s5",
+  "blurb": "Filtering is row semantics made executable: decide what each row means, then keep exactly the rows that mean what you want.",
+  "cells": [
+    {
+      "type": "concept",
+      "title": "A boolean mask is a question asked of every row",
+      "body": "<p>Filtering a table starts with a question that has a yes/no answer <b>per row</b>: <i>is this order above 150?</i> In pandas you ask the question against a whole column at once — <code>orders[\"amount\"] &gt; 150</code> — and get back a Series of True/False values, one per row, aligned to the table by position. Passing that mask back into the frame with <code>orders[mask]</code> keeps exactly the rows that answered True.</p><p>The habit to build: translate every filter into a per-row question <i>before</i> touching pandas. If you cannot phrase the rule as something each individual row either satisfies or fails, you are not ready to code it. This is what people mean when they say <b>what each row means decides what the operation does</b> — the row is the unit of meaning, and the mask is its cross-examination.</p>",
+      "demo": {
+        "code": "import pandas as pd\n\norders = pd.DataFrame({\n    \"order_id\": [101, 102, 103],\n    \"amount\": [120, 200, 350],\n})\nmask = orders[\"amount\"] > 150\nprint(mask.tolist())\nprint(orders[mask])"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "Combine questions with & and | — and mind the parentheses",
+      "body": "<p>Python's <code>and</code>/<code>or</code> ask \"is this whole object truthy?\" — the wrong question for a column holding a thousand answers. pandas overloads <code>&amp;</code> and <code>|</code> to combine two masks <b>element-wise</b>, and because they bind tighter than comparisons, every comparison needs its own parentheses: <code>(df[\"a\"] &gt; 1) &amp; (df[\"b\"] &lt; 5)</code>. For \"the value is one of these\" reach for <code>.isin([...])</code> instead of a chain of <code>|</code> — it reads like the intent and scales to any list length.</p><p>Filtering also never reorders rows: the survivors keep their original order. That guarantee is what makes \"rows in first-appearance order\" a promise you can write into a spec and keep without an explicit sort.</p>",
+      "demo": {
+        "code": "import pandas as pd\n\nlogs = pd.DataFrame({\n    \"service\": [\"auth\", \"billing\", \"auth\", \"search\"],\n    \"level\": [\"warn\", \"error\", \"error\", \"info\"],\n})\ncore = logs[\"service\"].isin([\"auth\", \"billing\"])\nprint((core & (logs[\"level\"] == \"error\")).tolist())\nprint(logs[core & (logs[\"level\"] == \"error\")])"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "Order is part of the answer, not a detail",
+      "body": "<p>Two tables can hold the same rows and still be <b>different answers</b>, because order is information. When a task says \"the best per student\", a tie between attempts makes \"the best\" ambiguous until you state how ties break. The professional move is to make ordering explicit: <code>sort_values</code> with exact keys and directions, plus a stated tie-break.</p><p>Sorting a frame by group and value — for example <code>sort_values([\"student\", \"score\"], ascending=[True, False])</code> — turns \"rank within group\" questions into <b>positional</b> questions: after that sort, the first row of each student is their best attempt, the second row is their second-best. Ranking becomes row arithmetic, and tie rules become sort rules you can point at.</p>",
+      "demo": {
+        "code": "import pandas as pd\n\nattempts = pd.DataFrame({\n    \"student\": [\"ana\", \"ana\", \"bo\", \"bo\"],\n    \"score\": [7, 9, 8, 8],\n})\nranked = attempts.sort_values(\n    [\"student\", \"score\"], ascending=[True, False]\n)\nprint(ranked)\nprint(ranked.drop_duplicates(\"student\")[[\"student\", \"score\"]])"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "pd-select-1",
+        "title": "Orders above the line",
+        "difficulty": "easy",
+        "tags": [
+          "boolean-masking",
+          "filtering",
+          "column-selection"
+        ],
+        "statement": "<p>A shop reviews its <code>orders</code> table. Each row is one order with columns <code>order_id</code> (int), <code>customer</code> (str) and <code>amount</code> (float).</p><p>Implement <code>big_orders(orders, min_amount)</code> that returns a DataFrame with exactly the columns <code>[\"order_id\", \"amount\"]</code> (in that order) containing the orders whose amount is <b>strictly greater</b> than <code>min_amount</code>. Rows keep the original table order (first-appearance order).</p>",
+        "constraints": [
+          "Return a DataFrame with exactly the columns ['order_id', 'amount'] in that order",
+          "Keep only rows with amount strictly greater than min_amount (equal does not pass)",
+          "Rows appear in the same order as in the input table",
+          "If no order passes, return an empty DataFrame that still has the two columns"
+        ],
+        "examples": [
+          {
+            "call": "big_orders(orders, 150)  # 4-row table with amounts 120, 200, 350, 90",
+            "returns": "DataFrame with columns ['order_id', 'amount'] and two rows: the orders of 200 and 350",
+            "why": "120 and 90 are not strictly greater than 150, so only two rows survive, in their original order"
+          },
+          {
+            "call": "big_orders(orders, 500)  # same 4-row table",
+            "returns": "empty DataFrame with columns ['order_id', 'amount']",
+            "why": "no amount is above 500, so the result keeps the columns but zero rows"
+          }
+        ],
+        "starter": "import pandas as pd\n\ndef big_orders(orders, min_amount):\n    \"\"\"Return the orders with amount strictly greater than min_amount.\n\n    Result is a DataFrame with columns ['order_id', 'amount'],\n    rows in the original table order.\n    \"\"\"\n    pass\n",
+        "func": "big_orders",
+        "tests": [
+          {
+            "label": "two of four pass",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "order_id",
+                    "customer",
+                    "amount"
+                  ],
+                  "rows": [
+                    [
+                      101,
+                      "ana",
+                      120.0
+                    ],
+                    [
+                      102,
+                      "bo",
+                      200.0
+                    ],
+                    [
+                      103,
+                      "cy",
+                      350.0
+                    ],
+                    [
+                      104,
+                      "dee",
+                      90.0
+                    ]
+                  ]
+                }
+              },
+              150
+            ],
+            "hidden": false,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "order_id",
+                  "amount"
+                ],
+                "rows": [
+                  [
+                    102.0,
+                    200.0
+                  ],
+                  [
+                    103.0,
+                    350.0
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "none pass",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "order_id",
+                    "customer",
+                    "amount"
+                  ],
+                  "rows": [
+                    [
+                      1,
+                      "ana",
+                      10.0
+                    ],
+                    [
+                      2,
+                      "bo",
+                      20.0
+                    ],
+                    [
+                      3,
+                      "cy",
+                      30.0
+                    ]
+                  ]
+                }
+              },
+              99
+            ],
+            "hidden": false,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "order_id",
+                  "amount"
+                ],
+                "rows": []
+              }
+            }
+          },
+          {
+            "label": "boundary equal is excluded",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "order_id",
+                    "customer",
+                    "amount"
+                  ],
+                  "rows": [
+                    [
+                      7,
+                      "x",
+                      150.0
+                    ],
+                    [
+                      8,
+                      "y",
+                      151.0
+                    ],
+                    [
+                      9,
+                      "z",
+                      149.0
+                    ]
+                  ]
+                }
+              },
+              150
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "order_id",
+                  "amount"
+                ],
+                "rows": [
+                  [
+                    8.0,
+                    151.0
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "all pass keeps order",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "order_id",
+                    "customer",
+                    "amount"
+                  ],
+                  "rows": [
+                    [
+                      21,
+                      "x",
+                      5.5
+                    ],
+                    [
+                      22,
+                      "y",
+                      6.5
+                    ]
+                  ]
+                }
+              },
+              1
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "order_id",
+                  "amount"
+                ],
+                "rows": [
+                  [
+                    21.0,
+                    5.5
+                  ],
+                  [
+                    22.0,
+                    6.5
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "duplicates survive in order",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "order_id",
+                    "customer",
+                    "amount"
+                  ],
+                  "rows": [
+                    [
+                      31,
+                      "x",
+                      300.0
+                    ],
+                    [
+                      32,
+                      "y",
+                      100.0
+                    ],
+                    [
+                      33,
+                      "x",
+                      300.0
+                    ]
+                  ]
+                }
+              },
+              200
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "order_id",
+                  "amount"
+                ],
+                "rows": [
+                  [
+                    31.0,
+                    300.0
+                  ],
+                  [
+                    33.0,
+                    300.0
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "negative threshold",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "order_id",
+                    "customer",
+                    "amount"
+                  ],
+                  "rows": [
+                    [
+                      41,
+                      "x",
+                      -50.0
+                    ],
+                    [
+                      42,
+                      "y",
+                      0.0
+                    ],
+                    [
+                      43,
+                      "z",
+                      10.0
+                    ]
+                  ]
+                }
+              },
+              -10
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "order_id",
+                  "amount"
+                ],
+                "rows": [
+                  [
+                    42.0,
+                    0.0
+                  ],
+                  [
+                    43.0,
+                    10.0
+                  ]
+                ]
+              }
+            }
+          }
+        ],
+        "hints": [
+          "Can you phrase the rule as a per-row question? What does one True/False value in orders['amount'] > min_amount correspond to?",
+          "Build the boolean mask from the amount column, then use it to select rows and the two columns you need — loc accepts both at once.",
+          "mask = orders['amount'] > min_amount, then return orders.loc[mask, ['order_id', 'amount']]. Filtering preserves the input row order, so no sort is needed."
+        ],
+        "reasoning": "<p>The whole exercise is one per-row question — <i>is this order's amount strictly above the threshold?</i> — asked of every row at once. The mask is aligned to the frame by position, so <code>orders.loc[mask, cols]</code> keeps exactly the rows whose answer is True. Filtering is guaranteed to preserve first-appearance order, which is why the output needs no explicit sort. Selecting the column list inside the same <code>loc</code> call answers \"which rows\" and \"which columns\" in one expression — the two halves of every selection problem, decided together.</p>",
+        "solution": "import pandas as pd\n\ndef big_orders(orders, min_amount):\n    \"\"\"Return the orders with amount strictly greater than min_amount.\"\"\"\n    mask = orders[\"amount\"] > min_amount\n    return orders.loc[mask, [\"order_id\", \"amount\"]]\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "pd-select-2",
+        "title": "The shortlist: departments and a salary window",
+        "difficulty": "medium",
+        "tags": [
+          "boolean-masking",
+          "isin",
+          "chained-conditions"
+        ],
+        "statement": "<p>HR is building a shortlist from the <code>employees</code> table. Each row is one employee with columns <code>name</code> (str), <code>dept</code> (str), <code>salary</code> (int) and <code>years</code> (int).</p><p>Implement <code>shortlist(employees, depts, salary_min, salary_max)</code> returning a DataFrame with exactly the columns <code>[\"name\", \"dept\", \"salary\"]</code> (in that order) with the employees whose <code>dept</code> is one of the values in the list <code>depts</code> <b>and</b> whose salary is between <code>salary_min</code> and <code>salary_max</code>, <b>both ends inclusive</b>. Rows keep the original table order.</p>",
+        "constraints": [
+          "Return a DataFrame with exactly the columns ['name', 'dept', 'salary'] in that order",
+          "dept membership is tested against the depts list; an empty list matches nobody",
+          "salary_min <= salary <= salary_max, both ends inclusive",
+          "Rows appear in the same order as in the input table"
+        ],
+        "examples": [
+          {
+            "call": "shortlist(employees, ['eng', 'ops'], 60, 90)  # salaries 55, 70, 90, 95",
+            "returns": "DataFrame with columns ['name', 'dept', 'salary'] holding the employees with salary 70 and 90 (eng/ops only)",
+            "why": "the 55 salary is below the window, 95 is above it, and both ends 60/90 are inclusive so 90 passes"
+          },
+          {
+            "call": "shortlist(employees, [], 0, 1000)  # any table",
+            "returns": "empty DataFrame with columns ['name', 'dept', 'salary']",
+            "why": "no department is in the empty list, so the dept condition filters out every row"
+          }
+        ],
+        "starter": "import pandas as pd\n\ndef shortlist(employees, depts, salary_min, salary_max):\n    \"\"\"Return employees in the given departments whose salary is\n    within [salary_min, salary_max] (inclusive).\n\n    Result has columns ['name', 'dept', 'salary'], rows in the\n    original table order.\n    \"\"\"\n    pass\n",
+        "func": "shortlist",
+        "tests": [
+          {
+            "label": "window and dept filter",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "name",
+                    "dept",
+                    "salary",
+                    "years"
+                  ],
+                  "rows": [
+                    [
+                      "ana",
+                      "eng",
+                      70,
+                      3
+                    ],
+                    [
+                      "bo",
+                      "sales",
+                      75,
+                      4
+                    ],
+                    [
+                      "cy",
+                      "ops",
+                      90,
+                      1
+                    ],
+                    [
+                      "dee",
+                      "eng",
+                      95,
+                      5
+                    ],
+                    [
+                      "eve",
+                      "ops",
+                      55,
+                      2
+                    ]
+                  ]
+                }
+              },
+              [
+                "eng",
+                "ops"
+              ],
+              60,
+              90
+            ],
+            "hidden": false,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "name",
+                  "dept",
+                  "salary"
+                ],
+                "rows": [
+                  [
+                    "ana",
+                    "eng",
+                    70
+                  ],
+                  [
+                    "cy",
+                    "ops",
+                    90
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "empty dept list",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "name",
+                    "dept",
+                    "salary",
+                    "years"
+                  ],
+                  "rows": [
+                    [
+                      "ana",
+                      "eng",
+                      70,
+                      3
+                    ],
+                    [
+                      "bo",
+                      "sales",
+                      75,
+                      4
+                    ]
+                  ]
+                }
+              },
+              [],
+              0,
+              1000
+            ],
+            "hidden": false,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "name",
+                  "dept",
+                  "salary"
+                ],
+                "rows": []
+              }
+            }
+          },
+          {
+            "label": "both boundaries inclusive",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "name",
+                    "dept",
+                    "salary",
+                    "years"
+                  ],
+                  "rows": [
+                    [
+                      "ana",
+                      "eng",
+                      60,
+                      1
+                    ],
+                    [
+                      "bo",
+                      "eng",
+                      75,
+                      2
+                    ],
+                    [
+                      "cy",
+                      "eng",
+                      90,
+                      3
+                    ],
+                    [
+                      "dee",
+                      "eng",
+                      89,
+                      4
+                    ]
+                  ]
+                }
+              },
+              [
+                "eng"
+              ],
+              60,
+              90
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "name",
+                  "dept",
+                  "salary"
+                ],
+                "rows": [
+                  [
+                    "ana",
+                    "eng",
+                    60
+                  ],
+                  [
+                    "bo",
+                    "eng",
+                    75
+                  ],
+                  [
+                    "cy",
+                    "eng",
+                    90
+                  ],
+                  [
+                    "dee",
+                    "eng",
+                    89
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "single dept in list",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "name",
+                    "dept",
+                    "salary",
+                    "years"
+                  ],
+                  "rows": [
+                    [
+                      "ana",
+                      "eng",
+                      100,
+                      1
+                    ],
+                    [
+                      "bo",
+                      "ops",
+                      100,
+                      2
+                    ],
+                    [
+                      "cy",
+                      "eng",
+                      100,
+                      3
+                    ]
+                  ]
+                }
+              },
+              [
+                "eng"
+              ],
+              0,
+              200
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "name",
+                  "dept",
+                  "salary"
+                ],
+                "rows": [
+                  [
+                    "ana",
+                    "eng",
+                    100
+                  ],
+                  [
+                    "cy",
+                    "eng",
+                    100
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "original order with interleaved rows",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "name",
+                    "dept",
+                    "salary",
+                    "years"
+                  ],
+                  "rows": [
+                    [
+                      "x1",
+                      "ops",
+                      50,
+                      1
+                    ],
+                    [
+                      "x2",
+                      "eng",
+                      51,
+                      1
+                    ],
+                    [
+                      "x3",
+                      "ops",
+                      52,
+                      1
+                    ],
+                    [
+                      "x4",
+                      "eng",
+                      53,
+                      1
+                    ],
+                    [
+                      "x5",
+                      "ops",
+                      54,
+                      1
+                    ]
+                  ]
+                }
+              },
+              [
+                "eng",
+                "ops"
+              ],
+              50,
+              52
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "name",
+                  "dept",
+                  "salary"
+                ],
+                "rows": [
+                  [
+                    "x1",
+                    "ops",
+                    50
+                  ],
+                  [
+                    "x2",
+                    "eng",
+                    51
+                  ],
+                  [
+                    "x3",
+                    "ops",
+                    52
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "nobody in the salary window",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "name",
+                    "dept",
+                    "salary",
+                    "years"
+                  ],
+                  "rows": [
+                    [
+                      "ana",
+                      "eng",
+                      10,
+                      1
+                    ],
+                    [
+                      "bo",
+                      "eng",
+                      20,
+                      2
+                    ]
+                  ]
+                }
+              },
+              [
+                "eng"
+              ],
+              100,
+              200
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "name",
+                  "dept",
+                  "salary"
+                ],
+                "rows": []
+              }
+            }
+          }
+        ],
+        "hints": [
+          "You have two independent per-row questions — 'is the dept in the list?' and 'is the salary inside the window?'. How do you AND two column-sized lists of answers?",
+          "Use .isin(depts) for membership, then combine with the two salary comparisons using & — each comparison wrapped in its own parentheses — and index the frame with the combined mask.",
+          "mask = (employees['dept'].isin(depts)) & (employees['salary'] >= salary_min) & (employees['salary'] <= salary_max); return employees.loc[mask, ['name', 'dept', 'salary']]."
+        ],
+        "reasoning": "<p>A shortlist is the <b>conjunction</b> of per-row questions: each row must satisfy every condition at once. pandas spells conjunction element-wise with <code>&amp;</code>, and each operand must already be a full column of answers — that is why <code>.isin(depts)</code> beats a hand-rolled loop over departments: it produces one mask for the whole list. Because the final mask has one boolean per row, the surviving rows are exactly those where every question answered True, and they emerge in first-appearance order — the same guarantee as any single-condition filter, now composed.</p>",
+        "solution": "import pandas as pd\n\ndef shortlist(employees, depts, salary_min, salary_max):\n    \"\"\"Return employees in the given departments whose salary is\n    within [salary_min, salary_max] (inclusive).\"\"\"\n    mask = (employees[\"dept\"].isin(depts)\n            & (employees[\"salary\"] >= salary_min)\n            & (employees[\"salary\"] <= salary_max))\n    return employees.loc[mask, [\"name\", \"dept\", \"salary\"]]\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "pd-select-3",
+        "title": "Second-best attempt, ties included",
+        "difficulty": "medium",
+        "tags": [
+          "sorting",
+          "ranking",
+          "groupwise",
+          "determinism"
+        ],
+        "statement": "<p>A gaming club records practice attempts. Each row of <code>attempts</code> is one attempt with columns <code>student</code> (str), <code>attempt</code> (int id) and <code>score</code> (int). Students have different numbers of attempts and equal scores happen.</p><p>Implement <code>second_best(attempts)</code> returning a DataFrame with exactly the columns <code>[\"student\", \"score\"]</code> (in that order): one row per student who has <b>at least two attempts</b>, showing that student's <b>second-highest attempt</b>. The second-highest is defined by sorting that student's attempts by score <b>descending</b> and taking the score in position 2 — so duplicates count as separate attempts: attempts 9, 9, 7 have second-highest 9. Rows are sorted by <code>student</code> ascending (alphabetical). Students with fewer than two attempts do not appear at all.</p>",
+        "constraints": [
+          "One row per student with at least two attempts; students with one attempt never appear",
+          "Second-highest = the score in position 2 after sorting that student's attempts by score descending (duplicates count)",
+          "Rows sorted by student ascending (alphabetical)",
+          "Return a DataFrame with exactly the columns ['student', 'score'] in that order"
+        ],
+        "examples": [
+          {
+            "call": "second_best(attempts)  # ana scored 7 then 9, bo scored 5 then 3, cy scored 10 once",
+            "returns": "DataFrame with columns ['student', 'score']: ana 7, bo 3",
+            "why": "ana sorted descending is 9, 7 so position 2 is 7; bo is 5, 3 so position 2 is 3; cy has only one attempt and is left out"
+          },
+          {
+            "call": "second_best(attempts)  # dee scored 9, 9, 7",
+            "returns": "a row dee 9",
+            "why": "with duplicates counting, dee sorted descending is 9, 9, 7 — the second position holds another 9"
+          }
+        ],
+        "starter": "import pandas as pd\n\ndef second_best(attempts):\n    \"\"\"Return each student's second-highest attempt.\n\n    One row per student with at least two attempts, columns\n    ['student', 'score'], rows sorted by student ascending.\n    Duplicates count as separate attempts.\n    \"\"\"\n    pass\n",
+        "func": "second_best",
+        "tests": [
+          {
+            "label": "two students qualify",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "student",
+                    "attempt",
+                    "score"
+                  ],
+                  "rows": [
+                    [
+                      "ana",
+                      1,
+                      7
+                    ],
+                    [
+                      "bo",
+                      1,
+                      5
+                    ],
+                    [
+                      "ana",
+                      2,
+                      9
+                    ],
+                    [
+                      "bo",
+                      2,
+                      3
+                    ],
+                    [
+                      "cy",
+                      1,
+                      10
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": false,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "student",
+                  "score"
+                ],
+                "rows": [
+                  [
+                    "ana",
+                    7
+                  ],
+                  [
+                    "bo",
+                    3
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "mixed group sorted by name",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "student",
+                    "attempt",
+                    "score"
+                  ],
+                  "rows": [
+                    [
+                      "jules",
+                      1,
+                      9
+                    ],
+                    [
+                      "amir",
+                      1,
+                      5
+                    ],
+                    [
+                      "jules",
+                      2,
+                      9
+                    ],
+                    [
+                      "amir",
+                      2,
+                      8
+                    ],
+                    [
+                      "jules",
+                      3,
+                      7
+                    ],
+                    [
+                      "nina",
+                      1,
+                      4
+                    ],
+                    [
+                      "nina",
+                      2,
+                      2
+                    ],
+                    [
+                      "tom",
+                      1,
+                      6
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": false,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "student",
+                  "score"
+                ],
+                "rows": [
+                  [
+                    "amir",
+                    5
+                  ],
+                  [
+                    "jules",
+                    9
+                  ],
+                  [
+                    "nina",
+                    2
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "duplicate scores count",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "student",
+                    "attempt",
+                    "score"
+                  ],
+                  "rows": [
+                    [
+                      "dee",
+                      1,
+                      9
+                    ],
+                    [
+                      "dee",
+                      2,
+                      9
+                    ],
+                    [
+                      "dee",
+                      3,
+                      7
+                    ],
+                    [
+                      "dee",
+                      4,
+                      7
+                    ],
+                    [
+                      "amy",
+                      1,
+                      10
+                    ],
+                    [
+                      "amy",
+                      2,
+                      10
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "student",
+                  "score"
+                ],
+                "rows": [
+                  [
+                    "amy",
+                    10
+                  ],
+                  [
+                    "dee",
+                    9
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "all attempts equal",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "student",
+                    "attempt",
+                    "score"
+                  ],
+                  "rows": [
+                    [
+                      "sam",
+                      1,
+                      5
+                    ],
+                    [
+                      "sam",
+                      2,
+                      5
+                    ],
+                    [
+                      "sam",
+                      3,
+                      5
+                    ],
+                    [
+                      "kim",
+                      1,
+                      3
+                    ],
+                    [
+                      "kim",
+                      2,
+                      5
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "student",
+                  "score"
+                ],
+                "rows": [
+                  [
+                    "kim",
+                    3
+                  ],
+                  [
+                    "sam",
+                    5
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "only singleton attempts",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "student",
+                    "attempt",
+                    "score"
+                  ],
+                  "rows": [
+                    [
+                      "solo",
+                      1,
+                      9
+                    ],
+                    [
+                      "pat",
+                      1,
+                      2
+                    ],
+                    [
+                      "pat",
+                      2,
+                      8
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "student",
+                  "score"
+                ],
+                "rows": [
+                  [
+                    "pat",
+                    2
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "names out of order in input",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "student",
+                    "attempt",
+                    "score"
+                  ],
+                  "rows": [
+                    [
+                      "zoe",
+                      1,
+                      1
+                    ],
+                    [
+                      "zoe",
+                      2,
+                      5
+                    ],
+                    [
+                      "zoe",
+                      3,
+                      3
+                    ],
+                    [
+                      "ada",
+                      1,
+                      9
+                    ],
+                    [
+                      "ada",
+                      2,
+                      8
+                    ],
+                    [
+                      "mia",
+                      1,
+                      7
+                    ],
+                    [
+                      "mia",
+                      2,
+                      7
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "student",
+                  "score"
+                ],
+                "rows": [
+                  [
+                    "ada",
+                    8
+                  ],
+                  [
+                    "mia",
+                    7
+                  ],
+                  [
+                    "zoe",
+                    3
+                  ]
+                ]
+              }
+            }
+          }
+        ],
+        "hints": [
+          "If every student's attempts were sorted best-first, 'second-highest' would stop being a comparison. What would it become instead?",
+          "Sort the whole frame by student ascending and score descending. Now each student's best attempt is the first row of their block and the second-best is the second row — you need the second row of each block.",
+          "ranked = attempts.sort_values(['student', 'score'], ascending=[True, False]); keep = ranked.groupby('student').cumcount() == 1; return ranked.loc[keep, ['student', 'score']]. Students with one attempt never reach cumcount 1."
+        ],
+        "reasoning": "<p>The reframe that unlocks this: <b>ranking is sorting plus position</b>. Once the frame is sorted by student then score descending, \"second-highest\" is literally the second row of each student's block — no comparisons, no max-of-the-rest gymnastics. Counting rows within each group (<code>groupby(...).cumcount()</code>) marks positions, and a student with a single attempt never produces a row numbered 1, so the at-least-two rule enforces itself. Note why duplicates must count: the tie rule is defined on <i>attempts</i>, not distinct scores, which is exactly the kind of decision the row semantics force you to make explicit.</p>",
+        "solution": "import pandas as pd\n\ndef second_best(attempts):\n    \"\"\"Return each student's second-highest attempt (duplicates count).\"\"\"\n    ranked = attempts.sort_values(\n        [\"student\", \"score\"], ascending=[True, False]\n    )\n    keep = ranked.groupby(\"student\").cumcount() == 1\n    return ranked.loc[keep, [\"student\", \"score\"]].reset_index(drop=True)\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "pd-select-4",
+        "title": "Cap the sensor spikes at the 90th percentile",
+        "difficulty": "hard",
+        "tags": [
+          "quantile",
+          "clip",
+          "outliers",
+          "rounding"
+        ],
+        "statement": "<p>An IoT gateway logs delivery times. Each row of <code>readings</code> is one delivery with columns <code>delivery</code> (str id), <code>route</code> (str) and <code>minutes</code> (float). A few deliveries get stuck in traffic and produce spikes that ruin every chart.</p><p>Implement <code>cap_outliers(readings)</code> that computes the <b>90th percentile</b> of the <code>minutes</code> column over all rows with <code>.quantile(0.9)</code> (pandas default interpolation), and returns a Series named <code>minutes</code> where every value <b>strictly above</b> that percentile is replaced by the percentile value itself, while values at or below it are left unchanged. Every returned value is <b>rounded to 2 decimal places</b>, and entries follow the original row order.</p>",
+        "constraints": [
+          "The cap is readings['minutes'].quantile(0.9) computed over ALL rows (pandas default linear interpolation)",
+          "Values strictly above the cap become the cap; values at or below the cap stay as they were",
+          "All returned values rounded to 2 decimal places",
+          "Return a Series named 'minutes', one entry per input row, in the original row order"
+        ],
+        "examples": [
+          {
+            "call": "cap_outliers(readings)  # 11 deliveries; minutes 11.8 ... 16.3 ... and one 90.0",
+            "returns": "Series named 'minutes': the same 11 values but 90.0 is replaced by 16.3",
+            "why": "with 11 values the 90th percentile lands exactly on the 10th smallest (16.3), so the 90.0 spike is capped at 16.3"
+          },
+          {
+            "call": "cap_outliers(readings)  # 11 deliveries, minutes 5..15 evenly",
+            "returns": "Series named 'minutes' where 15.0 becomes 14.0, all else unchanged",
+            "why": "the 90th percentile is 14.0, and only the single value above it (15.0) gets pulled down"
+          }
+        ],
+        "starter": "import pandas as pd\n\ndef cap_outliers(readings):\n    \"\"\"Return the minutes column with values above the 90th\n    percentile replaced by that percentile.\n\n    Series named 'minutes', original row order, all values\n    rounded to 2 decimal places.\n    \"\"\"\n    pass\n",
+        "func": "cap_outliers",
+        "tests": [
+          {
+            "label": "one big spike capped",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "delivery",
+                    "route",
+                    "minutes"
+                  ],
+                  "rows": [
+                    [
+                      "d1",
+                      "A",
+                      12.5
+                    ],
+                    [
+                      "d2",
+                      "B",
+                      13.0
+                    ],
+                    [
+                      "d3",
+                      "A",
+                      14.2
+                    ],
+                    [
+                      "d4",
+                      "C",
+                      11.8
+                    ],
+                    [
+                      "d5",
+                      "B",
+                      12.9
+                    ],
+                    [
+                      "d6",
+                      "A",
+                      15.0
+                    ],
+                    [
+                      "d7",
+                      "C",
+                      13.7
+                    ],
+                    [
+                      "d8",
+                      "B",
+                      12.1
+                    ],
+                    [
+                      "d9",
+                      "A",
+                      14.8
+                    ],
+                    [
+                      "d10",
+                      "C",
+                      16.3
+                    ],
+                    [
+                      "d11",
+                      "B",
+                      90.0
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": false,
+            "expected": {
+              "__ser__": {
+                "values": [
+                  12.5,
+                  13.0,
+                  14.2,
+                  11.8,
+                  12.9,
+                  15.0,
+                  13.7,
+                  12.1,
+                  14.8,
+                  16.3,
+                  16.3
+                ],
+                "name": "minutes"
+              }
+            }
+          },
+          {
+            "label": "even ladder of values",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "delivery",
+                    "route",
+                    "minutes"
+                  ],
+                  "rows": [
+                    [
+                      "d1",
+                      "A",
+                      5.0
+                    ],
+                    [
+                      "d2",
+                      "A",
+                      6.0
+                    ],
+                    [
+                      "d3",
+                      "B",
+                      7.0
+                    ],
+                    [
+                      "d4",
+                      "B",
+                      8.0
+                    ],
+                    [
+                      "d5",
+                      "C",
+                      9.0
+                    ],
+                    [
+                      "d6",
+                      "C",
+                      10.0
+                    ],
+                    [
+                      "d7",
+                      "A",
+                      11.0
+                    ],
+                    [
+                      "d8",
+                      "B",
+                      12.0
+                    ],
+                    [
+                      "d9",
+                      "C",
+                      13.0
+                    ],
+                    [
+                      "d10",
+                      "A",
+                      14.0
+                    ],
+                    [
+                      "d11",
+                      "B",
+                      15.0
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": false,
+            "expected": {
+              "__ser__": {
+                "values": [
+                  5.0,
+                  6.0,
+                  7.0,
+                  8.0,
+                  9.0,
+                  10.0,
+                  11.0,
+                  12.0,
+                  13.0,
+                  14.0,
+                  14.0
+                ],
+                "name": "minutes"
+              }
+            }
+          },
+          {
+            "label": "interpolated percentile (10 rows)",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "delivery",
+                    "route",
+                    "minutes"
+                  ],
+                  "rows": [
+                    [
+                      "d1",
+                      "A",
+                      1.0
+                    ],
+                    [
+                      "d2",
+                      "A",
+                      2.0
+                    ],
+                    [
+                      "d3",
+                      "B",
+                      3.0
+                    ],
+                    [
+                      "d4",
+                      "B",
+                      4.0
+                    ],
+                    [
+                      "d5",
+                      "C",
+                      5.0
+                    ],
+                    [
+                      "d6",
+                      "C",
+                      6.0
+                    ],
+                    [
+                      "d7",
+                      "A",
+                      7.0
+                    ],
+                    [
+                      "d8",
+                      "B",
+                      8.0
+                    ],
+                    [
+                      "d9",
+                      "C",
+                      9.0
+                    ],
+                    [
+                      "d10",
+                      "A",
+                      20.0
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__ser__": {
+                "values": [
+                  1.0,
+                  2.0,
+                  3.0,
+                  4.0,
+                  5.0,
+                  6.0,
+                  7.0,
+                  8.0,
+                  9.0,
+                  10.1
+                ],
+                "name": "minutes"
+              }
+            }
+          },
+          {
+            "label": "all values identical",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "delivery",
+                    "route",
+                    "minutes"
+                  ],
+                  "rows": [
+                    [
+                      "d1",
+                      "A",
+                      3.0
+                    ],
+                    [
+                      "d2",
+                      "B",
+                      3.0
+                    ],
+                    [
+                      "d3",
+                      "C",
+                      3.0
+                    ],
+                    [
+                      "d4",
+                      "A",
+                      3.0
+                    ],
+                    [
+                      "d5",
+                      "B",
+                      3.0
+                    ],
+                    [
+                      "d6",
+                      "C",
+                      3.0
+                    ],
+                    [
+                      "d7",
+                      "A",
+                      3.0
+                    ],
+                    [
+                      "d8",
+                      "B",
+                      3.0
+                    ],
+                    [
+                      "d9",
+                      "C",
+                      3.0
+                    ],
+                    [
+                      "d10",
+                      "A",
+                      3.0
+                    ],
+                    [
+                      "d11",
+                      "B",
+                      3.0
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__ser__": {
+                "values": [
+                  3.0,
+                  3.0,
+                  3.0,
+                  3.0,
+                  3.0,
+                  3.0,
+                  3.0,
+                  3.0,
+                  3.0,
+                  3.0,
+                  3.0
+                ],
+                "name": "minutes"
+              }
+            }
+          },
+          {
+            "label": "two spikes above an interpolated cap",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "delivery",
+                    "route",
+                    "minutes"
+                  ],
+                  "rows": [
+                    [
+                      "d1",
+                      "A",
+                      1.0
+                    ],
+                    [
+                      "d2",
+                      "A",
+                      2.0
+                    ],
+                    [
+                      "d3",
+                      "B",
+                      5.0
+                    ],
+                    [
+                      "d4",
+                      "B",
+                      5.0
+                    ],
+                    [
+                      "d5",
+                      "C",
+                      5.0
+                    ],
+                    [
+                      "d6",
+                      "C",
+                      5.0
+                    ],
+                    [
+                      "d7",
+                      "A",
+                      5.0
+                    ],
+                    [
+                      "d8",
+                      "B",
+                      5.0
+                    ],
+                    [
+                      "d9",
+                      "C",
+                      5.0
+                    ],
+                    [
+                      "d10",
+                      "A",
+                      5.0
+                    ],
+                    [
+                      "d11",
+                      "B",
+                      9.0
+                    ],
+                    [
+                      "d12",
+                      "C",
+                      9.0
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__ser__": {
+                "values": [
+                  1.0,
+                  2.0,
+                  5.0,
+                  5.0,
+                  5.0,
+                  5.0,
+                  5.0,
+                  5.0,
+                  5.0,
+                  5.0,
+                  8.6,
+                  8.6
+                ],
+                "name": "minutes"
+              }
+            }
+          },
+          {
+            "label": "negative times present",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "delivery",
+                    "route",
+                    "minutes"
+                  ],
+                  "rows": [
+                    [
+                      "d1",
+                      "A",
+                      -5.0
+                    ],
+                    [
+                      "d2",
+                      "B",
+                      -2.0
+                    ],
+                    [
+                      "d3",
+                      "C",
+                      0.0
+                    ],
+                    [
+                      "d4",
+                      "A",
+                      1.0
+                    ],
+                    [
+                      "d5",
+                      "B",
+                      2.0
+                    ],
+                    [
+                      "d6",
+                      "C",
+                      3.0
+                    ],
+                    [
+                      "d7",
+                      "A",
+                      4.0
+                    ],
+                    [
+                      "d8",
+                      "B",
+                      5.0
+                    ],
+                    [
+                      "d9",
+                      "C",
+                      6.0
+                    ],
+                    [
+                      "d10",
+                      "A",
+                      7.0
+                    ],
+                    [
+                      "d11",
+                      "B",
+                      8.0
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__ser__": {
+                "values": [
+                  -5.0,
+                  -2.0,
+                  0.0,
+                  1.0,
+                  2.0,
+                  3.0,
+                  4.0,
+                  5.0,
+                  6.0,
+                  7.0,
+                  7.0
+                ],
+                "name": "minutes"
+              }
+            }
+          }
+        ],
+        "hints": [
+          "The threshold is not a number you are given — it is a statistic of the data. What single pandas call turns a column into 'the value below which 90% of the rows sit'?",
+          "Compute cap = readings['minutes'].quantile(0.9). Then you need 'replace every value above cap with cap, keep the rest' — there is a one-call method that does exactly this one-sided replacement.",
+          "cap = readings['minutes'].quantile(0.9); return readings['minutes'].clip(upper=cap).round(2). clip keeps values at or below the cap untouched and pulls larger ones down to it."
+        ],
+        "reasoning": "<p>Capping is a <b>data-dependent rule</b>: the threshold only exists once you have seen all the rows, which is why <code>.quantile(0.9)</code> must run on the whole column before any per-row decision. After that, the operation is the one-sided minimum <code>min(value, cap)</code> — precisely what <code>.clip(upper=cap)</code> computes for every row at once, leaving values at or below the cap untouched. Two determinism details make the answer checkable: pandas' percentile interpolation is fixed (linear), so the cap is reproducible; and rounding to 2 decimals pins the float noise that quantile interpolation can introduce.</p>",
+        "solution": "import pandas as pd\n\ndef cap_outliers(readings):\n    \"\"\"Cap minutes values above the 90th percentile at that percentile.\"\"\"\n    cap = readings[\"minutes\"].quantile(0.9)\n    return readings[\"minutes\"].clip(upper=cap).round(2)\n"
+      }
+    }
+  ]
+}

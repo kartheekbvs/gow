@@ -1,0 +1,1962 @@
+{
+  "id": "pd-groupby",
+  "title": "GroupBy Reasoning",
+  "icon": "🧮",
+  "level": "intermediate",
+  "order": 30,
+  "conceptRef": "pandas.html#s7",
+  "blurb": "GroupBy is split-apply-combine: each group is a little table, and what collapsing a group means is your call to define.",
+  "cells": [
+    {
+      "type": "concept",
+      "title": "Split, apply, combine — the group is the unit",
+      "body": "<p>GroupBy does not really \"group rows\" — it <b>splits</b> the frame into many little frames (one per key value), <b>applies</b> your operation to each, and <b>combines</b> the one-row answers back into a table. Once you see it that way, \"average minutes per courier\" stops being a syntax puzzle: each courier's rows form a sub-table, and you take its mean.</p><p>The combine step decides the output's shape. An aggregation returns one value per group — the result has as many rows as there are distinct keys, and <code>groupby</code> sorts those keys by default. That is why \"one row per group, sorted by the group key\" is a promise you get for free — and one you can safely write into a spec instead of sorting by hand.</p>",
+      "demo": {
+        "code": "import pandas as pd\n\nruns = pd.DataFrame({\n    \"courier\": [\"ana\", \"bo\", \"ana\", \"bo\", \"ana\"],\n    \"minutes\": [30, 25, 41, 31, 20],\n})\ngroups = dict(tuple(runs.groupby(\"courier\")))\nprint(groups[\"ana\"])\nprint(runs.groupby(\"courier\")[\"minutes\"].mean())"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "agg collapses, transform broadcasts",
+      "body": "<p>Two verbs, two shapes. <code>.agg</code> — and shortcuts like <code>.sum()</code>, <code>.mean()</code> — returns one value per group, so the result has one row <b>per group</b>. <code>.transform</code> returns one value per <b>row</b> of the original frame: every row of a group receives its group's answer, aligned to the row's position.</p><p>That alignment is what makes \"score minus your class average\" a one-liner: <code>scores - scores.groupby(class).transform(\"mean\")</code> subtracts, row by row, each student's <i>own</i> class mean. The rule of thumb: whenever the output must line up with the input rows — same length, same order — think transform, not agg. Getting this shape decision right is half of all GroupBy bugs.</p>",
+      "demo": {
+        "code": "import pandas as pd\n\nscores = pd.DataFrame({\n    \"class\": [\"a\", \"a\", \"b\", \"b\"],\n    \"score\": [70, 80, 90, 100],\n})\nprint(scores.groupby(\"class\")[\"score\"].mean().tolist())\nprint(scores.groupby(\"class\")[\"score\"].transform(\"mean\").tolist())\nprint((scores[\"score\"] - scores.groupby(\"class\")[\"score\"].transform(\"mean\")).tolist())"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "filter: a group-level question about rows",
+      "body": "<p><code>df.groupby(key).filter(fn)</code> asks a question of each <b>group</b> — a question whose answer is True or False for the whole sub-table — and keeps <b>all rows</b> of the groups that pass, in their original order. It is how you say \"only stores whose average daily sales top 500 — but I want the daily rows, not the averages\".</p><p>The reasoning step is spotting that the condition is group-level even though the output is row-level. Compare with boolean masking, which asks a row-level question and also returns rows. Same output shape, completely different question — and mixing the two up (filtering rows by a group statistic computed on the filtered set) is the classic GroupBy design bug.</p>",
+      "demo": {
+        "code": "import pandas as pd\n\ndaily = pd.DataFrame({\n    \"store\": [\"s1\", \"s1\", \"s2\", \"s2\"],\n    \"sales\": [600, 400, 100, 150],\n})\nstrong = daily.groupby(\"store\").filter(lambda g: g[\"sales\"].mean() > 450)\nprint(strong)"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "pd-groupby-1",
+        "title": "Units per region",
+        "difficulty": "easy",
+        "tags": [
+          "groupby",
+          "aggregation",
+          "sum"
+        ],
+        "statement": "<p>A distributor tracks shipments. Each row of <code>shipments</code> is one shipment with columns <code>region</code> (str), <code>rep</code> (str) and <code>units</code> (int, may be negative for returns).</p><p>Implement <code>units_per_region(shipments)</code> returning a DataFrame with exactly the columns <code>[\"region\", \"total_units\"]</code> (in that order): one row per region with the sum of its units, rows sorted by <code>region</code> ascending (alphabetical).</p>",
+        "constraints": [
+          "Return a DataFrame with exactly the columns ['region', 'total_units'] in that order",
+          "One row per distinct region; units are summed over that region's shipments",
+          "Rows sorted by region ascending (alphabetical)",
+          "Negative units (returns) subtract from the regional total"
+        ],
+        "examples": [
+          {
+            "call": "units_per_region(shipments)  # north 10+7, south 5, east 3",
+            "returns": "DataFrame with columns ['region', 'total_units']: east 3, north 17, south 5",
+            "why": "each region's shipments collapse to one summed row and regions sort alphabetically"
+          },
+          {
+            "call": "units_per_region(shipments)  # west -4 and west 9",
+            "returns": "a row west 5",
+            "why": "a return shipment of -4 units nets against the 9 shipped"
+          }
+        ],
+        "starter": "import pandas as pd\n\ndef units_per_region(shipments):\n    \"\"\"Return total units per region.\n\n    DataFrame with columns ['region', 'total_units'],\n    rows sorted by region ascending.\n    \"\"\"\n    pass\n",
+        "func": "units_per_region",
+        "tests": [
+          {
+            "label": "three regions, one repeated",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "region",
+                    "rep",
+                    "units"
+                  ],
+                  "rows": [
+                    [
+                      "north",
+                      "ana",
+                      10
+                    ],
+                    [
+                      "south",
+                      "bo",
+                      5
+                    ],
+                    [
+                      "north",
+                      "cy",
+                      7
+                    ],
+                    [
+                      "east",
+                      "dee",
+                      3
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": false,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "region",
+                  "total_units"
+                ],
+                "rows": [
+                  [
+                    "east",
+                    3
+                  ],
+                  [
+                    "north",
+                    17
+                  ],
+                  [
+                    "south",
+                    5
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "two regions, several reps",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "region",
+                    "rep",
+                    "units"
+                  ],
+                  "rows": [
+                    [
+                      "west",
+                      "ana",
+                      4
+                    ],
+                    [
+                      "west",
+                      "bo",
+                      6
+                    ],
+                    [
+                      "north",
+                      "cy",
+                      1
+                    ],
+                    [
+                      "north",
+                      "dee",
+                      2
+                    ],
+                    [
+                      "north",
+                      "ana",
+                      3
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": false,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "region",
+                  "total_units"
+                ],
+                "rows": [
+                  [
+                    "north",
+                    6
+                  ],
+                  [
+                    "west",
+                    10
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "single region",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "region",
+                    "rep",
+                    "units"
+                  ],
+                  "rows": [
+                    [
+                      "east",
+                      "ana",
+                      2
+                    ],
+                    [
+                      "east",
+                      "bo",
+                      8
+                    ],
+                    [
+                      "east",
+                      "cy",
+                      5
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "region",
+                  "total_units"
+                ],
+                "rows": [
+                  [
+                    "east",
+                    15
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "regions listed out of order",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "region",
+                    "rep",
+                    "units"
+                  ],
+                  "rows": [
+                    [
+                      "zeta",
+                      "a",
+                      1
+                    ],
+                    [
+                      "alpha",
+                      "b",
+                      2
+                    ],
+                    [
+                      "mid",
+                      "c",
+                      3
+                    ],
+                    [
+                      "zeta",
+                      "d",
+                      4
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "region",
+                  "total_units"
+                ],
+                "rows": [
+                  [
+                    "alpha",
+                    2
+                  ],
+                  [
+                    "mid",
+                    3
+                  ],
+                  [
+                    "zeta",
+                    5
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "negative units net out",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "region",
+                    "rep",
+                    "units"
+                  ],
+                  "rows": [
+                    [
+                      "west",
+                      "ana",
+                      -4
+                    ],
+                    [
+                      "west",
+                      "bo",
+                      9
+                    ],
+                    [
+                      "north",
+                      "cy",
+                      2
+                    ],
+                    [
+                      "north",
+                      "dee",
+                      -10
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "region",
+                  "total_units"
+                ],
+                "rows": [
+                  [
+                    "north",
+                    -8
+                  ],
+                  [
+                    "west",
+                    5
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "one shipment per region",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "region",
+                    "rep",
+                    "units"
+                  ],
+                  "rows": [
+                    [
+                      "b2",
+                      "x",
+                      7
+                    ],
+                    [
+                      "a1",
+                      "y",
+                      3
+                    ],
+                    [
+                      "c3",
+                      "z",
+                      5
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "region",
+                  "total_units"
+                ],
+                "rows": [
+                  [
+                    "a1",
+                    3
+                  ],
+                  [
+                    "b2",
+                    7
+                  ],
+                  [
+                    "c3",
+                    5
+                  ]
+                ]
+              }
+            }
+          }
+        ],
+        "hints": [
+          "Each region's shipments form a little table. What single number summarizes that little table, and what does one result row represent?",
+          "groupby('region') splits the frame; summing the units column collapses each group to one row. as_index=False keeps the region as a normal column instead of the index.",
+          "out = shipments.groupby('region', as_index=False)['units'].sum().rename(columns={'units': 'total_units'}); return out.sort_values('region').reset_index(drop=True) — groupby already sorts keys, the explicit sort states it."
+        ],
+        "reasoning": "<p>Split-apply-combine in its purest form: the split is by <code>region</code>, the apply is <code>sum</code>, and the combine produces one row per distinct region. The row semantics is the anchor — each output row means <i>\"all shipments of one region, netted\"</i>, which is why negative returns must subtract rather than be dropped. <code>as_index=False</code> (or a later <code>reset_index</code>) keeps the key as a column so the result is a plain two-column table, and because <code>groupby</code> sorts its keys, \"sorted by region\" costs nothing extra — but stating it makes the answer checkable.</p>",
+        "solution": "import pandas as pd\n\ndef units_per_region(shipments):\n    \"\"\"Return total units per region, sorted by region.\"\"\"\n    out = (shipments.groupby(\"region\", as_index=False)[\"units\"]\n           .sum()\n           .rename(columns={\"units\": \"total_units\"}))\n    return out.sort_values(\"region\").reset_index(drop=True)\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "pd-groupby-2",
+        "title": "Busiest teams, ties broken fairly",
+        "difficulty": "easy",
+        "tags": [
+          "groupby",
+          "counting",
+          "sorting",
+          "tie-breaking"
+        ],
+        "statement": "<p>Support tickets land in a <code>tickets</code> table. Each row is one ticket with columns <code>ticket</code> (str id), <code>team</code> (str) and <code>priority</code> (str).</p><p>Implement <code>tickets_per_team(tickets)</code> returning a DataFrame with exactly the columns <code>[\"team\", \"n_tickets\"]</code>: one row per team with the number of its tickets. Rows are sorted by <code>n_tickets</code> <b>descending</b>; teams with equal counts are ordered by <code>team</code> ascending (alphabetical), so the ranking is fully determined.</p>",
+        "constraints": [
+          "Return a DataFrame with exactly the columns ['team', 'n_tickets'] in that order",
+          "n_tickets is the number of ticket rows for that team",
+          "Rows sorted by n_tickets descending, ties by team ascending",
+          "Every team present in the table appears exactly once"
+        ],
+        "examples": [
+          {
+            "call": "tickets_per_team(tickets)  # core has 3 tickets, apps 2, web 1",
+            "returns": "DataFrame with columns ['team', 'n_tickets']: core 3, apps 2, web 1",
+            "why": "the ranking follows the counts: 3 before 2 before 1"
+          },
+          {
+            "call": "tickets_per_team(tickets)  # core has 2, apps has 2, web has 1",
+            "returns": "rows: apps 2, core 2, web 1",
+            "why": "core and apps tie at 2, and the alphabetical tie-break puts apps first"
+          }
+        ],
+        "starter": "import pandas as pd\n\ndef tickets_per_team(tickets):\n    \"\"\"Return ticket counts per team.\n\n    DataFrame with columns ['team', 'n_tickets'], sorted by\n    n_tickets descending, ties by team ascending.\n    \"\"\"\n    pass\n",
+        "func": "tickets_per_team",
+        "tests": [
+          {
+            "label": "clear ranking",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "ticket",
+                    "team",
+                    "priority"
+                  ],
+                  "rows": [
+                    [
+                      "t1",
+                      "core",
+                      "high"
+                    ],
+                    [
+                      "t2",
+                      "apps",
+                      "low"
+                    ],
+                    [
+                      "t3",
+                      "core",
+                      "low"
+                    ],
+                    [
+                      "t4",
+                      "web",
+                      "low"
+                    ],
+                    [
+                      "t5",
+                      "core",
+                      "high"
+                    ],
+                    [
+                      "t6",
+                      "apps",
+                      "high"
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": false,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "team",
+                  "n_tickets"
+                ],
+                "rows": [
+                  [
+                    "core",
+                    3
+                  ],
+                  [
+                    "apps",
+                    2
+                  ],
+                  [
+                    "web",
+                    1
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "tie between two teams",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "ticket",
+                    "team",
+                    "priority"
+                  ],
+                  "rows": [
+                    [
+                      "t1",
+                      "core",
+                      "high"
+                    ],
+                    [
+                      "t2",
+                      "apps",
+                      "low"
+                    ],
+                    [
+                      "t3",
+                      "core",
+                      "low"
+                    ],
+                    [
+                      "t4",
+                      "web",
+                      "low"
+                    ],
+                    [
+                      "t5",
+                      "apps",
+                      "high"
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": false,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "team",
+                  "n_tickets"
+                ],
+                "rows": [
+                  [
+                    "apps",
+                    2
+                  ],
+                  [
+                    "core",
+                    2
+                  ],
+                  [
+                    "web",
+                    1
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "all teams tie, alphabetical order",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "ticket",
+                    "team",
+                    "priority"
+                  ],
+                  "rows": [
+                    [
+                      "t1",
+                      "web",
+                      "low"
+                    ],
+                    [
+                      "t2",
+                      "core",
+                      "low"
+                    ],
+                    [
+                      "t3",
+                      "apps",
+                      "low"
+                    ],
+                    [
+                      "t4",
+                      "web",
+                      "high"
+                    ],
+                    [
+                      "t5",
+                      "core",
+                      "high"
+                    ],
+                    [
+                      "t6",
+                      "apps",
+                      "high"
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "team",
+                  "n_tickets"
+                ],
+                "rows": [
+                  [
+                    "apps",
+                    2
+                  ],
+                  [
+                    "core",
+                    2
+                  ],
+                  [
+                    "web",
+                    2
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "single team only",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "ticket",
+                    "team",
+                    "priority"
+                  ],
+                  "rows": [
+                    [
+                      "t1",
+                      "core",
+                      "low"
+                    ],
+                    [
+                      "t2",
+                      "core",
+                      "high"
+                    ],
+                    [
+                      "t3",
+                      "core",
+                      "high"
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "team",
+                  "n_tickets"
+                ],
+                "rows": [
+                  [
+                    "core",
+                    3
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "five teams, tie in the middle",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "ticket",
+                    "team",
+                    "priority"
+                  ],
+                  "rows": [
+                    [
+                      "t1",
+                      "delta",
+                      "low"
+                    ],
+                    [
+                      "t2",
+                      "alpha",
+                      "low"
+                    ],
+                    [
+                      "t3",
+                      "delta",
+                      "low"
+                    ],
+                    [
+                      "t4",
+                      "delta",
+                      "low"
+                    ],
+                    [
+                      "t5",
+                      "beta",
+                      "low"
+                    ],
+                    [
+                      "t6",
+                      "beta",
+                      "low"
+                    ],
+                    [
+                      "t7",
+                      "gamma",
+                      "low"
+                    ],
+                    [
+                      "t8",
+                      "epsilon",
+                      "low"
+                    ],
+                    [
+                      "t9",
+                      "alpha",
+                      "low"
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "team",
+                  "n_tickets"
+                ],
+                "rows": [
+                  [
+                    "delta",
+                    3
+                  ],
+                  [
+                    "alpha",
+                    2
+                  ],
+                  [
+                    "beta",
+                    2
+                  ],
+                  [
+                    "epsilon",
+                    1
+                  ],
+                  [
+                    "gamma",
+                    1
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "single ticket table",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "ticket",
+                    "team",
+                    "priority"
+                  ],
+                  "rows": [
+                    [
+                      "only",
+                      "core",
+                      "high"
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "team",
+                  "n_tickets"
+                ],
+                "rows": [
+                  [
+                    "core",
+                    1
+                  ]
+                ]
+              }
+            }
+          }
+        ],
+        "hints": [
+          "Counting rows per team is an aggregation where the aggregated 'value' is the row count itself. Which groupby method counts rows without needing a particular column's values?",
+          "size() on the grouped frame gives one count per team. Then the ranking is a sort on two keys: count descending first, team name ascending second.",
+          "counts = tickets.groupby('team').size().rename('n_tickets').reset_index(); return counts.sort_values(['n_tickets', 'team'], ascending=[False, True]).reset_index(drop=True)."
+        ],
+        "reasoning": "<p>Counting per group is the aggregation where the \"value\" is existence: <code>.size()</code> counts rows, so it never trips on missing values the way <code>.count()</code> on a column can. The deeper lesson is the <b>tie</b>: \"most tickets first\" does not fully determine an order when counts collide, so a deterministic answer needs a second sort key. Sorting on <code>[\"n_tickets\", \"team\"]</code> with mixed directions encodes \"count first, name to break ties\" — the same discipline as any ranking with ties, in three lines.</p>",
+        "solution": "import pandas as pd\n\ndef tickets_per_team(tickets):\n    \"\"\"Return ticket counts per team, ranked deterministically.\"\"\"\n    counts = tickets.groupby(\"team\").size().rename(\"n_tickets\").reset_index()\n    return counts.sort_values(\n        [\"n_tickets\", \"team\"], ascending=[False, True]\n    ).reset_index(drop=True)\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "pd-groupby-3",
+        "title": "Courier scorecard",
+        "difficulty": "medium",
+        "tags": [
+          "groupby",
+          "named-aggregation",
+          "rounding"
+        ],
+        "statement": "<p>A delivery platform builds a scorecard. Each row of <code>deliveries</code> is one delivery with columns <code>courier</code> (str), <code>day</code> (str) and <code>minutes</code> (int, never missing).</p><p>Implement <code>courier_stats(deliveries)</code> returning a DataFrame with exactly the columns <code>[\"courier\", \"n\", \"avg_minutes\", \"max_minutes\"]</code> (in that order), one row per courier, sorted by <code>courier</code> ascending:</p><ul><li><code>n</code>: the number of deliveries by that courier</li><li><code>avg_minutes</code>: the mean of minutes, <b>rounded to 2 decimal places</b></li><li><code>max_minutes</code>: that courier's longest delivery</li></ul>",
+        "constraints": [
+          "Return a DataFrame with exactly the columns ['courier', 'n', 'avg_minutes', 'max_minutes'] in that order",
+          "One row per courier, sorted by courier ascending",
+          "avg_minutes is the group mean rounded to 2 decimal places",
+          "n counts deliveries; minutes is never missing"
+        ],
+        "examples": [
+          {
+            "call": "courier_stats(deliveries)  # ana delivered in 30 and 20 minutes, bo in 25",
+            "returns": "DataFrame with columns ['courier', 'n', 'avg_minutes', 'max_minutes']: ana 2 25.0 30, bo 1 25.0 25",
+            "why": "ana's two deliveries average (30+20)/2 = 25.0 and peak at 30; bo's single delivery is its own average and maximum"
+          },
+          {
+            "call": "courier_stats(deliveries)  # cy delivered in 10, 25 and 15 minutes",
+            "returns": "a row cy 3 16.67 25",
+            "why": "(10+25+15)/3 = 16.666... which rounds to 16.67"
+          }
+        ],
+        "starter": "import pandas as pd\n\ndef courier_stats(deliveries):\n    \"\"\"Return per-courier delivery statistics.\n\n    Columns ['courier', 'n', 'avg_minutes', 'max_minutes'],\n    one row per courier sorted by courier, avg rounded to\n    2 decimals.\n    \"\"\"\n    pass\n",
+        "func": "courier_stats",
+        "tests": [
+          {
+            "label": "two couriers",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "courier",
+                    "day",
+                    "minutes"
+                  ],
+                  "rows": [
+                    [
+                      "ana",
+                      "mon",
+                      30
+                    ],
+                    [
+                      "bo",
+                      "mon",
+                      25
+                    ],
+                    [
+                      "ana",
+                      "tue",
+                      20
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": false,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "courier",
+                  "n",
+                  "avg_minutes",
+                  "max_minutes"
+                ],
+                "rows": [
+                  [
+                    "ana",
+                    2,
+                    25.0,
+                    30
+                  ],
+                  [
+                    "bo",
+                    1,
+                    25.0,
+                    25
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "three couriers, repeating mean",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "courier",
+                    "day",
+                    "minutes"
+                  ],
+                  "rows": [
+                    [
+                      "cy",
+                      "mon",
+                      10
+                    ],
+                    [
+                      "cy",
+                      "tue",
+                      25
+                    ],
+                    [
+                      "cy",
+                      "wed",
+                      15
+                    ],
+                    [
+                      "ana",
+                      "mon",
+                      30
+                    ],
+                    [
+                      "bo",
+                      "tue",
+                      8
+                    ],
+                    [
+                      "bo",
+                      "wed",
+                      12
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": false,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "courier",
+                  "n",
+                  "avg_minutes",
+                  "max_minutes"
+                ],
+                "rows": [
+                  [
+                    "ana",
+                    1,
+                    30.0,
+                    30
+                  ],
+                  [
+                    "bo",
+                    2,
+                    10.0,
+                    12
+                  ],
+                  [
+                    "cy",
+                    3,
+                    16.67,
+                    25
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "single courier, four deliveries",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "courier",
+                    "day",
+                    "minutes"
+                  ],
+                  "rows": [
+                    [
+                      "rex",
+                      "mon",
+                      12
+                    ],
+                    [
+                      "rex",
+                      "tue",
+                      18
+                    ],
+                    [
+                      "rex",
+                      "wed",
+                      20
+                    ],
+                    [
+                      "rex",
+                      "thu",
+                      10
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "courier",
+                  "n",
+                  "avg_minutes",
+                  "max_minutes"
+                ],
+                "rows": [
+                  [
+                    "rex",
+                    4,
+                    15.0,
+                    20
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "mean needs rounding",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "courier",
+                    "day",
+                    "minutes"
+                  ],
+                  "rows": [
+                    [
+                      "mia",
+                      "mon",
+                      10
+                    ],
+                    [
+                      "mia",
+                      "tue",
+                      20
+                    ],
+                    [
+                      "mia",
+                      "wed",
+                      20
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "courier",
+                  "n",
+                  "avg_minutes",
+                  "max_minutes"
+                ],
+                "rows": [
+                  [
+                    "mia",
+                    3,
+                    16.67,
+                    20
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "courier names arrive unsorted",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "courier",
+                    "day",
+                    "minutes"
+                  ],
+                  "rows": [
+                    [
+                      "zoe",
+                      "mon",
+                      5
+                    ],
+                    [
+                      "ada",
+                      "mon",
+                      9
+                    ],
+                    [
+                      "mia",
+                      "mon",
+                      7
+                    ],
+                    [
+                      "ada",
+                      "tue",
+                      3
+                    ],
+                    [
+                      "zoe",
+                      "tue",
+                      5
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "courier",
+                  "n",
+                  "avg_minutes",
+                  "max_minutes"
+                ],
+                "rows": [
+                  [
+                    "ada",
+                    2,
+                    6.0,
+                    9
+                  ],
+                  [
+                    "mia",
+                    1,
+                    7.0,
+                    7
+                  ],
+                  [
+                    "zoe",
+                    2,
+                    5.0,
+                    5
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "one-delivery couriers",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "courier",
+                    "day",
+                    "minutes"
+                  ],
+                  "rows": [
+                    [
+                      "kim",
+                      "mon",
+                      44
+                    ],
+                    [
+                      "lee",
+                      "tue",
+                      6
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "courier",
+                  "n",
+                  "avg_minutes",
+                  "max_minutes"
+                ],
+                "rows": [
+                  [
+                    "kim",
+                    1,
+                    44.0,
+                    44
+                  ],
+                  [
+                    "lee",
+                    1,
+                    6.0,
+                    6
+                  ]
+                ]
+              }
+            }
+          }
+        ],
+        "hints": [
+          "Three different statistics of the same column, side by side in one output row per group. Can one groupby call produce several named result columns at once?",
+          "The named-aggregation syntax agg(n=('minutes', 'count'), avg_minutes=('minutes', 'mean'), max_minutes=('minutes', 'max')) lets you pick source column, function and output name per field.",
+          "stats = deliveries.groupby('courier', as_index=False).agg(n=('minutes', 'count'), avg_minutes=('minutes', 'mean'), max_minutes=('minutes', 'max')); then stats['avg_minutes'] = stats['avg_minutes'].round(2) and sort by courier."
+        ],
+        "reasoning": "<p>A scorecard asks several questions of the <b>same</b> groups at once, and named aggregation is the tool built for it: each pair <code>name=(column, func)</code> says \"take this column of each little table, apply this collapse, store it under this name\". Doing it in one call is not just brevity — it guarantees all columns come from the same grouping, which hand-rolled separate groupbys can silently violate. The <code>round(2)</code> step is applied <i>after</i> aggregation: average first, then round — rounding the data before averaging would bias the mean.</p>",
+        "solution": "import pandas as pd\n\ndef courier_stats(deliveries):\n    \"\"\"Return per-courier delivery statistics.\"\"\"\n    stats = deliveries.groupby(\"courier\", as_index=False).agg(\n        n=(\"minutes\", \"count\"),\n        avg_minutes=(\"minutes\", \"mean\"),\n        max_minutes=(\"minutes\", \"max\"),\n    )\n    stats[\"avg_minutes\"] = stats[\"avg_minutes\"].round(2)\n    return stats.sort_values(\"courier\").reset_index(drop=True)\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "pd-groupby-4",
+        "title": "How far from your class average?",
+        "difficulty": "medium",
+        "tags": [
+          "groupby",
+          "transform",
+          "broadcasting",
+          "rounding"
+        ],
+        "statement": "<p>Each row of <code>scores</code> is one exam attempt with columns <code>student</code> (str), <code>classroom</code> (str) and <code>score</code> (int).</p><p>Implement <code>deviation(scores)</code> returning a Series named <code>dev</code> <b>aligned with the input rows</b> (same length, same order): each value is that row's <code>score</code> minus the <b>mean score of that row's classroom</b>, <b>rounded to 2 decimal places</b>. Values may be negative, zero, or positive.</p>",
+        "constraints": [
+          "Return a Series named 'dev' with one value per input row, in the input row order",
+          "Each value = row's score minus the mean score of that row's classroom (all rows of that classroom count)",
+          "Every value rounded to 2 decimal places",
+          "Classrooms may have any number of rows and rows may be interleaved"
+        ],
+        "examples": [
+          {
+            "call": "deviation(scores)  # classroom a scored 70 and 80; classroom b scored 90 and 100",
+            "returns": "Series named 'dev': [-5.0, 5.0, -5.0, 5.0]",
+            "why": "classroom a averages 75 so its rows deviate by -5 and +5; classroom b averages 95 with the same pattern"
+          },
+          {
+            "call": "deviation(scores)  # one classroom with scores 65, 71, 76",
+            "returns": "Series named 'dev': [-5.67, 0.33, 5.33]",
+            "why": "the class mean is 70.666..., and each deviation is rounded to 2 decimals"
+          }
+        ],
+        "starter": "import pandas as pd\n\ndef deviation(scores):\n    \"\"\"Return each row's score minus its classroom mean.\n\n    Series named 'dev', aligned with the input rows,\n    values rounded to 2 decimal places.\n    \"\"\"\n    pass\n",
+        "func": "deviation",
+        "tests": [
+          {
+            "label": "two classrooms, clean means",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "student",
+                    "classroom",
+                    "score"
+                  ],
+                  "rows": [
+                    [
+                      "ana",
+                      "a",
+                      70
+                    ],
+                    [
+                      "bo",
+                      "a",
+                      80
+                    ],
+                    [
+                      "cy",
+                      "b",
+                      90
+                    ],
+                    [
+                      "dee",
+                      "b",
+                      100
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": false,
+            "expected": {
+              "__ser__": {
+                "values": [
+                  -5.0,
+                  5.0,
+                  -5.0,
+                  5.0
+                ],
+                "name": "dev"
+              }
+            }
+          },
+          {
+            "label": "interleaved classrooms",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "student",
+                    "classroom",
+                    "score"
+                  ],
+                  "rows": [
+                    [
+                      "ana",
+                      "a",
+                      70
+                    ],
+                    [
+                      "bo",
+                      "b",
+                      90
+                    ],
+                    [
+                      "cy",
+                      "a",
+                      80
+                    ],
+                    [
+                      "dee",
+                      "b",
+                      100
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": false,
+            "expected": {
+              "__ser__": {
+                "values": [
+                  -5.0,
+                  -5.0,
+                  5.0,
+                  5.0
+                ],
+                "name": "dev"
+              }
+            }
+          },
+          {
+            "label": "repeating-decimal mean",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "student",
+                    "classroom",
+                    "score"
+                  ],
+                  "rows": [
+                    [
+                      "ivy",
+                      "c",
+                      65
+                    ],
+                    [
+                      "jax",
+                      "c",
+                      71
+                    ],
+                    [
+                      "kim",
+                      "c",
+                      76
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__ser__": {
+                "values": [
+                  -5.67,
+                  0.33,
+                  5.33
+                ],
+                "name": "dev"
+              }
+            }
+          },
+          {
+            "label": "single classroom, four students",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "student",
+                    "classroom",
+                    "score"
+                  ],
+                  "rows": [
+                    [
+                      "a1",
+                      "z",
+                      80
+                    ],
+                    [
+                      "a2",
+                      "z",
+                      85
+                    ],
+                    [
+                      "a3",
+                      "z",
+                      90
+                    ],
+                    [
+                      "a4",
+                      "z",
+                      95
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__ser__": {
+                "values": [
+                  -7.5,
+                  -2.5,
+                  2.5,
+                  7.5
+                ],
+                "name": "dev"
+              }
+            }
+          },
+          {
+            "label": "single row overall",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "student",
+                    "classroom",
+                    "score"
+                  ],
+                  "rows": [
+                    [
+                      "solo",
+                      "x",
+                      42
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__ser__": {
+                "values": [
+                  0.0
+                ],
+                "name": "dev"
+              }
+            }
+          },
+          {
+            "label": "unequal classrooms interleaved",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "student",
+                    "classroom",
+                    "score"
+                  ],
+                  "rows": [
+                    [
+                      "p1",
+                      "m",
+                      50
+                    ],
+                    [
+                      "p2",
+                      "n",
+                      10
+                    ],
+                    [
+                      "p3",
+                      "m",
+                      60
+                    ],
+                    [
+                      "p4",
+                      "n",
+                      20
+                    ],
+                    [
+                      "p5",
+                      "n",
+                      30
+                    ],
+                    [
+                      "p6",
+                      "m",
+                      70
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__ser__": {
+                "values": [
+                  -10.0,
+                  -10.0,
+                  0.0,
+                  0.0,
+                  10.0,
+                  10.0
+                ],
+                "name": "dev"
+              }
+            }
+          }
+        ],
+        "hints": [
+          "The output must have one value per input row, not per classroom. Which groupby verb returns group answers re-broadcast to the original rows?",
+          "Compute class_mean = scores.groupby('classroom')['score'].transform('mean') — every row receives its own classroom's mean, positionally aligned — then subtract it from scores['score'].",
+          "dev = (scores['score'] - scores.groupby('classroom')['score'].transform('mean')).round(2); return dev.rename('dev'). The transform keeps input row order, so alignment is automatic."
+        ],
+        "reasoning": "<p>The shape requirement gives the verb away: one output value per <b>input row</b> means the group statistic must be broadcast back to the rows it came from — that is <code>transform</code>, not <code>agg</code>. transform returns a Series the same length as the frame, aligned by position, so <i>each row is compared against its own classroom's mean</i>, even when classrooms interleave in the table. This positional alignment is the invariant to trust: subtracting two same-length Series pairs row i with row i, never re-sorts, never reindexes — which is also why the result can promise \"same order as the input\".</p>",
+        "solution": "import pandas as pd\n\ndef deviation(scores):\n    \"\"\"Return each row's score minus its classroom mean.\"\"\"\n    class_mean = scores.groupby(\"classroom\")[\"score\"].transform(\"mean\")\n    return (scores[\"score\"] - class_mean).round(2).rename(\"dev\")\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "pd-groupby-5",
+        "title": "Only the thriving stores",
+        "difficulty": "hard",
+        "tags": [
+          "groupby",
+          "filter",
+          "aggregate-condition",
+          "row-order"
+        ],
+        "statement": "<p>A retail chain records daily sales. Each row of <code>daily</code> is one store-day with columns <code>store</code> (str), <code>date</code> (str) and <code>sales</code> (int).</p><p>Leadership wants to study the daily pattern of <b>thriving stores only</b>: stores whose <b>average daily sales strictly exceed</b> <code>threshold</code>.</p><p>Implement <code>thriving_daily(daily, threshold)</code> returning a DataFrame with the same columns <code>[\"store\", \"date\", \"sales\"]</code>: <b>all the rows</b> (all store-days) belonging to stores whose mean sales strictly exceed the threshold. Rows appear in the <b>original table order</b>, even when different stores' rows interleave. Stores whose average is exactly the threshold are excluded.</p>",
+        "constraints": [
+          "A store is kept when the mean of ALL its daily sales is strictly greater than threshold (equal is excluded)",
+          "Return whole store-day rows, not the averages",
+          "Rows in the original table order, with columns ['store', 'date', 'sales']",
+          "If no store qualifies, return an empty DataFrame with those columns"
+        ],
+        "examples": [
+          {
+            "call": "thriving_daily(daily, 400)  # s1 sold 600 then 400 (mean 500), s2 sold 100 then 150 (mean 125)",
+            "returns": "DataFrame with s1's two rows only, in original order",
+            "why": "only s1's average (500) strictly exceeds 400 — and we keep its daily rows, not the number 500"
+          },
+          {
+            "call": "thriving_daily(daily, 500)  # s1 averaged exactly 500",
+            "returns": "an empty DataFrame with columns ['store', 'date', 'sales']",
+            "why": "the rule is strict: an average of exactly 500 does not exceed 500"
+          }
+        ],
+        "starter": "import pandas as pd\n\ndef thriving_daily(daily, threshold):\n    \"\"\"Return the store-day rows of stores whose average daily\n    sales strictly exceed threshold.\n\n    Same columns, original row order.\n    \"\"\"\n    pass\n",
+        "func": "thriving_daily",
+        "tests": [
+          {
+            "label": "one store passes",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "store",
+                    "date",
+                    "sales"
+                  ],
+                  "rows": [
+                    [
+                      "s1",
+                      "d1",
+                      600
+                    ],
+                    [
+                      "s2",
+                      "d1",
+                      100
+                    ],
+                    [
+                      "s1",
+                      "d2",
+                      400
+                    ],
+                    [
+                      "s2",
+                      "d2",
+                      150
+                    ]
+                  ]
+                }
+              },
+              400
+            ],
+            "hidden": false,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "store",
+                  "date",
+                  "sales"
+                ],
+                "rows": [
+                  [
+                    "s1",
+                    "d1",
+                    600
+                  ],
+                  [
+                    "s1",
+                    "d2",
+                    400
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "both stores pass",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "store",
+                    "date",
+                    "sales"
+                  ],
+                  "rows": [
+                    [
+                      "s1",
+                      "d1",
+                      600
+                    ],
+                    [
+                      "s2",
+                      "d1",
+                      100
+                    ],
+                    [
+                      "s1",
+                      "d2",
+                      400
+                    ],
+                    [
+                      "s2",
+                      "d2",
+                      150
+                    ]
+                  ]
+                }
+              },
+              100
+            ],
+            "hidden": false,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "store",
+                  "date",
+                  "sales"
+                ],
+                "rows": [
+                  [
+                    "s1",
+                    "d1",
+                    600
+                  ],
+                  [
+                    "s2",
+                    "d1",
+                    100
+                  ],
+                  [
+                    "s1",
+                    "d2",
+                    400
+                  ],
+                  [
+                    "s2",
+                    "d2",
+                    150
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "exact average is excluded",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "store",
+                    "date",
+                    "sales"
+                  ],
+                  "rows": [
+                    [
+                      "s3",
+                      "d1",
+                      600
+                    ],
+                    [
+                      "s3",
+                      "d2",
+                      400
+                    ],
+                    [
+                      "s4",
+                      "d1",
+                      800
+                    ],
+                    [
+                      "s4",
+                      "d2",
+                      300
+                    ]
+                  ]
+                }
+              },
+              500
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "store",
+                  "date",
+                  "sales"
+                ],
+                "rows": [
+                  [
+                    "s4",
+                    "d1",
+                    800
+                  ],
+                  [
+                    "s4",
+                    "d2",
+                    300
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "no store qualifies",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "store",
+                    "date",
+                    "sales"
+                  ],
+                  "rows": [
+                    [
+                      "s1",
+                      "d1",
+                      10
+                    ],
+                    [
+                      "s2",
+                      "d1",
+                      20
+                    ],
+                    [
+                      "s1",
+                      "d2",
+                      12
+                    ],
+                    [
+                      "s2",
+                      "d2",
+                      18
+                    ]
+                  ]
+                }
+              },
+              500
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "store",
+                  "date",
+                  "sales"
+                ],
+                "rows": []
+              }
+            }
+          },
+          {
+            "label": "interleaved rows keep table order",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "store",
+                    "date",
+                    "sales"
+                  ],
+                  "rows": [
+                    [
+                      "s1",
+                      "d1",
+                      900
+                    ],
+                    [
+                      "s2",
+                      "d1",
+                      50
+                    ],
+                    [
+                      "s1",
+                      "d2",
+                      100
+                    ],
+                    [
+                      "s3",
+                      "d1",
+                      300
+                    ],
+                    [
+                      "s2",
+                      "d2",
+                      60
+                    ],
+                    [
+                      "s1",
+                      "d3",
+                      800
+                    ],
+                    [
+                      "s3",
+                      "d2",
+                      400
+                    ]
+                  ]
+                }
+              },
+              200
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "store",
+                  "date",
+                  "sales"
+                ],
+                "rows": [
+                  [
+                    "s1",
+                    "d1",
+                    900
+                  ],
+                  [
+                    "s1",
+                    "d2",
+                    100
+                  ],
+                  [
+                    "s3",
+                    "d1",
+                    300
+                  ],
+                  [
+                    "s1",
+                    "d3",
+                    800
+                  ],
+                  [
+                    "s3",
+                    "d2",
+                    400
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "single store, single row",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "store",
+                    "date",
+                    "sales"
+                  ],
+                  "rows": [
+                    [
+                      "only",
+                      "d1",
+                      75
+                    ]
+                  ]
+                }
+              },
+              50
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "store",
+                  "date",
+                  "sales"
+                ],
+                "rows": [
+                  [
+                    "only",
+                    "d1",
+                    75
+                  ]
+                ]
+              }
+            }
+          }
+        ],
+        "hints": [
+          "The condition (average above a threshold) is a property of a whole store, but the output is daily rows. Which groupby verb keeps rows of groups instead of collapsing them?",
+          "groupby('store').filter(lambda g: g['sales'].mean() > threshold) evaluates the condition per store and returns the surviving groups' rows in original order.",
+          "return daily.groupby('store').filter(lambda g: g['sales'].mean() > threshold). A transform-based alternative: means = daily.groupby('store')['sales'].transform('mean'); return daily[means > threshold]."
+        ],
+        "reasoning": "<p>Spot the two levels: the <b>question</b> is group-level (\"does this store's average clear the bar?\") while the <b>output</b> is row-level (\"give me the store-days\"). <code>groupby().filter</code> exists for exactly this mismatch — it hands your function each store's sub-table, takes a yes/no per sub-table, and returns the union of the passing sub-tables' rows. Because filter is implemented as row selection (not reassembly), the original order and columns survive untouched, even for interleaved stores. The vectorized alternative — broadcast the group means with <code>transform</code> and mask the rows — teaches the same invariant from the other side.</p>",
+        "solution": "import pandas as pd\n\ndef thriving_daily(daily, threshold):\n    \"\"\"Return rows of stores whose mean sales exceed threshold.\"\"\"\n    return daily.groupby(\"store\").filter(\n        lambda g: g[\"sales\"].mean() > threshold\n    )\n"
+      }
+    }
+  ]
+}

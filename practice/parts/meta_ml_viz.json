@@ -1,0 +1,9 @@
+{
+  "id": "ml-viz-reasoning",
+  "title": "ML & Viz Reasoning",
+  "icon": "🧠",
+  "tagline": "Predict-before-you-run challenges across Matplotlib, scikit-learn, TensorFlow and transformers — execution in your head, verified instantly.",
+  "accent": "green",
+  "engine": "python",
+  "packages": []
+}

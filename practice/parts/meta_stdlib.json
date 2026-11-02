@@ -1,0 +1,9 @@
+{
+  "id": "stdlib-power",
+  "title": "Stdlib Power Tools",
+  "icon": "🧰",
+  "tagline": "collections, itertools, functools, re, json, datetime — the standard-library tools that turn clumsy code into clean code.",
+  "accent": "purple",
+  "engine": "python",
+  "packages": []
+}

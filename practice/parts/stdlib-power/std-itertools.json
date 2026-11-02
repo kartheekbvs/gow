@@ -1,0 +1,2248 @@
+{
+  "id": "std-itertools",
+  "title": "itertools: Combinatorics & Chaining",
+  "icon": "⛓️",
+  "level": "intermediate",
+  "order": 20,
+  "conceptRef": "stdlib.html#s3",
+  "blurb": "Flatten, enumerate, and group: iterator tools that replace index arithmetic with pipelines that state what they mean.",
+  "cells": [
+    {
+      "type": "concept",
+      "title": "chain: many sequences, one pass",
+      "body": "<p>Real data rarely arrives as one flat list: logs come in hourly files, batches in chunks, edges in per-node buckets. Before you can scan anything you must flatten — and the classic mistake is to flatten by copying: nested loops that append into a fresh list, index bookkeeping, off-by-one bugs at batch boundaries.</p><p><code>chain.from_iterable(batches)</code> yields every element of every batch in order, lazily, with no copying and no indices — and unlike <code>chain(*batches)</code> it does not need all batches up front, so it works on generators too. Flattening is the simplest example of a broader idea: composing iterators into a pipeline where each stage pulls from the previous one. The moment you stop managing indices, whole categories of bugs disappear.</p>",
+      "demo": {
+        "code": "from itertools import chain\n\nbatches = [[1, 2], [], [3], [4, 5]]\nprint(list(chain.from_iterable(batches)))\n\ndef in_batches(items, size):\n    for i in range(0, len(items), size):\n        yield items[i:i + size]\n\nprint(list(chain.from_iterable(in_batches(range(1, 8), 3))))"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "Combinatorial iterators: enumerate the universe, then filter",
+      "body": "<p>Some questions sound like clever puzzles — which menu combinations hit the budget exactly, what numbers can these digits form, which subsets satisfy the rule — but when the universe of candidates is small, the honest answer is to <b>enumerate every candidate and test it</b>. The combinatorial iterators are candidate factories: <code>product</code> walks every way to pick one item per list, <code>permutations</code> every arrangement, <code>combinations</code> every subset of a given size.</p><p>The skill being trained is not memorizing the functions; it is <i>estimating the size of the universe before committing</i>. Six options per course across five courses is under eight thousand meals — enumerable. Twenty items choose ten is 184,756 — still fine. A 40-character alphabet permuted is not. Enumeration converts a reasoning problem into a counting problem, and counting is where you catch trouble early.</p>",
+      "demo": {
+        "code": "from itertools import product, permutations, combinations\n\nprint(list(product([1, 2], [\"a\", \"b\"])))\nprint(list(permutations(\"ab\")))\nprint(list(combinations([1, 2, 3], 2)))\nprint(\"meals:\", len(list(product(range(6), repeat=5))))"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "groupby groups consecutive runs — sort first",
+      "body": "<p><code>groupby</code> walks a sequence and yields a (key, group) pair for every <b>run of consecutive elements that share the same key</b>. That is the contract, and it is the most misunderstood line in the module: it does not find all elements matching a key — only the adjacent ones. Feed it unsorted words and one letter's words arrive scattered across several tiny groups.</p><p>The fix is the pattern to memorize: <b>sort by the same key you group by, then group</b>. Python's sort is stable, so elements that share a key keep their original relative order inside the sorted run — sorting does not scramble your data, it concentrates it. The same discipline applies whenever you reach for grouping: decide the key, order by the key, then group.</p>",
+      "demo": {
+        "code": "from itertools import groupby\n\nwords = [\"pear\", \"fig\", \"plum\", \"apple\", \"peach\"]\nkey = lambda w: w[0]\n\nnaive = [(k, list(g)) for k, g in groupby(words, key)]\nprint(naive)\n\nordered = sorted(words, key=key)\nfixed = [(k, list(g)) for k, g in groupby(ordered, key)]\nprint(fixed)"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "std-itertools-1",
+        "title": "One conveyor, many batches",
+        "difficulty": "easy",
+        "tags": [
+          "itertools",
+          "flattening",
+          "sequences"
+        ],
+        "statement": "<p>A sorting facility logs parcels hour by hour: the day's data is a list of batches, one list per hour, each holding that hour's parcel ids in scan order. Some hours are idle and contribute an empty batch.</p><p>Rebuild the full day as a single flat list of parcel ids, preserving the original order exactly — hour by hour, and within each hour, scan by scan.</p>",
+        "constraints": [
+          "0 <= len(batches) <= 10,000",
+          "every batch holds between 0 and 1,000 ids"
+        ],
+        "examples": [
+          {
+            "call": "flatten([[1, 2], [], [3], [4, 5]])",
+            "returns": "[1, 2, 3, 4, 5]",
+            "why": "empty hours contribute nothing; everything else keeps its place"
+          },
+          {
+            "call": "flatten([[\"a\", \"b\"], [\"c\"]])",
+            "returns": "['a', 'b', 'c']",
+            "why": "batches are concatenated in the order they appear"
+          }
+        ],
+        "starter": "def flatten(batches):\n    \"\"\"Return every parcel id from every batch, in order.\"\"\"\n    pass\n",
+        "func": "flatten",
+        "tests": [
+          {
+            "label": "mixed batches with an empty one",
+            "args": [
+              [
+                [
+                  1,
+                  2
+                ],
+                [],
+                [
+                  3
+                ],
+                [
+                  4,
+                  5
+                ]
+              ]
+            ],
+            "expected": [
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "hidden": false
+          },
+          {
+            "label": "string ids",
+            "args": [
+              [
+                [
+                  "a",
+                  "b"
+                ],
+                [
+                  "c"
+                ]
+              ]
+            ],
+            "expected": [
+              "a",
+              "b",
+              "c"
+            ],
+            "hidden": false
+          },
+          {
+            "label": "no batches at all",
+            "args": [
+              []
+            ],
+            "expected": [],
+            "hidden": true
+          },
+          {
+            "label": "one empty batch",
+            "args": [
+              [
+                []
+              ]
+            ],
+            "expected": [],
+            "hidden": true
+          },
+          {
+            "label": "single non-empty batch",
+            "args": [
+              [
+                [
+                  9,
+                  9,
+                  9
+                ]
+              ]
+            ],
+            "expected": [
+              9,
+              9,
+              9
+            ],
+            "hidden": true
+          },
+          {
+            "label": "long day of alternating batches",
+            "args": [
+              {
+                "__repeat__": {
+                  "item": [
+                    [
+                      1
+                    ],
+                    [
+                      2,
+                      3
+                    ]
+                  ],
+                  "times": 3000
+                }
+              }
+            ],
+            "expected": {
+              "__repeat__": {
+                "item": [
+                  1,
+                  2,
+                  3
+                ],
+                "times": 3000
+              }
+            },
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "A nested loop with append works — but the module has a tool whose whole job is 'yield everything from everything, in order'. What is it?",
+          "itertools.chain.from_iterable(batches) takes an iterable of iterables and yields their elements one batch at a time, without copying or index math.",
+          "return list(chain.from_iterable(batches)) materializes the flattened stream. It also works when batches is a generator, unlike chain(*batches)."
+        ],
+        "reasoning": "<p>Flattening is concatenation in disguise: the result is 'batch 0's items, then batch 1's, then batch 2's'. A nested loop expresses that, but it also makes you own the bookkeeping — the loop variables, the append calls, the temptation to name an index. <code>chain.from_iterable</code> states the intent (<i>stream everything, in order</i>) and is lazy: it pulls one batch at a time, so memory stays flat no matter how many batches arrive. The transferable instinct is to see 'many containers, one sequence' as a pipeline stage rather than a loop shape — the same thinking later turns into generator pipelines that process log files without ever holding a full day in memory.</p>",
+        "solution": "from itertools import chain\n\n\ndef flatten(batches):\n    \"\"\"Return every parcel id from every batch, in order.\"\"\"\n    return list(chain.from_iterable(batches))\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "std-itertools-2",
+        "title": "Hit the lunch budget exactly",
+        "difficulty": "medium",
+        "tags": [
+          "itertools",
+          "combinatorics",
+          "search"
+        ],
+        "statement": "<p>A cafeteria build-your-own-meal station sells meals in courses: the menu is a list of courses, and each course offers a list of <code>(item_name, price)</code> options. A meal is formed by picking <b>exactly one option from every course</b>.</p><p>The accounting team can only reimburse meals that cost <b>exactly</b> the daily budget — one cent over or under is rejected. Return every budget-exact meal as a list of item-name tuples, listed in menu-sweep order: like an odometer, the last course's options cycle fastest.</p>",
+        "constraints": [
+          "1 <= len(courses) <= 6",
+          "each course offers between 1 and 6 options",
+          "prices are integers between 1 and 50; 1 <= budget <= 300"
+        ],
+        "examples": [
+          {
+            "call": "exact_meals([[(\"soup\", 4), (\"salad\", 6)], [(\"wrap\", 7), (\"pasta\", 9)]], 13)",
+            "returns": "[('soup', 'pasta'), ('salad', 'wrap')]",
+            "why": "soup+pasta is 4+9 and salad+wrap is 6+7; the other two combinations miss 13"
+          },
+          {
+            "call": "exact_meals([[(\"tea\", 2)]], 5)",
+            "returns": "[]",
+            "why": "the only possible meal costs 2, so nothing hits the budget"
+          }
+        ],
+        "starter": "def exact_meals(courses, budget):\n    \"\"\"Return all meals whose prices sum exactly to budget.\n\n    A meal picks one option per course; meals appear\n    in menu-sweep order (last course cycles fastest).\n    \"\"\"\n    pass\n",
+        "func": "exact_meals",
+        "tests": [
+          {
+            "label": "two exact meals out of four",
+            "args": [
+              [
+                [
+                  [
+                    "soup",
+                    4
+                  ],
+                  [
+                    "salad",
+                    6
+                  ]
+                ],
+                [
+                  [
+                    "wrap",
+                    7
+                  ],
+                  [
+                    "pasta",
+                    9
+                  ]
+                ]
+              ],
+              13
+            ],
+            "expected": [
+              {
+                "__tuple__": [
+                  "soup",
+                  "pasta"
+                ]
+              },
+              {
+                "__tuple__": [
+                  "salad",
+                  "wrap"
+                ]
+              }
+            ],
+            "hidden": false
+          },
+          {
+            "label": "no meal hits the budget",
+            "args": [
+              [
+                [
+                  [
+                    "tea",
+                    2
+                  ]
+                ]
+              ],
+              5
+            ],
+            "expected": [],
+            "hidden": false
+          },
+          {
+            "label": "single course, two winners",
+            "args": [
+              [
+                [
+                  [
+                    "a",
+                    5
+                  ],
+                  [
+                    "b",
+                    5
+                  ],
+                  [
+                    "c",
+                    4
+                  ]
+                ]
+              ],
+              5
+            ],
+            "expected": [
+              {
+                "__tuple__": [
+                  "a"
+                ]
+              },
+              {
+                "__tuple__": [
+                  "b"
+                ]
+              }
+            ],
+            "hidden": true
+          },
+          {
+            "label": "three courses, one winner",
+            "args": [
+              [
+                [
+                  [
+                    "a",
+                    1
+                  ],
+                  [
+                    "b",
+                    2
+                  ]
+                ],
+                [
+                  [
+                    "c",
+                    2
+                  ],
+                  [
+                    "d",
+                    4
+                  ]
+                ],
+                [
+                  [
+                    "e",
+                    1
+                  ],
+                  [
+                    "f",
+                    3
+                  ]
+                ]
+              ],
+              6
+            ],
+            "expected": [
+              {
+                "__tuple__": [
+                  "a",
+                  "c",
+                  "f"
+                ]
+              },
+              {
+                "__tuple__": [
+                  "a",
+                  "d",
+                  "e"
+                ]
+              }
+            ],
+            "hidden": true
+          },
+          {
+            "label": "every combination qualifies",
+            "args": [
+              [
+                [
+                  [
+                    "x",
+                    1
+                  ],
+                  [
+                    "y",
+                    1
+                  ]
+                ],
+                [
+                  [
+                    "z",
+                    1
+                  ],
+                  [
+                    "w",
+                    1
+                  ]
+                ]
+              ],
+              2
+            ],
+            "expected": [
+              {
+                "__tuple__": [
+                  "x",
+                  "z"
+                ]
+              },
+              {
+                "__tuple__": [
+                  "x",
+                  "w"
+                ]
+              },
+              {
+                "__tuple__": [
+                  "y",
+                  "z"
+                ]
+              },
+              {
+                "__tuple__": [
+                  "y",
+                  "w"
+                ]
+              }
+            ],
+            "hidden": true
+          },
+          {
+            "label": "budget below every possible total",
+            "args": [
+              [
+                [
+                  [
+                    "a",
+                    9
+                  ],
+                  [
+                    "b",
+                    8
+                  ]
+                ],
+                [
+                  [
+                    "c",
+                    7
+                  ]
+                ]
+              ],
+              1
+            ],
+            "expected": [],
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "How would you list every possible meal by hand for three courses — and is the count small enough to simply check each one?",
+          "Enumerate all candidate meals with itertools.product, one option per course, then keep exactly those whose prices sum to the budget.",
+          "for combo in product(*courses): total = sum(price for _, price in combo); keep tuple(name for name, _ in combo) when total == budget. The tuples come out in menu-sweep order automatically."
+        ],
+        "reasoning": "<p>The problem defines the answer set implicitly ('one option per course, total equals budget'), and enumeration makes that definition executable: <code>product(*courses)</code> is literally 'one option per course, all ways'. Correctness then rests on one countable fact — the number of meals is the product of the option counts, at most 6 to the power 6 here — so brute force is not a gamble, it is a budgeted decision. The alternative (index arithmetic per course, nested loops that change shape with the course count) is exactly the code that breaks when a seventh course appears. Learning to <i>size the universe first</i> is what separates deliberate enumeration from accidental exponential blowup.</p>",
+        "solution": "from itertools import product\n\n\ndef exact_meals(courses, budget):\n    \"\"\"Return all meals whose prices sum exactly to budget.\n\n    A meal picks one option per course; meals appear\n    in menu-sweep order (last course cycles fastest).\n    \"\"\"\n    meals = []\n    for combo in product(*courses):\n        if sum(price for _, price in combo) == budget:\n            meals.append(tuple(name for name, _ in combo))\n    return meals\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "std-itertools-3",
+        "title": "Autocomplete index",
+        "difficulty": "medium",
+        "tags": [
+          "itertools",
+          "groupby",
+          "sorting"
+        ],
+        "statement": "<p>A search box suggests words as you type. To power it, build an index that groups words by their first letter: return a list of <code>(letter, words)</code> pairs where the letters are in alphabetical order and each group lists its words in their <b>original order of appearance</b>.</p><p>The word list arrives as an <code>OpCountList</code> — a list stand-in that counts how many times your code inspects an element. Your algorithm may inspect elements at most <code>3 x len(words)</code> times, so a plan that re-scans the whole list once per letter of the alphabet will blow the budget on the big hidden test.</p>",
+        "constraints": [
+          "0 <= len(words) <= 100,000",
+          "words are non-empty lowercase strings; duplicates are allowed",
+          "inspection budget: at most 3 x len(words) element inspections (len() itself is free)"
+        ],
+        "examples": [
+          {
+            "call": "first_letter_index([\"pear\", \"fig\", \"plum\", \"apple\", \"peach\"])",
+            "returns": "[('a', ['apple']), ('f', ['fig']), ('p', ['pear', 'plum', 'peach'])]",
+            "why": "letters sort alphabetically; inside 'p', the original order pear, plum, peach is preserved"
+          },
+          {
+            "call": "first_letter_index([\"b\", \"a\"])",
+            "returns": "[('a', ['a']), ('b', ['b'])]",
+            "why": "output letters are sorted, not in first-seen order"
+          }
+        ],
+        "starter": "def first_letter_index(words):\n    \"\"\"Group words by first letter for the search index.\n\n    Letters appear alphabetically; words inside a group\n    keep their original order. words is an OpCountList:\n    inspecting an element costs 1, so touch each element\n    as few times as possible.\n    \"\"\"\n    pass\n",
+        "func": "first_letter_index",
+        "tests": [
+          {
+            "label": "unsorted input, stable groups",
+            "args": [
+              [
+                "pear",
+                "fig",
+                "plum",
+                "apple",
+                "peach"
+              ]
+            ],
+            "expected": [
+              {
+                "__tuple__": [
+                  "a",
+                  [
+                    "apple"
+                  ]
+                ]
+              },
+              {
+                "__tuple__": [
+                  "f",
+                  [
+                    "fig"
+                  ]
+                ]
+              },
+              {
+                "__tuple__": [
+                  "p",
+                  [
+                    "pear",
+                    "plum",
+                    "peach"
+                  ]
+                ]
+              }
+            ],
+            "hidden": false
+          },
+          {
+            "label": "letters come out sorted",
+            "args": [
+              [
+                "b",
+                "a"
+              ]
+            ],
+            "expected": [
+              {
+                "__tuple__": [
+                  "a",
+                  [
+                    "a"
+                  ]
+                ]
+              },
+              {
+                "__tuple__": [
+                  "b",
+                  [
+                    "b"
+                  ]
+                ]
+              }
+            ],
+            "hidden": false
+          },
+          {
+            "label": "no words",
+            "args": [
+              []
+            ],
+            "expected": [],
+            "hidden": true
+          },
+          {
+            "label": "single word",
+            "args": [
+              [
+                "hello"
+              ]
+            ],
+            "expected": [
+              {
+                "__tuple__": [
+                  "h",
+                  [
+                    "hello"
+                  ]
+                ]
+              }
+            ],
+            "hidden": true
+          },
+          {
+            "label": "all words share one letter, with duplicates",
+            "args": [
+              [
+                "bat",
+                "bee",
+                "bat"
+              ]
+            ],
+            "expected": [
+              {
+                "__tuple__": [
+                  "b",
+                  [
+                    "bat",
+                    "bee",
+                    "bat"
+                  ]
+                ]
+              }
+            ],
+            "hidden": true
+          },
+          {
+            "label": "big alphabet, one-pass budget",
+            "args": [
+              {
+                "__opcount__": {
+                  "data": {
+                    "__repeat__": {
+                      "item": [
+                        "a",
+                        "b",
+                        "c",
+                        "d",
+                        "e",
+                        "f",
+                        "g",
+                        "h",
+                        "i",
+                        "j",
+                        "k",
+                        "l",
+                        "m",
+                        "n",
+                        "o",
+                        "p",
+                        "q",
+                        "r",
+                        "s",
+                        "t",
+                        "u",
+                        "v",
+                        "w",
+                        "x",
+                        "y",
+                        "z"
+                      ],
+                      "times": 50
+                    }
+                  }
+                }
+              }
+            ],
+            "expected": [
+              {
+                "__tuple__": [
+                  "a",
+                  [
+                    "a",
+                    "a",
+                    "a",
+                    "a",
+                    "a",
+                    "a",
+                    "a",
+                    "a",
+                    "a",
+                    "a",
+                    "a",
+                    "a",
+                    "a",
+                    "a",
+                    "a",
+                    "a",
+                    "a",
+                    "a",
+                    "a",
+                    "a",
+                    "a",
+                    "a",
+                    "a",
+                    "a",
+                    "a",
+                    "a",
+                    "a",
+                    "a",
+                    "a",
+                    "a",
+                    "a",
+                    "a",
+                    "a",
+                    "a",
+                    "a",
+                    "a",
+                    "a",
+                    "a",
+                    "a",
+                    "a",
+                    "a",
+                    "a",
+                    "a",
+                    "a",
+                    "a",
+                    "a",
+                    "a",
+                    "a",
+                    "a",
+                    "a"
+                  ]
+                ]
+              },
+              {
+                "__tuple__": [
+                  "b",
+                  [
+                    "b",
+                    "b",
+                    "b",
+                    "b",
+                    "b",
+                    "b",
+                    "b",
+                    "b",
+                    "b",
+                    "b",
+                    "b",
+                    "b",
+                    "b",
+                    "b",
+                    "b",
+                    "b",
+                    "b",
+                    "b",
+                    "b",
+                    "b",
+                    "b",
+                    "b",
+                    "b",
+                    "b",
+                    "b",
+                    "b",
+                    "b",
+                    "b",
+                    "b",
+                    "b",
+                    "b",
+                    "b",
+                    "b",
+                    "b",
+                    "b",
+                    "b",
+                    "b",
+                    "b",
+                    "b",
+                    "b",
+                    "b",
+                    "b",
+                    "b",
+                    "b",
+                    "b",
+                    "b",
+                    "b",
+                    "b",
+                    "b",
+                    "b"
+                  ]
+                ]
+              },
+              {
+                "__tuple__": [
+                  "c",
+                  [
+                    "c",
+                    "c",
+                    "c",
+                    "c",
+                    "c",
+                    "c",
+                    "c",
+                    "c",
+                    "c",
+                    "c",
+                    "c",
+                    "c",
+                    "c",
+                    "c",
+                    "c",
+                    "c",
+                    "c",
+                    "c",
+                    "c",
+                    "c",
+                    "c",
+                    "c",
+                    "c",
+                    "c",
+                    "c",
+                    "c",
+                    "c",
+                    "c",
+                    "c",
+                    "c",
+                    "c",
+                    "c",
+                    "c",
+                    "c",
+                    "c",
+                    "c",
+                    "c",
+                    "c",
+                    "c",
+                    "c",
+                    "c",
+                    "c",
+                    "c",
+                    "c",
+                    "c",
+                    "c",
+                    "c",
+                    "c",
+                    "c",
+                    "c"
+                  ]
+                ]
+              },
+              {
+                "__tuple__": [
+                  "d",
+                  [
+                    "d",
+                    "d",
+                    "d",
+                    "d",
+                    "d",
+                    "d",
+                    "d",
+                    "d",
+                    "d",
+                    "d",
+                    "d",
+                    "d",
+                    "d",
+                    "d",
+                    "d",
+                    "d",
+                    "d",
+                    "d",
+                    "d",
+                    "d",
+                    "d",
+                    "d",
+                    "d",
+                    "d",
+                    "d",
+                    "d",
+                    "d",
+                    "d",
+                    "d",
+                    "d",
+                    "d",
+                    "d",
+                    "d",
+                    "d",
+                    "d",
+                    "d",
+                    "d",
+                    "d",
+                    "d",
+                    "d",
+                    "d",
+                    "d",
+                    "d",
+                    "d",
+                    "d",
+                    "d",
+                    "d",
+                    "d",
+                    "d",
+                    "d"
+                  ]
+                ]
+              },
+              {
+                "__tuple__": [
+                  "e",
+                  [
+                    "e",
+                    "e",
+                    "e",
+                    "e",
+                    "e",
+                    "e",
+                    "e",
+                    "e",
+                    "e",
+                    "e",
+                    "e",
+                    "e",
+                    "e",
+                    "e",
+                    "e",
+                    "e",
+                    "e",
+                    "e",
+                    "e",
+                    "e",
+                    "e",
+                    "e",
+                    "e",
+                    "e",
+                    "e",
+                    "e",
+                    "e",
+                    "e",
+                    "e",
+                    "e",
+                    "e",
+                    "e",
+                    "e",
+                    "e",
+                    "e",
+                    "e",
+                    "e",
+                    "e",
+                    "e",
+                    "e",
+                    "e",
+                    "e",
+                    "e",
+                    "e",
+                    "e",
+                    "e",
+                    "e",
+                    "e",
+                    "e",
+                    "e"
+                  ]
+                ]
+              },
+              {
+                "__tuple__": [
+                  "f",
+                  [
+                    "f",
+                    "f",
+                    "f",
+                    "f",
+                    "f",
+                    "f",
+                    "f",
+                    "f",
+                    "f",
+                    "f",
+                    "f",
+                    "f",
+                    "f",
+                    "f",
+                    "f",
+                    "f",
+                    "f",
+                    "f",
+                    "f",
+                    "f",
+                    "f",
+                    "f",
+                    "f",
+                    "f",
+                    "f",
+                    "f",
+                    "f",
+                    "f",
+                    "f",
+                    "f",
+                    "f",
+                    "f",
+                    "f",
+                    "f",
+                    "f",
+                    "f",
+                    "f",
+                    "f",
+                    "f",
+                    "f",
+                    "f",
+                    "f",
+                    "f",
+                    "f",
+                    "f",
+                    "f",
+                    "f",
+                    "f",
+                    "f",
+                    "f"
+                  ]
+                ]
+              },
+              {
+                "__tuple__": [
+                  "g",
+                  [
+                    "g",
+                    "g",
+                    "g",
+                    "g",
+                    "g",
+                    "g",
+                    "g",
+                    "g",
+                    "g",
+                    "g",
+                    "g",
+                    "g",
+                    "g",
+                    "g",
+                    "g",
+                    "g",
+                    "g",
+                    "g",
+                    "g",
+                    "g",
+                    "g",
+                    "g",
+                    "g",
+                    "g",
+                    "g",
+                    "g",
+                    "g",
+                    "g",
+                    "g",
+                    "g",
+                    "g",
+                    "g",
+                    "g",
+                    "g",
+                    "g",
+                    "g",
+                    "g",
+                    "g",
+                    "g",
+                    "g",
+                    "g",
+                    "g",
+                    "g",
+                    "g",
+                    "g",
+                    "g",
+                    "g",
+                    "g",
+                    "g",
+                    "g"
+                  ]
+                ]
+              },
+              {
+                "__tuple__": [
+                  "h",
+                  [
+                    "h",
+                    "h",
+                    "h",
+                    "h",
+                    "h",
+                    "h",
+                    "h",
+                    "h",
+                    "h",
+                    "h",
+                    "h",
+                    "h",
+                    "h",
+                    "h",
+                    "h",
+                    "h",
+                    "h",
+                    "h",
+                    "h",
+                    "h",
+                    "h",
+                    "h",
+                    "h",
+                    "h",
+                    "h",
+                    "h",
+                    "h",
+                    "h",
+                    "h",
+                    "h",
+                    "h",
+                    "h",
+                    "h",
+                    "h",
+                    "h",
+                    "h",
+                    "h",
+                    "h",
+                    "h",
+                    "h",
+                    "h",
+                    "h",
+                    "h",
+                    "h",
+                    "h",
+                    "h",
+                    "h",
+                    "h",
+                    "h",
+                    "h"
+                  ]
+                ]
+              },
+              {
+                "__tuple__": [
+                  "i",
+                  [
+                    "i",
+                    "i",
+                    "i",
+                    "i",
+                    "i",
+                    "i",
+                    "i",
+                    "i",
+                    "i",
+                    "i",
+                    "i",
+                    "i",
+                    "i",
+                    "i",
+                    "i",
+                    "i",
+                    "i",
+                    "i",
+                    "i",
+                    "i",
+                    "i",
+                    "i",
+                    "i",
+                    "i",
+                    "i",
+                    "i",
+                    "i",
+                    "i",
+                    "i",
+                    "i",
+                    "i",
+                    "i",
+                    "i",
+                    "i",
+                    "i",
+                    "i",
+                    "i",
+                    "i",
+                    "i",
+                    "i",
+                    "i",
+                    "i",
+                    "i",
+                    "i",
+                    "i",
+                    "i",
+                    "i",
+                    "i",
+                    "i",
+                    "i"
+                  ]
+                ]
+              },
+              {
+                "__tuple__": [
+                  "j",
+                  [
+                    "j",
+                    "j",
+                    "j",
+                    "j",
+                    "j",
+                    "j",
+                    "j",
+                    "j",
+                    "j",
+                    "j",
+                    "j",
+                    "j",
+                    "j",
+                    "j",
+                    "j",
+                    "j",
+                    "j",
+                    "j",
+                    "j",
+                    "j",
+                    "j",
+                    "j",
+                    "j",
+                    "j",
+                    "j",
+                    "j",
+                    "j",
+                    "j",
+                    "j",
+                    "j",
+                    "j",
+                    "j",
+                    "j",
+                    "j",
+                    "j",
+                    "j",
+                    "j",
+                    "j",
+                    "j",
+                    "j",
+                    "j",
+                    "j",
+                    "j",
+                    "j",
+                    "j",
+                    "j",
+                    "j",
+                    "j",
+                    "j",
+                    "j"
+                  ]
+                ]
+              },
+              {
+                "__tuple__": [
+                  "k",
+                  [
+                    "k",
+                    "k",
+                    "k",
+                    "k",
+                    "k",
+                    "k",
+                    "k",
+                    "k",
+                    "k",
+                    "k",
+                    "k",
+                    "k",
+                    "k",
+                    "k",
+                    "k",
+                    "k",
+                    "k",
+                    "k",
+                    "k",
+                    "k",
+                    "k",
+                    "k",
+                    "k",
+                    "k",
+                    "k",
+                    "k",
+                    "k",
+                    "k",
+                    "k",
+                    "k",
+                    "k",
+                    "k",
+                    "k",
+                    "k",
+                    "k",
+                    "k",
+                    "k",
+                    "k",
+                    "k",
+                    "k",
+                    "k",
+                    "k",
+                    "k",
+                    "k",
+                    "k",
+                    "k",
+                    "k",
+                    "k",
+                    "k",
+                    "k"
+                  ]
+                ]
+              },
+              {
+                "__tuple__": [
+                  "l",
+                  [
+                    "l",
+                    "l",
+                    "l",
+                    "l",
+                    "l",
+                    "l",
+                    "l",
+                    "l",
+                    "l",
+                    "l",
+                    "l",
+                    "l",
+                    "l",
+                    "l",
+                    "l",
+                    "l",
+                    "l",
+                    "l",
+                    "l",
+                    "l",
+                    "l",
+                    "l",
+                    "l",
+                    "l",
+                    "l",
+                    "l",
+                    "l",
+                    "l",
+                    "l",
+                    "l",
+                    "l",
+                    "l",
+                    "l",
+                    "l",
+                    "l",
+                    "l",
+                    "l",
+                    "l",
+                    "l",
+                    "l",
+                    "l",
+                    "l",
+                    "l",
+                    "l",
+                    "l",
+                    "l",
+                    "l",
+                    "l",
+                    "l",
+                    "l"
+                  ]
+                ]
+              },
+              {
+                "__tuple__": [
+                  "m",
+                  [
+                    "m",
+                    "m",
+                    "m",
+                    "m",
+                    "m",
+                    "m",
+                    "m",
+                    "m",
+                    "m",
+                    "m",
+                    "m",
+                    "m",
+                    "m",
+                    "m",
+                    "m",
+                    "m",
+                    "m",
+                    "m",
+                    "m",
+                    "m",
+                    "m",
+                    "m",
+                    "m",
+                    "m",
+                    "m",
+                    "m",
+                    "m",
+                    "m",
+                    "m",
+                    "m",
+                    "m",
+                    "m",
+                    "m",
+                    "m",
+                    "m",
+                    "m",
+                    "m",
+                    "m",
+                    "m",
+                    "m",
+                    "m",
+                    "m",
+                    "m",
+                    "m",
+                    "m",
+                    "m",
+                    "m",
+                    "m",
+                    "m",
+                    "m"
+                  ]
+                ]
+              },
+              {
+                "__tuple__": [
+                  "n",
+                  [
+                    "n",
+                    "n",
+                    "n",
+                    "n",
+                    "n",
+                    "n",
+                    "n",
+                    "n",
+                    "n",
+                    "n",
+                    "n",
+                    "n",
+                    "n",
+                    "n",
+                    "n",
+                    "n",
+                    "n",
+                    "n",
+                    "n",
+                    "n",
+                    "n",
+                    "n",
+                    "n",
+                    "n",
+                    "n",
+                    "n",
+                    "n",
+                    "n",
+                    "n",
+                    "n",
+                    "n",
+                    "n",
+                    "n",
+                    "n",
+                    "n",
+                    "n",
+                    "n",
+                    "n",
+                    "n",
+                    "n",
+                    "n",
+                    "n",
+                    "n",
+                    "n",
+                    "n",
+                    "n",
+                    "n",
+                    "n",
+                    "n",
+                    "n"
+                  ]
+                ]
+              },
+              {
+                "__tuple__": [
+                  "o",
+                  [
+                    "o",
+                    "o",
+                    "o",
+                    "o",
+                    "o",
+                    "o",
+                    "o",
+                    "o",
+                    "o",
+                    "o",
+                    "o",
+                    "o",
+                    "o",
+                    "o",
+                    "o",
+                    "o",
+                    "o",
+                    "o",
+                    "o",
+                    "o",
+                    "o",
+                    "o",
+                    "o",
+                    "o",
+                    "o",
+                    "o",
+                    "o",
+                    "o",
+                    "o",
+                    "o",
+                    "o",
+                    "o",
+                    "o",
+                    "o",
+                    "o",
+                    "o",
+                    "o",
+                    "o",
+                    "o",
+                    "o",
+                    "o",
+                    "o",
+                    "o",
+                    "o",
+                    "o",
+                    "o",
+                    "o",
+                    "o",
+                    "o",
+                    "o"
+                  ]
+                ]
+              },
+              {
+                "__tuple__": [
+                  "p",
+                  [
+                    "p",
+                    "p",
+                    "p",
+                    "p",
+                    "p",
+                    "p",
+                    "p",
+                    "p",
+                    "p",
+                    "p",
+                    "p",
+                    "p",
+                    "p",
+                    "p",
+                    "p",
+                    "p",
+                    "p",
+                    "p",
+                    "p",
+                    "p",
+                    "p",
+                    "p",
+                    "p",
+                    "p",
+                    "p",
+                    "p",
+                    "p",
+                    "p",
+                    "p",
+                    "p",
+                    "p",
+                    "p",
+                    "p",
+                    "p",
+                    "p",
+                    "p",
+                    "p",
+                    "p",
+                    "p",
+                    "p",
+                    "p",
+                    "p",
+                    "p",
+                    "p",
+                    "p",
+                    "p",
+                    "p",
+                    "p",
+                    "p",
+                    "p"
+                  ]
+                ]
+              },
+              {
+                "__tuple__": [
+                  "q",
+                  [
+                    "q",
+                    "q",
+                    "q",
+                    "q",
+                    "q",
+                    "q",
+                    "q",
+                    "q",
+                    "q",
+                    "q",
+                    "q",
+                    "q",
+                    "q",
+                    "q",
+                    "q",
+                    "q",
+                    "q",
+                    "q",
+                    "q",
+                    "q",
+                    "q",
+                    "q",
+                    "q",
+                    "q",
+                    "q",
+                    "q",
+                    "q",
+                    "q",
+                    "q",
+                    "q",
+                    "q",
+                    "q",
+                    "q",
+                    "q",
+                    "q",
+                    "q",
+                    "q",
+                    "q",
+                    "q",
+                    "q",
+                    "q",
+                    "q",
+                    "q",
+                    "q",
+                    "q",
+                    "q",
+                    "q",
+                    "q",
+                    "q",
+                    "q"
+                  ]
+                ]
+              },
+              {
+                "__tuple__": [
+                  "r",
+                  [
+                    "r",
+                    "r",
+                    "r",
+                    "r",
+                    "r",
+                    "r",
+                    "r",
+                    "r",
+                    "r",
+                    "r",
+                    "r",
+                    "r",
+                    "r",
+                    "r",
+                    "r",
+                    "r",
+                    "r",
+                    "r",
+                    "r",
+                    "r",
+                    "r",
+                    "r",
+                    "r",
+                    "r",
+                    "r",
+                    "r",
+                    "r",
+                    "r",
+                    "r",
+                    "r",
+                    "r",
+                    "r",
+                    "r",
+                    "r",
+                    "r",
+                    "r",
+                    "r",
+                    "r",
+                    "r",
+                    "r",
+                    "r",
+                    "r",
+                    "r",
+                    "r",
+                    "r",
+                    "r",
+                    "r",
+                    "r",
+                    "r",
+                    "r"
+                  ]
+                ]
+              },
+              {
+                "__tuple__": [
+                  "s",
+                  [
+                    "s",
+                    "s",
+                    "s",
+                    "s",
+                    "s",
+                    "s",
+                    "s",
+                    "s",
+                    "s",
+                    "s",
+                    "s",
+                    "s",
+                    "s",
+                    "s",
+                    "s",
+                    "s",
+                    "s",
+                    "s",
+                    "s",
+                    "s",
+                    "s",
+                    "s",
+                    "s",
+                    "s",
+                    "s",
+                    "s",
+                    "s",
+                    "s",
+                    "s",
+                    "s",
+                    "s",
+                    "s",
+                    "s",
+                    "s",
+                    "s",
+                    "s",
+                    "s",
+                    "s",
+                    "s",
+                    "s",
+                    "s",
+                    "s",
+                    "s",
+                    "s",
+                    "s",
+                    "s",
+                    "s",
+                    "s",
+                    "s",
+                    "s"
+                  ]
+                ]
+              },
+              {
+                "__tuple__": [
+                  "t",
+                  [
+                    "t",
+                    "t",
+                    "t",
+                    "t",
+                    "t",
+                    "t",
+                    "t",
+                    "t",
+                    "t",
+                    "t",
+                    "t",
+                    "t",
+                    "t",
+                    "t",
+                    "t",
+                    "t",
+                    "t",
+                    "t",
+                    "t",
+                    "t",
+                    "t",
+                    "t",
+                    "t",
+                    "t",
+                    "t",
+                    "t",
+                    "t",
+                    "t",
+                    "t",
+                    "t",
+                    "t",
+                    "t",
+                    "t",
+                    "t",
+                    "t",
+                    "t",
+                    "t",
+                    "t",
+                    "t",
+                    "t",
+                    "t",
+                    "t",
+                    "t",
+                    "t",
+                    "t",
+                    "t",
+                    "t",
+                    "t",
+                    "t",
+                    "t"
+                  ]
+                ]
+              },
+              {
+                "__tuple__": [
+                  "u",
+                  [
+                    "u",
+                    "u",
+                    "u",
+                    "u",
+                    "u",
+                    "u",
+                    "u",
+                    "u",
+                    "u",
+                    "u",
+                    "u",
+                    "u",
+                    "u",
+                    "u",
+                    "u",
+                    "u",
+                    "u",
+                    "u",
+                    "u",
+                    "u",
+                    "u",
+                    "u",
+                    "u",
+                    "u",
+                    "u",
+                    "u",
+                    "u",
+                    "u",
+                    "u",
+                    "u",
+                    "u",
+                    "u",
+                    "u",
+                    "u",
+                    "u",
+                    "u",
+                    "u",
+                    "u",
+                    "u",
+                    "u",
+                    "u",
+                    "u",
+                    "u",
+                    "u",
+                    "u",
+                    "u",
+                    "u",
+                    "u",
+                    "u",
+                    "u"
+                  ]
+                ]
+              },
+              {
+                "__tuple__": [
+                  "v",
+                  [
+                    "v",
+                    "v",
+                    "v",
+                    "v",
+                    "v",
+                    "v",
+                    "v",
+                    "v",
+                    "v",
+                    "v",
+                    "v",
+                    "v",
+                    "v",
+                    "v",
+                    "v",
+                    "v",
+                    "v",
+                    "v",
+                    "v",
+                    "v",
+                    "v",
+                    "v",
+                    "v",
+                    "v",
+                    "v",
+                    "v",
+                    "v",
+                    "v",
+                    "v",
+                    "v",
+                    "v",
+                    "v",
+                    "v",
+                    "v",
+                    "v",
+                    "v",
+                    "v",
+                    "v",
+                    "v",
+                    "v",
+                    "v",
+                    "v",
+                    "v",
+                    "v",
+                    "v",
+                    "v",
+                    "v",
+                    "v",
+                    "v",
+                    "v"
+                  ]
+                ]
+              },
+              {
+                "__tuple__": [
+                  "w",
+                  [
+                    "w",
+                    "w",
+                    "w",
+                    "w",
+                    "w",
+                    "w",
+                    "w",
+                    "w",
+                    "w",
+                    "w",
+                    "w",
+                    "w",
+                    "w",
+                    "w",
+                    "w",
+                    "w",
+                    "w",
+                    "w",
+                    "w",
+                    "w",
+                    "w",
+                    "w",
+                    "w",
+                    "w",
+                    "w",
+                    "w",
+                    "w",
+                    "w",
+                    "w",
+                    "w",
+                    "w",
+                    "w",
+                    "w",
+                    "w",
+                    "w",
+                    "w",
+                    "w",
+                    "w",
+                    "w",
+                    "w",
+                    "w",
+                    "w",
+                    "w",
+                    "w",
+                    "w",
+                    "w",
+                    "w",
+                    "w",
+                    "w",
+                    "w"
+                  ]
+                ]
+              },
+              {
+                "__tuple__": [
+                  "x",
+                  [
+                    "x",
+                    "x",
+                    "x",
+                    "x",
+                    "x",
+                    "x",
+                    "x",
+                    "x",
+                    "x",
+                    "x",
+                    "x",
+                    "x",
+                    "x",
+                    "x",
+                    "x",
+                    "x",
+                    "x",
+                    "x",
+                    "x",
+                    "x",
+                    "x",
+                    "x",
+                    "x",
+                    "x",
+                    "x",
+                    "x",
+                    "x",
+                    "x",
+                    "x",
+                    "x",
+                    "x",
+                    "x",
+                    "x",
+                    "x",
+                    "x",
+                    "x",
+                    "x",
+                    "x",
+                    "x",
+                    "x",
+                    "x",
+                    "x",
+                    "x",
+                    "x",
+                    "x",
+                    "x",
+                    "x",
+                    "x",
+                    "x",
+                    "x"
+                  ]
+                ]
+              },
+              {
+                "__tuple__": [
+                  "y",
+                  [
+                    "y",
+                    "y",
+                    "y",
+                    "y",
+                    "y",
+                    "y",
+                    "y",
+                    "y",
+                    "y",
+                    "y",
+                    "y",
+                    "y",
+                    "y",
+                    "y",
+                    "y",
+                    "y",
+                    "y",
+                    "y",
+                    "y",
+                    "y",
+                    "y",
+                    "y",
+                    "y",
+                    "y",
+                    "y",
+                    "y",
+                    "y",
+                    "y",
+                    "y",
+                    "y",
+                    "y",
+                    "y",
+                    "y",
+                    "y",
+                    "y",
+                    "y",
+                    "y",
+                    "y",
+                    "y",
+                    "y",
+                    "y",
+                    "y",
+                    "y",
+                    "y",
+                    "y",
+                    "y",
+                    "y",
+                    "y",
+                    "y",
+                    "y"
+                  ]
+                ]
+              },
+              {
+                "__tuple__": [
+                  "z",
+                  [
+                    "z",
+                    "z",
+                    "z",
+                    "z",
+                    "z",
+                    "z",
+                    "z",
+                    "z",
+                    "z",
+                    "z",
+                    "z",
+                    "z",
+                    "z",
+                    "z",
+                    "z",
+                    "z",
+                    "z",
+                    "z",
+                    "z",
+                    "z",
+                    "z",
+                    "z",
+                    "z",
+                    "z",
+                    "z",
+                    "z",
+                    "z",
+                    "z",
+                    "z",
+                    "z",
+                    "z",
+                    "z",
+                    "z",
+                    "z",
+                    "z",
+                    "z",
+                    "z",
+                    "z",
+                    "z",
+                    "z",
+                    "z",
+                    "z",
+                    "z",
+                    "z",
+                    "z",
+                    "z",
+                    "z",
+                    "z",
+                    "z",
+                    "z"
+                  ]
+                ]
+              }
+            ],
+            "hidden": true,
+            "max_ops": 3900
+          }
+        ],
+        "hints": [
+          "Grouping tools that walk a sequence only cluster CONSECUTIVE equals. What must be true of the input's order before they can group a letter's words together?",
+          "Sort by the same key you group by — Python's sort is stable, so words sharing a first letter keep their original relative order inside the sorted run.",
+          "ordered = sorted(words, key=lambda w: w[0]) is one pass; then groupby(ordered, key=lambda w: w[0]) yields (letter, group) pairs — materialize each group with list(group)."
+        ],
+        "reasoning": "<p>The trap is that grouping tools only see <b>adjacent</b> equal keys, so the real work happens before the grouping: sorting by the same key concentrates each letter's words into one contiguous run. The stability of Python's sort is what preserves 'original order of appearance' inside each run — a stable sort never reorders equal keys, so the sorted sequence keeps the story the input told. The budget enforces the discipline: re-scanning the list once per letter costs 26 inspections per word, while sort-then-group touches each word once. 'Sort by the grouping key' is the contract to remember — forget it and the code still runs, it just quietly returns dozens of fragment groups instead of one per key.</p>",
+        "solution": "from itertools import groupby\n\n\ndef first_letter_index(words):\n    \"\"\"Group words by first letter for the search index.\n\n    Letters appear alphabetically; words inside a group\n    keep their original order. words is an OpCountList:\n    inspecting an element costs 1, so touch each element\n    as few times as possible.\n    \"\"\"\n    ordered = sorted(words, key=lambda w: w[0])\n    return [(letter, list(group))\n            for letter, group in groupby(ordered, key=lambda w: w[0])]\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "std-itertools-4",
+        "title": "Combination lock: next code",
+        "difficulty": "hard",
+        "tags": [
+          "itertools",
+          "permutations",
+          "search"
+        ],
+        "statement": "<p>A bike lock shows a number built from digit stickers — no zeros, up to seven stickers. You may peel off every sticker and restick them in any arrangement; every sticker must be used exactly once.</p><p>Find the <b>smallest number strictly greater</b> than the one currently shown that can be displayed this way, and return it as an integer. If every rearrangement is smaller than or equal to the current number, return <code>-1</code>.</p>",
+        "constraints": [
+          "1 <= len(digits) <= 7",
+          "digits contains only the characters 1-9 (no zeros)",
+          "duplicates among the stickers are allowed"
+        ],
+        "examples": [
+          {
+            "call": "next_code(\"215\")",
+            "returns": "251",
+            "why": "the arrangements are 125, 152, 215, 251, 512, 521; the smallest one above 215 is 251"
+          },
+          {
+            "call": "next_code(\"778\")",
+            "returns": "787",
+            "why": "778, 787 and 877 are the only distinct arrangements; 787 is the smallest one above 778"
+          }
+        ],
+        "starter": "def next_code(digits):\n    \"\"\"Return the smallest rearrangement strictly greater\n\n    than int(digits), using every sticker exactly once;\n    -1 when no such rearrangement exists.\n    \"\"\"\n    pass\n",
+        "func": "next_code",
+        "tests": [
+          {
+            "label": "next arrangement of 215",
+            "args": [
+              "215"
+            ],
+            "expected": 251,
+            "hidden": false
+          },
+          {
+            "label": "duplicate stickers",
+            "args": [
+              "778"
+            ],
+            "expected": 787,
+            "hidden": false
+          },
+          {
+            "label": "already the largest",
+            "args": [
+              "987"
+            ],
+            "expected": -1,
+            "hidden": true
+          },
+          {
+            "label": "single sticker",
+            "args": [
+              "5"
+            ],
+            "expected": -1,
+            "hidden": true
+          },
+          {
+            "label": "repeated pair inside",
+            "args": [
+              "199"
+            ],
+            "expected": 919,
+            "hidden": true
+          },
+          {
+            "label": "two stickers ascending",
+            "args": [
+              "12"
+            ],
+            "expected": 21,
+            "hidden": true
+          },
+          {
+            "label": "seven stickers, full sweep",
+            "args": [
+              "1234567"
+            ],
+            "expected": 1234576,
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "How many distinct arrangements can seven stickers have at most? Could you afford to look at every single one of them?",
+          "itertools.permutations(digits) yields every arrangement as a tuple of characters. Join each into a string, convert to int, and keep the smallest value that is strictly greater than the shown number.",
+          "Track best = None while looping; update it when value is above int(digits) and smaller than the current best. Return best if found, otherwise -1. At most 5040 arrangements for seven stickers."
+        ],
+        "reasoning": "<p>This is a search problem in disguise, and the key move is <b>sizing the universe before choosing a strategy</b>: seven stickers admit at most 7! = 5040 arrangements, so scanning them all is instant and — more importantly — obviously correct. A single loop with a running minimum states the whole argument; there is no index surgery to get wrong. The clever linear-time rearrangement trick exists, but it is easy to misapply on duplicates and it wins nothing at this input size. The transferable judgment: enumeration is not a dirty word — it is a deliberate trade that buys correctness with a countable, bounded amount of work. The failure mode to avoid is running the same sweep on twenty stickers, where the universe is 2.4 quintillion and the plan silently stops being a plan.</p>",
+        "solution": "from itertools import permutations\n\n\ndef next_code(digits):\n    \"\"\"Return the smallest rearrangement strictly greater\n\n    than int(digits), using every sticker exactly once;\n    -1 when no such rearrangement exists.\n    \"\"\"\n    shown = int(digits)\n    best = None\n    for arrangement in permutations(digits):\n        value = int(\"\".join(arrangement))\n        if value > shown and (best is None or value < best):\n            best = value\n    return best if best is not None else -1\n"
+      }
+    }
+  ]
+}

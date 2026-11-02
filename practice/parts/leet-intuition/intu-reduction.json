@@ -1,0 +1,176 @@
+{
+  "id": "intu-reduction",
+  "title": "Reductions — Turn New Into Known",
+  "icon": "🔄",
+  "level": "advanced",
+  "order": 30,
+  "conceptRef": "python-basics.html#s11",
+  "blurb": "The strongest problem-solving move: reshape a question until it becomes one you can already answer.",
+  "cells": [
+    {
+      "type": "concept",
+      "title": "Canonical forms: make things comparable",
+      "body": "<p>Many questions that look new are equality questions in disguise: 'are these two things the same kind of thing?' The powerful move is to map every object to a <b>canonical form</b> — a standard representative — so that equality of the originals reduces to equality of the forms. Two words are anagrams exactly when their sorted letters are identical. Two schedules conflict exactly when their intervals overlap after sorting by start. The comparison becomes trivial <i>once the data is in the right shape</i>.</p><p>Choosing the canonical form is the creative step. It must be cheap to compute and must preserve exactly the property you care about — and nothing else. Sorting destroys order (fine for anagrams, fatal for rotations). Counting letters preserves multiset equality. Doubling a string preserves rotation structure. Each exercise here hides one such mapping; the skill is naming what property you need to keep before you pick the transform.</p>",
+      "demo": {
+        "code": "def canon(word):\n    return ''.join(sorted(word.lower()))\n\nprint(canon('Listen'), canon('Silent'))\nprint(canon('Listen') == canon('Silent'))\nprint(canon('Listen') == canon('Tinsel'), canon('Listen') == canon('enlist'))\nprint(canon('apple') == canon('pale'))   # different letter counts"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "Reduction changes the problem you are solving",
+      "body": "<p>A reduction is a proof: 'if I could solve problem B, I could solve problem A.' When you find one, everything known about B becomes a tool for A. The palindrome question — 'can these letters be arranged into a palindrome?' — reduces to counting: a palindrome needs every letter count even, except at most one odd count (which sits in the middle). The geometry question — 'which point minimizes total travel on a line?' — reduces to order statistics: the median beats every other point, and the proof is a pairing argument.</p><p>The habit to build: before writing code for a new problem, spend one minute asking <i>what already-solved problem is hiding inside it</i>. Interviewers call strong candidates 'clean' precisely because they find these mappings. And when the mapping is non-obvious, look at small cases by hand — reductions are usually discovered by noticing that two cases you thought were different keep producing the same intermediate picture.</p>",
+      "demo": {
+        "code": "from collections import Counter\n\ndef can_be_palindrome(s):\n    # reduction: palindrome <=> at most one odd letter count\n    odds = [c for c in Counter(s).values() if c % 2]\n    return len(odds) <= 1\n\nfor w in ['aabb', 'carrace', 'code', 'a', 'aab']:\n    print(w, '->', can_be_palindrome(w))\n\n# the median fact (pairing argument)\npoints = [1, 4, 6, 10, 40]\nmed = sorted(points)[len(points)//2]\nprint('median:', med, 'total distance:', sum(abs(p-med) for p in points))"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "intu-reduction-1",
+        "title": "The Anagram Shelf",
+        "difficulty": "easy",
+        "tags": ["canonical forms", "sorting"],
+        "statement": "<p>A warehouse stores products on one long shelf. Stock was entered twice, once by product name and once by a handwritten list — and the handwriting scrambled the letters of each name. Given both lists (same length, same order of products), report whether <b>every</b> handwritten entry is an anagram of the corresponding typed name.</p><p>Implement <code>all_anagrams(typed, handwritten)</code> returning <code>True</code>/<code>False</code>. Case matters; spaces and punctuation are just characters like any other.</p>",
+        "constraints": [
+          "1 <= len(typed) = len(handwritten) <= 100,000",
+          "0 <= len of each name <= 1,000",
+          "strings may contain any characters; two empty strings are anagrams"
+        ],
+        "examples": [
+          {"call": "all_anagrams(['listen', 'apple'], ['silent', 'papel'])", "returns": "True", "why": "both pairs rearrange into each other"},
+          {"call": "all_anagrams(['listen'], ['listens'])", "returns": "False", "why": "different number of characters can never be anagrams"}
+        ],
+        "starter": "def all_anagrams(typed, handwritten):\n    \"\"\"Return True iff every handwritten name is an anagram of the\n    corresponding typed name.\n    \"\"\"\n    pass\n",
+        "func": "all_anagrams",
+        "tests": [
+          {"label": "both match", "args": [["listen", "apple"], ["silent", "papel"]], "expected": true, "hidden": false},
+          {"label": "one fails", "args": [["listen"], ["listens"]], "expected": false, "hidden": false},
+          {"label": "empty strings", "args": [[""], [""]], "expected": true, "hidden": true},
+          {"label": "case sensitive", "args": [["Ab"], ["bA"]], "expected": true, "hidden": true},
+          {"label": "same letters wrong counts", "args": [["aab", "abb"], ["abb", "aab"]], "expected": false, "hidden": true},
+          {"label": "mixed batch", "args": [["it", "rat", "tar"], ["ti", "atr", "rat"]], "expected": true, "hidden": true},
+          {"label": "big batch", "args": [{"__repeat__": {"item": ["dormitory"], "times": 10000}}, {"__repeat__": {"item": ["dirtyroom"], "times": 10000}}], "expected": true, "hidden": true}
+        ],
+        "hints": [
+          "Comparing 'do these have the same letters' letter-by-letter is painful. Is there a transform that makes anagrams literally identical?",
+          "sorted('listen') and sorted('silent') produce the same string. Two strings are anagrams exactly when their sorted forms are equal.",
+          "return all(sorted(a) == sorted(b) for a, b in zip(typed, handwritten)) — or compare letter Counter objects, which is O(len) per pair instead of O(len log len)."
+        ],
+        "reasoning": "<p>The reduction: 'is B an anagram of A?' becomes 'does B's canonical form equal A's canonical form?' where the canonical form is the letters in sorted order. Sorting is safe here precisely because anagram-hood does not care about position — the transform destroys exactly the property you do not need and preserves the one you do (the multiset of characters). Once both sides are canonical, the question is a plain equality check, and the whole problem collapses into a one-line loop.</p>",
+        "solution": "def all_anagrams(typed, handwritten):\n    return all(sorted(a) == sorted(b)\n               for a, b in zip(typed, handwritten))\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "intu-reduction-2",
+        "title": "The Palindrome Partition",
+        "difficulty": "medium",
+        "tags": ["counting", "reduction"],
+        "statement": "<p>A sign painter has one tray of letter tiles (letters may repeat). She wants to arrange <b>all</b> of them into a single palindrome. With the tiles as they are it may be impossible — but she is allowed to <b>discard some tiles</b> first. She wonders: what is the smallest number of tiles to discard so the remaining tiles can be arranged into a palindrome?</p><p>Implement <code>tiles_to_discard(tiles)</code> returning that minimum count. Note: after discarding, at least zero tiles remain (an empty arrangement counts as a palindrome).</p>",
+        "constraints": [
+          "1 <= len(tiles) <= 100,000",
+          "tiles contains lowercase letters a-z"
+        ],
+        "examples": [
+          {"call": "tiles_to_discard('aabbcc')", "returns": "0", "why": "already pairable: e.g. abccba needs no discard"},
+          {"call": "tiles_to_discard('abc')", "returns": "2", "why": "keep 'a' (or b or c) alone — a one-letter string is a palindrome; the other two tiles go"}
+        ],
+        "starter": "def tiles_to_discard(tiles):\n    \"\"\"Return the fewest tiles to remove so the rest can form a\n    palindrome.\n    \"\"\"\n    pass\n",
+        "func": "tiles_to_discard",
+        "tests": [
+          {"label": "already possible", "args": ["aabbcc"], "expected": 0, "hidden": false},
+          {"label": "three singles", "args": ["abc"], "expected": 2, "hidden": false},
+          {"label": "single tile", "args": ["z"], "expected": 0, "hidden": true},
+          {"label": "one odd count", "args": ["aabb"], "expected": 0, "hidden": true},
+          {"label": "two odd counts", "args": ["aabc"], "expected": 1, "hidden": true},
+          {"label": "all same letter", "args": [{"__repeat__": {"item": "x", "times": 7}}], "expected": 0, "hidden": true},
+          {"label": "five odd counts", "args": ["abcdeabcdefgh"], "expected": 2, "hidden": true},
+          {"label": "long tray", "args": [{"__repeat__": {"item": "aabbccddeexyz", "times": 10001}}], "expected": 2, "hidden": true}
+        ],
+        "hints": [
+          "Do not think about arrangements — think about letter counts. What does a palindrome's letter-count table look like?",
+          "In a palindrome every letter count is even, except at most ONE letter (the middle) with an odd count. Count how many letters currently have odd counts.",
+          "If k letters have odd counts and k <= 1: answer 0. Otherwise you must fix k-1 of them; discarding one tile turns an odd count even, so the answer is k-1."
+        ],
+        "reasoning": "<p>The reduction replaces 'arrange tiles into a palindrome' with 'look at letter-count parities'. A palindrome mirrors around its center, so every letter pairs up — counts are all even — except possibly the single middle letter. That turns the painter's question into arithmetic on a count table: if k letters have odd counts, you can keep one of them as the middle; each other odd letter needs exactly one tile removed to become even. Hence k−1 discards (0 when k is 0 or 1). Notice the search over arrangements disappeared entirely — the right invariant makes the search unnecessary.</p>",
+        "solution": "def tiles_to_discard(tiles):\n    from collections import Counter\n    odd = sum(1 for c in Counter(tiles).values() if c % 2)\n    return max(0, odd - 1)\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "intu-reduction-3",
+        "title": "The Shifted Broadcast",
+        "difficulty": "medium",
+        "tags": ["canonical forms", "strings"],
+        "statement": "<p>A radio station transmits a repeating code word. Due to a sync glitch, your receiver started recording at some unknown rotation of the pattern: the received string is the transmitted string chopped at a secret point and the two pieces swapped. Given the pattern <code>original</code> and the recording <code>received</code>, determine whether <code>received</code> is a rotation of <code>original</code>.</p><p>Implement <code>is_rotation(original, received)</code>. Strings with different lengths can never be rotations.</p>",
+        "constraints": [
+          "1 <= len(original), len(received) <= 200,000",
+          "lowercase letters only"
+        ],
+        "examples": [
+          {"call": "is_rotation('waterbottle', 'erbottlewat')", "returns": "True", "why": "chopping 'waterbottle' after 'w'... after index 3 gives 'wat' + 'erbottle'; swapping yields the received string"},
+          {"call": "is_rotation('abc', 'acb')", "returns": "False", "why": "same letters, wrong cyclic order — a rotation preserves cyclic order"}
+        ],
+        "starter": "def is_rotation(original, received):\n    \"\"\"Return True iff received is some rotation of original.\"\"\"\n    pass\n",
+        "func": "is_rotation",
+        "tests": [
+          {"label": "classic rotation", "args": ["waterbottle", "erbottlewat"], "expected": true, "hidden": false},
+          {"label": "reorder is not rotation", "args": ["abc", "acb"], "expected": false, "hidden": false},
+          {"label": "identical strings", "args": ["same", "same"], "expected": true, "hidden": true},
+          {"label": "different lengths", "args": ["abc", "abca"], "expected": false, "hidden": true},
+          {"label": "shift by one", "args": ["abcdef", "fabcde"], "expected": true, "hidden": true},
+          {"label": "repeated letters trap", "args": ["aaab", "abaa"], "expected": true, "hidden": true},
+          {"label": "almost a rotation", "args": ["abcd", "acbd"], "expected": false, "hidden": true},
+          {"label": "long repeating pattern", "args": [{"__repeat__": {"item": "abcabcxyz", "times": 20000}}, {"__repeat__": {"item": "xyzabcabc", "times": 20000}}], "expected": true, "hidden": true}
+        ],
+        "hints": [
+          "Trying every rotation and comparing is O(n²). Find a transform under which all rotations of a string become the SAME question.",
+          "Write the original twice, back to back: original + original. Every rotation of original appears somewhere inside it as a substring — and nothing that is not a rotation does (given equal lengths).",
+          "return len(a) == len(b) and b in (a + a) — one concatenation, one substring search. Python's substring search is efficient (roughly linear), so this handles 200k characters instantly."
+        ],
+        "reasoning": "<p>The trick is a reduction to substring containment: <i>received is a rotation of original exactly when received occurs inside original+original (with equal lengths).</i> Why it works: chopping original at any point splits it into A+B; original+original contains ...A+B...A+B..., so B+A is right there spanning the junction. Conversely, any equal-length substring of original+original that appears starting at index i is exactly 'rotate by i'. The two-character effort of writing the string twice converts an enumeration-of-rotations problem into a single library call — the hallmark of a good reduction.</p>",
+        "solution": "def is_rotation(original, received):\n    if len(original) != len(received):\n        return False\n    return received in (original + original)\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "intu-reduction-4",
+        "title": "The Service Center Site",
+        "difficulty": "hard",
+        "tags": ["efficiency", "median", "reduction"],
+        "statement": "<p>Servers live at fixed positions along a straight corridor (given as a list of integer coordinates, possibly negative, possibly duplicated). You must choose where to stand so that the <b>sum of walking distances</b> from you to every server is as small as possible. You may stand only at an integer position (it does not have to be a server position). Return that minimum <b>total distance</b>.</p><p>Implement <code>best_meeting_point(positions)</code>. The list arrives as an <code>OpCountList</code>; the big hidden test budgets about 3 inspections per server — trying every candidate position is far too slow.</p>",
+        "constraints": [
+          "1 <= len(positions) <= 200,000",
+          "-1,000,000 <= each position <= 1,000,000",
+          "positions may contain duplicates",
+          "inspection budget on the big test: 3 * len(positions)"
+        ],
+        "examples": [
+          {"call": "best_meeting_point([10, -3, 4])", "returns": "13", "why": "standing at 4 (the median): |10-4| + |-3-4| + |4-4| = 6 + 7 + 0 = 13, and no other point does better"},
+          {"call": "best_meeting_point([5])", "returns": "0", "why": "stand on the only server"}
+        ],
+        "starter": "def best_meeting_point(positions):\n    \"\"\"Return the minimum possible sum of |p - x| over all servers p,\n    for integer x anywhere on the line.\n    \"\"\"\n    pass\n",
+        "func": "best_meeting_point",
+        "tests": [
+          {"label": "median wins", "args": [[10, -3, 4]], "expected": 13, "hidden": false},
+          {"label": "single server", "args": [[5]], "expected": 0, "hidden": false},
+          {"label": "two servers, anywhere between", "args": [[2, 8]], "expected": 6, "hidden": true},
+          {"label": "duplicates", "args": [[7, 7, 7, 1]], "expected": 6, "hidden": true},
+          {"label": "even count, both middles equal", "args": [[1, 2, 8, 9]], "expected": 14, "hidden": true},
+          {"label": "negatives only", "args": [[-10, -4, -2]], "expected": 8, "hidden": true},
+          {"label": "big test, budget enforced", "args": [{"__opcount__": {"data": {"__repeat__": {"item": [-97, -55, -40, -23, -12, -7, -3, -1, 0, 2, 3, 5, 8, 11, 13, 17, 21, 26, 30, 33, 38, 42, 47, 53, 58, 62, 67, 71, 76, 82, 87, 93, 100, 108, 115, 121, 130, 137, 145, 152, 160, 168, 175, 183, 191, 200, 210, 219, 228, 240], "times": 4000}}}}], "expected": 13404000, "hidden": true, "max_ops": 600000}
+        ],
+        "hints": [
+          "Trying every candidate position is O(n²) inspections. Before optimizing the search, ask: is there a position that provably beats all others — and can you prove it with a pairing argument?",
+          "Pair up servers: leftmost with rightmost, second-leftmost with second-rightmost, ... For any pair (a, b) with a <= x <= b, the cost |a-x|+|b-x| is constant (b-a); stepping outside the pair only adds cost. Every x between the innermost pair is optimal — that is the median.",
+          "Sort a copy (one pass, n inspections), take the middle element as the standing point, then one more pass to total the distances: 2n inspections total, comfortably within 3n."
+        ],
+        "reasoning": "<p>The reduction turns optimization into order statistics: <i>the median minimizes the sum of absolute distances.</i> The proof is the pairing argument — match the leftmost server with the rightmost: standing anywhere between them costs exactly their gap, and standing outside costs more. Every pair you form carves out an interval the answer must live in; the intervals nest down to the middle of the sorted list. So one sort plus one pass computes exactly what an exhaustive search would: the search collapses to knowing WHERE to look. This is the pattern behind a whole family of 'minimize total movement' questions.</p>",
+        "solution": "def best_meeting_point(positions):\n    pts = sorted(positions)\n    median = pts[len(pts) // 2]\n    return sum(abs(p - median) for p in pts)\n"
+      }
+    }
+  ]
+}

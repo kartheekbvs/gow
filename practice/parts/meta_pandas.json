@@ -1,0 +1,9 @@
+{
+  "id": "pandas-reasoning",
+  "title": "Pandas Reasoning",
+  "icon": "🐼",
+  "tagline": "Selection, GroupBy, merging and reshaping — think in tables: what each row means decides what each operation does.",
+  "accent": "yellow",
+  "engine": "python",
+  "packages": ["pandas", "numpy"]
+}

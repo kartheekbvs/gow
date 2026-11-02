@@ -1,0 +1,9 @@
+{
+  "id": "leet-intuition",
+  "title": "LeetCode Intuition",
+  "icon": "🥋",
+  "tagline": "Operation budgets, invariants and reductions — derive approaches from first principles instead of memorizing patterns.",
+  "accent": "red",
+  "engine": "python",
+  "packages": []
+}

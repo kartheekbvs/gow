@@ -1,0 +1,480 @@
+{
+  "id": "std-regex",
+  "title": "re: Pattern Reasoning",
+  "icon": "🔍",
+  "level": "intermediate",
+  "order": 40,
+  "conceptRef": "stdlib.html#s2",
+  "blurb": "Describe the shape of text, then let the engine find it: extraction, validation, and surgical substitution.",
+  "cells": [
+    {
+      "type": "concept",
+      "title": "Describe the shape, then interrogate the string",
+      "body": "<p>A regular expression is a tiny language for describing the <b>shape</b> of text: 'some digits', 'two capital letters then a hyphen', 'a word typed twice'. Once you can describe a shape, the <code>re</code> module can interrogate any string about it — does the whole string have this shape, does the shape occur anywhere, list every occurrence, replace every occurrence.</p><p>Choosing the interrogation is the real skill. <code>search</code> asks 'does this shape occur anywhere?', <code>findall</code> asks 'list every piece that matches', and <code>fullmatch</code> asks 'is the ENTIRE string exactly this shape?' — the right question for validation, because anything outside the pattern (a stray space, a trailing newline) makes it fail. Most regex bugs in production are not exotic pattern bugs; they are asking the wrong question for the job.</p>",
+      "demo": {
+        "code": "import re\n\nlog = \"cpu 73 pct, mem 41 pct, disk 88 pct\"\nprint(re.findall(r\"\\d+\", log))\nprint(re.search(r\"\\d+\", log).group())\nprint(re.fullmatch(r\"\\d+\", \"88\"))\nprint(re.fullmatch(r\"\\d+\", \"88 pct\"))"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "Classes and quantifiers build validation rules",
+      "body": "<p>Validation rules read like contracts: 'two uppercase letters, a hyphen, three to five digits'. Character classes say which characters may appear — <code>[A-Z]</code> one uppercase letter, <code>\\d</code> one digit, <code>[a-z0-9]</code> a lowercase letter or a digit — and quantifiers say how many times — <code>{2}</code> exactly two, <code>{3,5}</code> between three and five, <code>+</code> one or more, <code>?</code> at most one.</p><p>Read a pattern aloud as a sentence and it becomes a spec you can review: <code>[A-Z]{2}-\\d{3,5}</code> is 'two capitals, a hyphen, three-to-five digits'. The discipline that keeps validation honest is <code>fullmatch</code>: the whole string must be the shape, so 'AB-123!!' and ' AB-123' fail instead of slipping through because a match merely occurred somewhere inside the string.</p>",
+      "demo": {
+        "code": "import re\n\nserial = re.compile(r\"[A-Z]{2}-\\d{3,5}\")\nsamples = [\"AB-1234\", \"ab-1234\", \"AB-12\",\n           \"AB-12345\", \"junk AB-1234\"]\nfor s in samples:\n    print(s, \"->\", bool(serial.fullmatch(s)))"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "Groups capture, sub replaces, backrefs remember",
+      "body": "<p>Parentheses do two jobs at once: they group part of a pattern, and they <b>capture</b> the text that matched inside them. Captures are what turn regex from a yes/no machine into a parser: after matching an address against <code>(\\w+)@(\\w+\\.\\w+)</code>, group 1 holds the user and group 2 the host — structured fields pulled out of raw text.</p><p>Captures also power replacement. <code>re.sub</code> can rebuild the string from the groups — either with a template like <code>r\"\\1@REDACTED\"</code>, or, when the replacement must be <i>computed</i> from the match, with a function that receives the match object and returns the new text. Finally, a backreference inside the pattern itself (<code>(\\w+) \\1</code>) demands that the same text appear a second time — which is how you detect a repeated word without knowing the word in advance.</p>",
+      "demo": {
+        "code": "import re\n\ntext = \"reach alice@corp.com or bob@shop.io by noon\"\nprint(re.findall(r\"(\\w+)@(\\w+\\.\\w+)\", text))\nprint(re.sub(r\"(\\w+)@\\w+\\.\\w+\", r\"\\1@REDACTED\", text))\nprint(re.findall(r\"\\b(\\w+) \\1\\b\", \"the the same same words\"))"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "std-regex-1",
+        "title": "Numbers buried in the log",
+        "difficulty": "easy",
+        "tags": [
+          "re",
+          "findall",
+          "extraction"
+        ],
+        "statement": "<p>A telemetry service emits free-form status lines in which numbers hide between words: readings, counts, thresholds. To chart the data you need every number, in order of appearance.</p><p>Each number is a <b>maximal run of consecutive digits</b> — letters and punctuation act as separators and are never part of a number. Extract every run and return it as an integer: leading zeros are an artifact of padded fields and must not survive the conversion.</p>",
+        "constraints": [
+          "0 <= len(text) <= 1,000,000",
+          "text contains printable ASCII letters, digits, spaces and punctuation only"
+        ],
+        "examples": [
+          {
+            "call": "all_numbers(\"temp 23 pressure 1013 humidity 45\")",
+            "returns": "[23, 1013, 45]",
+            "why": "three maximal digit runs, in order; nothing else in the line is numeric"
+          },
+          {
+            "call": "all_numbers(\"all sensors nominal\")",
+            "returns": "[]",
+            "why": "no digit run anywhere in the text"
+          }
+        ],
+        "starter": "def all_numbers(text):\n    \"\"\"Return every maximal digit run as an int, in order.\"\"\"\n    pass\n",
+        "func": "all_numbers",
+        "tests": [
+          {
+            "label": "readings in a status line",
+            "args": [
+              "temp 23 pressure 1013 humidity 45"
+            ],
+            "expected": [
+              23,
+              1013,
+              45
+            ],
+            "hidden": false
+          },
+          {
+            "label": "no digits at all",
+            "args": [
+              "all sensors nominal"
+            ],
+            "expected": [],
+            "hidden": false
+          },
+          {
+            "label": "empty line",
+            "args": [
+              ""
+            ],
+            "expected": [],
+            "hidden": true
+          },
+          {
+            "label": "digits glued to letters",
+            "args": [
+              "a12b34c"
+            ],
+            "expected": [
+              12,
+              34
+            ],
+            "hidden": true
+          },
+          {
+            "label": "padded field loses its zeros",
+            "args": [
+              "id 000042 and 7"
+            ],
+            "expected": [
+              42,
+              7
+            ],
+            "hidden": true
+          },
+          {
+            "label": "long stream of readings",
+            "args": [
+              {
+                "__repeat__": {
+                  "item": "v7 x9 ",
+                  "times": 3000
+                }
+              }
+            ],
+            "expected": {
+              "__repeat__": {
+                "item": [
+                  7,
+                  9
+                ],
+                "times": 3000
+              }
+            },
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "Say the shape out loud in pattern words: one digit, then more digits, stopping where a non-digit begins. How do you spell 'one or more digits'?",
+          "re.findall(r'\\d+', text) returns every maximal digit run as a string, scanned left to right.",
+          "Convert each piece: [int(piece) for piece in re.findall(r'\\d+', text)]. int() also discards the leading zeros of padded fields like 000042."
+        ],
+        "reasoning": "<p>Two facts make the one-liner correct. First, <code>\\d+</code> is <b>greedy</b>: starting from the first digit of a run it consumes digits until a non-digit appears, so each match is automatically maximal — you never get '10' out of '1013'. Second, adjacent runs cannot merge, because whatever separates two numbers is by definition a non-digit that ends the first match. The classic surprise for newcomers is that <code>findall</code> returns <i>strings</i>; the numbers only become integers when you convert them, and that conversion is also what strips padded zeros. The broader habit: state the shape precisely ('maximal run of digits'), then trust the engine's scan instead of writing index arithmetic around <code>str.isdigit</code>.</p>",
+        "solution": "import re\n\n\ndef all_numbers(text):\n    \"\"\"Return every maximal digit run as an int, in order.\"\"\"\n    return [int(piece) for piece in re.findall(r\"\\d+\", text)]\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "std-regex-2",
+        "title": "Serial number gate",
+        "difficulty": "medium",
+        "tags": [
+          "re",
+          "validation",
+          "fullmatch"
+        ],
+        "statement": "<p>Warehouse scanners must reject malformed serial numbers before they reach the inventory database. A well-formed serial is exactly:</p><ul><li>two uppercase letters,</li><li>a hyphen,</li><li>three to five digits,</li><li>a hyphen,</li><li>one uppercase letter followed by exactly two lowercase letters.</li></ul><p>Nothing may precede or follow the serial — a trailing space or an extra suffix makes it malformed. Given a candidate string, return <code>True</code> only when the <b>entire</b> string is a well-formed serial.</p>",
+        "constraints": [
+          "0 <= len(serial) <= 100",
+          "the candidate may contain any printable ASCII characters"
+        ],
+        "examples": [
+          {
+            "call": "is_valid_serial(\"QR-451-Zab\")",
+            "returns": "True",
+            "why": "two capitals, hyphen, three digits, hyphen, one capital plus two lowercase letters"
+          },
+          {
+            "call": "is_valid_serial(\"QR-45-Zab\")",
+            "returns": "False",
+            "why": "only two digits in the middle — the rule demands three to five"
+          }
+        ],
+        "starter": "def is_valid_serial(serial):\n    \"\"\"Return True only if the whole string is a valid serial.\"\"\"\n    pass\n",
+        "func": "is_valid_serial",
+        "tests": [
+          {
+            "label": "well-formed serial",
+            "args": [
+              "QR-451-Zab"
+            ],
+            "expected": true,
+            "hidden": false
+          },
+          {
+            "label": "too few digits",
+            "args": [
+              "QR-45-Zab"
+            ],
+            "expected": false,
+            "hidden": false
+          },
+          {
+            "label": "four digits also fit",
+            "args": [
+              "QR-4567-Wxy"
+            ],
+            "expected": true,
+            "hidden": true
+          },
+          {
+            "label": "six digits are too many",
+            "args": [
+              "QR-456789-Wxy"
+            ],
+            "expected": false,
+            "hidden": true
+          },
+          {
+            "label": "tail must be capital + two lowercase",
+            "args": [
+              "QR-451-zAB"
+            ],
+            "expected": false,
+            "hidden": true
+          },
+          {
+            "label": "trailing space is fatal",
+            "args": [
+              "QR-451-Zab "
+            ],
+            "expected": false,
+            "hidden": true
+          },
+          {
+            "label": "prefix junk is fatal",
+            "args": [
+              "xQR-451-Zab"
+            ],
+            "expected": false,
+            "hidden": true
+          },
+          {
+            "label": "empty candidate",
+            "args": [
+              ""
+            ],
+            "expected": false,
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "match() and search() both accept strings that merely CONTAIN the pattern somewhere. Which interrogation demands that the whole string BE the pattern?",
+          "Translate the rule clause by clause: [A-Z]{2}, a literal hyphen, \\d{3,5}, a hyphen, then [A-Z][a-z]{2} — then demand a whole-string match.",
+          "return re.fullmatch(r'[A-Z]{2}-\\d{3,5}-[A-Z][a-z]{2}', serial) is not None. fullmatch anchors both ends, so spaces, prefixes and suffixes fail automatically."
+        ],
+        "reasoning": "<p>The spec is already a grammar: each bullet is one clause of classes and quantifiers, so translation is mechanical — and that is the point of validation patterns, they <i>are</i> the spec, reviewable line by line. The decisive choice is the interrogation: <code>match</code> anchors only the start, so 'QR-451-Zab junk' would pass it; <code>search</code> anchors nothing; only <code>fullmatch</code> demands that the entire candidate be the shape, which is exactly what a database gate means by valid. Note also the two directions of quantifier precision: <code>{3,5}</code> accepts a range because the rule says so, while <code>{2}</code> on the tail's lowercase letters is exact because the rule says exactly two. When a pattern is reused, compiling it once at module level keeps the gate cheap.</p>",
+        "solution": "import re\n\n# two capitals, hyphen, 3-5 digits, hyphen, capital + two lowercase\n_SERIAL = re.compile(r\"[A-Z]{2}-\\d{3,5}-[A-Z][a-z]{2}\")\n\n\ndef is_valid_serial(serial):\n    \"\"\"Return True only if the whole string is a valid serial.\"\"\"\n    return _SERIAL.fullmatch(serial) is not None\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "std-regex-3",
+        "title": "Redact, keep the domain",
+        "difficulty": "medium",
+        "tags": [
+          "re",
+          "sub",
+          "groups"
+        ],
+        "statement": "<p>A support transcript must be scrubbed before it is shared: every <b>email address</b> has to be masked, but investigators still need to see which domain was contacted.</p><p>Replace only each email's local part — the piece before the @ — with its first character followed by three asterisks; keep the @ and the entire domain untouched. Text that is not part of an email must pass through unchanged.</p><p>Local parts consist of lowercase letters, digits, dots, underscores and hyphens. Domains consist of lowercase letters, digits, dots and hyphens and always end with a dot followed by at least two letters — so <code>user@corp</code> is not an email and must survive as-is.</p>",
+        "constraints": [
+          "0 <= len(text) <= 200,000",
+          "emails are lowercase; local parts have at least one character",
+          "domains end in a dot plus at least two lowercase letters"
+        ],
+        "examples": [
+          {
+            "call": "redact_emails(\"contact alice@corp.com or bob.smith@mail.example\")",
+            "returns": "'contact a***@corp.com or b***@mail.example'",
+            "why": "each local part becomes its first character plus three asterisks; domains pass through"
+          },
+          {
+            "call": "redact_emails(\"no addresses here\")",
+            "returns": "'no addresses here'",
+            "why": "nothing matched, so nothing changed"
+          }
+        ],
+        "starter": "def redact_emails(text):\n    \"\"\"Mask every local part to first char + '***', keep domains.\"\"\"\n    pass\n",
+        "func": "redact_emails",
+        "tests": [
+          {
+            "label": "two addresses in a sentence",
+            "args": [
+              "contact alice@corp.com or bob.smith@mail.example"
+            ],
+            "expected": "contact a***@corp.com or b***@mail.example",
+            "hidden": false
+          },
+          {
+            "label": "no addresses",
+            "args": [
+              "no addresses here"
+            ],
+            "expected": "no addresses here",
+            "hidden": false
+          },
+          {
+            "label": "empty transcript",
+            "args": [
+              ""
+            ],
+            "expected": "",
+            "hidden": true
+          },
+          {
+            "label": "adjacent addresses",
+            "args": [
+              "x@a.io,y@b.io"
+            ],
+            "expected": "x***@a.io,y***@b.io",
+            "hidden": true
+          },
+          {
+            "label": "incomplete domain survives untouched",
+            "args": [
+              "user@corp"
+            ],
+            "expected": "user@corp",
+            "hidden": true
+          },
+          {
+            "label": "one-character local part",
+            "args": [
+              "q@queue.io"
+            ],
+            "expected": "q***@queue.io",
+            "hidden": true
+          },
+          {
+            "label": "long transcript",
+            "args": [
+              {
+                "__repeat__": {
+                  "item": "ping user@site.com; ",
+                  "times": 500
+                }
+              }
+            ],
+            "expected": {
+              "__repeat__": {
+                "item": "ping u***@site.com; ",
+                "times": 500
+              }
+            },
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "The replacement text depends on what was matched — the first character of each local part. Can a fixed template string express that, or do you need code that runs per match?",
+          "Capture two groups, ([a-z0-9._-]+) before the @ and the domain after it. Then re.sub with a function: lambda m: m.group(1)[0] + '***@' + m.group(2).",
+          "A domain like [a-z0-9.-]+\\.[a-z]{2,} requires the dot-and-letters ending, which is why 'user@corp' never matches. sub applies your function to every match in one pass and reassembles the rest verbatim."
+        ],
+        "reasoning": "<p>The heart of the exercise is noticing that the replacement is <b>computed, not constant</b>: each masked local part depends on its own first character, so a template like <code>r\"***@\\2\"</code> cannot express it. That is precisely what the function form of <code>re.sub</code> exists for — the engine hands you each match object, your code returns the new text, and the engine stitches the unchanged gaps back together. The two capture groups are what make the function readable: group 1 is the local part to shrink, group 2 is the domain to preserve verbatim. The domain clause also shows why patterns must be pinned to the real rules — requiring a final dot plus two letters means half-formed addresses are simply not matches, and 'pass through unchanged' happens by itself instead of by special-case code.</p>",
+        "solution": "import re\n\n# group 1: local part; group 2: domain ending in dot + 2+ letters\n_EMAIL = re.compile(r\"([a-z0-9._-]+)@([a-z0-9.-]+\\.[a-z]{2,})\")\n\n\ndef redact_emails(text):\n    \"\"\"Mask every local part to first char + '***', keep domains.\"\"\"\n    return _EMAIL.sub(\n        lambda m: m.group(1)[0] + \"***@\" + m.group(2),\n        text,\n    )\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "std-regex-4",
+        "title": "The stuttering transcript",
+        "difficulty": "hard",
+        "tags": [
+          "re",
+          "backreferences",
+          "finditer"
+        ],
+        "statement": "<p>Transcription software sometimes stutters: the speaker's word gets typed twice in a row — 'the the report', 'is is fine'. A QA tool must flag every such accident.</p><p>Detect every word immediately followed by whitespace and then <b>the same word again</b>, ignoring letter case — 'Hello hello' counts. Scan left to right; after a detection, continue searching <i>after</i> the second copy, so detections never overlap or share words. Return the flagged words in order of detection, each spelled as it appeared the <b>first</b> time.</p><p>Words are runs of letters, digits and underscores. Punctuation between two copies — 'data, data' — breaks the pair: only whitespace may separate them.</p>",
+        "constraints": [
+          "0 <= len(text) <= 200,000",
+          "matching is case-insensitive",
+          "words are \\w runs; only whitespace may sit between the two copies"
+        ],
+        "examples": [
+          {
+            "call": "doubled_words(\"The the report says data data is fine\")",
+            "returns": "['The', 'data']",
+            "why": "'The the' matches case-insensitively and is reported with the first copy's spelling; 'data data' follows"
+          },
+          {
+            "call": "doubled_words(\"no stutter at all\")",
+            "returns": "[]",
+            "why": "no word is immediately repeated"
+          }
+        ],
+        "starter": "def doubled_words(text):\n    \"\"\"Return each immediately repeated word, in detection order.\"\"\"\n    pass\n",
+        "func": "doubled_words",
+        "tests": [
+          {
+            "label": "case-insensitive pair",
+            "args": [
+              "The the report says data data is fine"
+            ],
+            "expected": [
+              "The",
+              "data"
+            ],
+            "hidden": false
+          },
+          {
+            "label": "clean text",
+            "args": [
+              "no stutter at all"
+            ],
+            "expected": [],
+            "hidden": false
+          },
+          {
+            "label": "capitalized greeting",
+            "args": [
+              "Hello hello world"
+            ],
+            "expected": [
+              "Hello"
+            ],
+            "hidden": true
+          },
+          {
+            "label": "triple repeat counts once",
+            "args": [
+              "a a a"
+            ],
+            "expected": [
+              "a"
+            ],
+            "hidden": true
+          },
+          {
+            "label": "comma breaks the pair",
+            "args": [
+              "data, data everywhere"
+            ],
+            "expected": [],
+            "hidden": true
+          },
+          {
+            "label": "two separate stutters",
+            "args": [
+              "it it was was done"
+            ],
+            "expected": [
+              "it",
+              "was"
+            ],
+            "hidden": true
+          },
+          {
+            "label": "long transcript",
+            "args": [
+              {
+                "__repeat__": {
+                  "item": "the the end ",
+                  "times": 400
+                }
+              }
+            ],
+            "expected": {
+              "__repeat__": {
+                "item": [
+                  "the"
+                ],
+                "times": 400
+              }
+            },
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "'The same word again' means the pattern must remember what it just matched and then demand that exact text a second time. Which regex feature looks back at what a group captured?",
+          "A backreference does it: \\b(\\w+)\\s+\\1\\b with re.IGNORECASE. Group 1 captures the word; \\1 requires the identical letters again, case-insensitively.",
+          "Use re.finditer and collect m.group(1) per match — finditer scans non-overlapping and resumes after each match, exactly the required semantics. group(1) carries the first copy's original spelling."
+        ],
+        "reasoning": "<p>A backreference is not 'the same pattern again' — it is 'the same <b>text</b> again'. After <code>(\\w+)</code> captures <code>cat</code>, the token <code>\\1</code> matches the literal letters c-a-t and nothing else, which is why <code>\\b(\\w+)\\s+\\1\\b</code> detects repeated words of any identity. The case flag covers the whole match, backreference included, so 'Hello hello' matches while <code>group(1)</code> still reports the first copy's spelling. The word boundaries are load-bearing: without the trailing <code>\\b</code>, 'cat catalog' would match because \\1 happily covers the first three letters of 'catalog' — the boundary forces the second copy to end cleanly. And <code>finditer</code> gives the non-overlap rule for free: each match consumes both copies, so 'a a a' yields one detection, not two. Requiring-equal-text is a general tool — repeated words, doubled separators, matching quotes — wherever the data must agree with itself.</p>",
+        "solution": "import re\n\n# group 1 captures the word; \\1 demands the same text again\n_DOUBLED = re.compile(r\"\\b(\\w+)\\s+\\1\\b\", re.IGNORECASE)\n\n\ndef doubled_words(text):\n    \"\"\"Return each immediately repeated word, in detection order.\"\"\"\n    return [m.group(1) for m in _DOUBLED.finditer(text)]\n"
+      }
+    }
+  ]
+}

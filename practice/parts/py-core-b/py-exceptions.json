@@ -1,0 +1,478 @@
+{
+  "id": "py-exceptions",
+  "title": "Exceptions as Signals",
+  "icon": "🚨",
+  "level": "intermediate",
+  "order": 90,
+  "conceptRef": "python-basics.html#s10",
+  "blurb": "Stop checking before you leap: let failure raise, catch it at the boundary, and turn errors into data.",
+  "cells": [
+    {
+      "type": "concept",
+      "title": "EAFP: easier to ask forgiveness than permission",
+      "body": "<p>There are two ways to use a value that might be invalid. <b>LBYL</b> ('look before you leap') pre-checks: <code>if key in d: ...</code>, <code>if s.isdigit(): ...</code>. <b>EAFP</b> just tries the operation and handles the exception if it fails. Python culture leans EAFP, and not just for brevity: the check and the operation can disagree (a key can be present but the value wrong; <code>isdigit</code> accepts digits that still fail to parse), and in concurrent code the world can change between check and use.</p><p>The reasoning payoff: with EAFP, <i>the operation itself is the authority</i> on what is valid. Your code has one source of truth instead of two parallel ones that drift apart. The try block should be as small as possible — wrap the one risky line, not the whole function — so the except clause can't accidentally swallow unrelated failures.</p>",
+      "demo": {
+        "code": "cfg = {\"host\": \"db01\"}\n\n# LBYL: check first, then use\nport = cfg[\"port\"] if \"port\" in cfg else 5432\nprint(port)\n\n# EAFP: try it, handle the failure\ntry:\n    port = cfg[\"port\"]\nexcept KeyError:\n    port = 5432\nprint(port)"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "Raising is designing a signal",
+      "body": "<p>Catching exceptions is only half the protocol — your own code should <b>raise</b> when it cannot honor its contract, and the exception type you choose is part of your API. <code>ValueError</code> says 'the caller gave me a bad value'; <code>KeyError</code> says 'that name is missing'; <code>TypeError</code> says 'wrong shape of input'. Callers write <code>except ValueError</code> against that promise, so raising the wrong category breaks code you have never seen.</p><p>When a domain needs its own vocabulary, subclass <code>Exception</code>: a custom class is catchable by name, carries a message, and can hold structured data as attributes. A raise is not a crash — it is a non-local <code>return</code> that says 'this path failed; someone upstream decide what to do'. Designing failure paths deliberately is what separates libraries people enjoy from libraries people tolerate.</p>",
+      "demo": {
+        "code": "class Overheat(Exception):\n    \"\"\"A component passed its thermal limit.\"\"\"\n\n\ndef check(part, temp):\n    if temp > 90:\n        raise Overheat(part + \" at \" + str(temp) + \"C\")\n    return \"ok\"\n\n\nfor part, temp in ((\"pump\", 72), (\"coil\", 95)):\n    try:\n        print(part, check(part, temp))\n    except Overheat as exc:\n        print(part, \"ALARM:\", exc)"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "Recovery loops: skip, classify, retry",
+      "body": "<p>Real data pipelines meet three recovery shapes. <b>Skip</b>: one bad record must not kill the batch — wrap the risky parse in try/except and <code>continue</code> past failures, keeping a count so silence never hides a systemic problem. <b>Classify</b>: catch, inspect, and route the failure (log it, tag the row, bucket it by type). <b>Retry</b>: some failures are transient — a sensor or a network blip — so try again, but a bounded number of times, with a growing pause between attempts (exponential backoff), because hammering a struggling resource makes things worse.</p><p>Every shape shares one discipline: the loop must be able to <b>end</b>. Bounded retries, a maximum of one skip per record, a clear 'give up' path — unhandled failure inside a recovery loop is how jobs spin forever at 3 a.m. Write the exit conditions before the body.</p>",
+      "demo": {
+        "code": "rows = [\"12\", \"x\", \"30\", \"\", \"7\"]\ntotal = kept = 0\nfor row in rows:\n    try:\n        total += int(row)   # the operation is the validity test\n        kept += 1\n    except ValueError:\n        print(\"skipped bad row:\", repr(row))\nprint(\"kept\", kept, \"of\", len(rows), \"rows; total\", total)"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-exceptions-1",
+        "title": "Safe Gauge Reading",
+        "difficulty": "easy",
+        "tags": [
+          "exceptions",
+          "parsing"
+        ],
+        "statement": "<p>Fuel gauges on a fleet of trucks report their readings as strings over a noisy bus: <code>\"42\"</code>, <code>\"-7\"</code>, but also garbled fragments like <code>\"3.5\"</code>, <code>\"12a\"</code> or the empty string. The dashboard needs a number or, when the transmission is unusable, a fallback value.</p><p>Implement <code>safe_reading(text, fallback)</code>: the integer value of <code>text</code> when it parses as an integer literal, otherwise <code>fallback</code>. Solve it the EAFP way — attempt the conversion and handle the failure — rather than pre-validating the string character by character; Python's own parser is the authority on what an integer literal is.</p>",
+        "constraints": [
+          "text is always a string of at most 20 characters",
+          "fallback is an integer",
+          "int() accepts surrounding spaces and a leading + or - (so ' 15 ' is 15 and '+9' is 9)",
+          "strings like '3.5', '12a' and '' are NOT integer literals"
+        ],
+        "examples": [
+          {
+            "call": "safe_reading(\"42\", -1)",
+            "returns": "42",
+            "why": "a clean transmission"
+          },
+          {
+            "call": "safe_reading(\"err\", -1)",
+            "returns": "-1",
+            "why": "garbled text yields the fallback"
+          }
+        ],
+        "starter": "def safe_reading(text, fallback):\n    \"\"\"Return int(text) if it parses, else fallback.\"\"\"\n    pass\n",
+        "func": "safe_reading",
+        "tests": [
+          {
+            "label": "clean reading",
+            "args": [
+              "42",
+              -1
+            ],
+            "expected": 42,
+            "hidden": false
+          },
+          {
+            "label": "garbled text",
+            "args": [
+              "err",
+              -1
+            ],
+            "expected": -1,
+            "hidden": false
+          },
+          {
+            "label": "empty transmission",
+            "args": [
+              "",
+              0
+            ],
+            "expected": 0,
+            "hidden": true
+          },
+          {
+            "label": "negative fuel",
+            "args": [
+              "-7",
+              0
+            ],
+            "expected": -7,
+            "hidden": true
+          },
+          {
+            "label": "float text does not parse",
+            "args": [
+              "3.5",
+              0
+            ],
+            "expected": 0,
+            "hidden": true
+          },
+          {
+            "label": "surrounding noise is fine",
+            "args": [
+              " 15 ",
+              0
+            ],
+            "expected": 15,
+            "hidden": true
+          },
+          {
+            "label": "leading zeros are fine",
+            "args": [
+              "007",
+              0
+            ],
+            "expected": 7,
+            "hidden": true
+          },
+          {
+            "label": "explicit plus",
+            "args": [
+              "+9",
+              0
+            ],
+            "expected": 9,
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "Who is the authority on what counts as an integer literal — your own character checks, or int() itself?",
+          "Attempt int(text) inside a try, and catch ValueError to return the fallback. One risky line, one handler, no pre-checks.",
+          "try: return int(text) except ValueError: return fallback. That's the whole function — everything else the tests probe comes free from int's own rules."
+        ],
+        "reasoning": "<p>The EAFP version delegates the definition of 'valid integer literal' to the one component that actually owns it: the <code>int()</code> constructor. Any pre-validation you write is a second, weaker copy of that definition — and it will disagree at the edges (surrounding spaces, a leading <code>+</code>, <code>-0</code>). Notice also what the except clause does NOT do: it catches <code>ValueError</code> specifically, so a <code>TypeError</code> from a genuinely wrong kind of input would still surface loudly. Narrow handlers are a feature — a bare <code>except</code> here would hide bugs in your own code, not just noisy data.</p>",
+        "solution": "def safe_reading(text, fallback):\n    try:\n        return int(text)          # the parser is the authority\n    except ValueError:\n        return fallback\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-exceptions-2",
+        "title": "First Failure Per Component",
+        "difficulty": "medium",
+        "tags": [
+          "exceptions",
+          "parsing",
+          "dicts"
+        ],
+        "statement": "<p>A service writes log lines of the form <code>LEVEL COMPONENT MESSAGE</code>, where LEVEL is one of <code>INFO</code>, <code>WARN</code> or <code>ERROR</code>, COMPONENT is a single token, and MESSAGE is the rest of the line (it may contain spaces). The log is dirty: lines are truncated, levels are mistyped, junk gets interleaved. Your tool must <b>skip</b> any line that does not have three parts or whose level is not recognized, and never crash on the junk.</p><p>Implement <code>first_errors(lines)</code>: a dict mapping each component to the MESSAGE of its <i>first</i> <code>ERROR</code> line. INFO and WARN lines are valid but contribute nothing. Skip malformed lines the EAFP way — attempt the three-way unpacking and let a <code>ValueError</code> mark the bad ones.</p>",
+        "constraints": [
+          "0 <= len(lines) <= 1,000",
+          "fields are separated by one or more spaces",
+          "components are single tokens; only the first ERROR per component is remembered"
+        ],
+        "examples": [
+          {
+            "call": "first_errors([\"ERROR DB pool exhausted\", \"INFO DB all good\", \"ERROR DB disk full\"])",
+            "returns": "{'DB': 'pool exhausted'}",
+            "why": "the later DB error is ignored — only the first counts"
+          },
+          {
+            "call": "first_errors([\"ERROR DB pool exhausted\", \"WARN NET flaky\", \"ERROR NET timeout\"])",
+            "returns": "{'DB': 'pool exhausted', 'NET': 'timeout'}",
+            "why": "each component contributes its first error"
+          }
+        ],
+        "starter": "def first_errors(lines):\n    \"\"\"Return {component: first ERROR message} from dirty log lines.\"\"\"\n    pass\n",
+        "func": "first_errors",
+        "tests": [
+          {
+            "label": "first error per component",
+            "args": [
+              [
+                "ERROR DB pool exhausted",
+                "INFO DB all good",
+                "ERROR DB disk full"
+              ]
+            ],
+            "expected": {
+              "DB": "pool exhausted"
+            },
+            "hidden": false
+          },
+          {
+            "label": "two components",
+            "args": [
+              [
+                "ERROR DB pool exhausted",
+                "WARN NET flaky",
+                "ERROR NET timeout"
+              ]
+            ],
+            "expected": {
+              "DB": "pool exhausted",
+              "NET": "timeout"
+            },
+            "hidden": false
+          },
+          {
+            "label": "empty log",
+            "args": [
+              []
+            ],
+            "expected": {},
+            "hidden": true
+          },
+          {
+            "label": "junk is skipped",
+            "args": [
+              [
+                "ERROR DB",
+                "garbage",
+                "ERROR DB again"
+              ]
+            ],
+            "expected": {
+              "DB": "again"
+            },
+            "hidden": true
+          },
+          {
+            "label": "non-error levels never contribute",
+            "args": [
+              [
+                "INFO a ok",
+                "WARN b hmm"
+              ]
+            ],
+            "expected": {},
+            "hidden": true
+          },
+          {
+            "label": "first wins across components",
+            "args": [
+              [
+                "ERROR A one",
+                "ERROR B two",
+                "ERROR A three"
+              ]
+            ],
+            "expected": {
+              "A": "one",
+              "B": "two"
+            },
+            "hidden": true
+          },
+          {
+            "label": "unknown level is malformed",
+            "args": [
+              [
+                "NOTE X weird",
+                "ERROR X real"
+              ]
+            ],
+            "expected": {
+              "X": "real"
+            },
+            "hidden": true
+          },
+          {
+            "label": "messages keep their spaces",
+            "args": [
+              [
+                "ERROR DB pool exhausted now"
+              ]
+            ],
+            "expected": {
+              "DB": "pool exhausted now"
+            },
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "How does line.split(None, 2) behave on a line with only two fields — and what exception does the three-way unpacking level, component, message = ... raise then?",
+          "Wrap the split-and-unpack in try/except ValueError and continue past bad lines. Then validate the level against the known set, and only ERROR lines with an unseen component get stored.",
+          "for line in lines: try to unpack line.split(None, 2) into three names (except ValueError: continue); skip unknown levels; if level == 'ERROR' and component not in firsts: firsts[component] = message."
+        ],
+        "reasoning": "<p>Two EAFP decisions do the work. First, tuple unpacking <b>is</b> the shape check: <code>a, b, c = parts</code> raises <code>ValueError</code> exactly when the line does not have three fields, so the malformed-line rule costs one except clause instead of a manual <code>len()</code> inspection — and it cannot drift out of sync with the real requirement. Second, the 'first error only' rule is a dict-membership question: store a component's message only when the key is absent, and later errors are ignored without counters or flags. Note how <code>split(None, 2)</code> caps the split so the MESSAGE part keeps its internal spaces — parsing limits are part of the contract, not an afterthought.</p>",
+        "solution": "def first_errors(lines):\n    firsts = {}\n    for line in lines:\n        try:\n            level, component, message = line.split(None, 2)\n        except ValueError:\n            continue  # fewer than three fields: malformed, skip\n        if level not in (\"INFO\", \"WARN\", \"ERROR\"):\n            continue  # unknown level: malformed, skip\n        if level == \"ERROR\" and component not in firsts:\n            firsts[component] = message\n    return firsts\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-exceptions-3",
+        "title": "Retry With Backoff",
+        "difficulty": "hard",
+        "tags": [
+          "exceptions",
+          "retry",
+          "simulation"
+        ],
+        "statement": "<p>A field sensor is flaky: sometimes it answers with a reading, sometimes it times out. You will simulate it deterministically. Write <code>fetch_with_retry(plan, max_attempts)</code> where <code>plan[i]</code> describes attempt <code>i + 1</code>: an int means the sensor returns that reading; the string <code>\"fail\"</code> means it times out.</p><p>The required structure is the whole exercise: define a custom exception <code>SensorTimeout(Exception)</code>; write a helper that <b>raises</b> <code>SensorTimeout</code> when the plan says <code>\"fail\"</code> and returns the reading otherwise; and drive a retry loop that <b>catches</b> the exception and decides whether to try again. After the k-th failed attempt that is followed by another attempt, the client waits <code>2**(k-1)</code> seconds (so the pauses grow 1, 2, 4, ...). Return a dict <code>{\"status\": \"ok\" | \"failed\", \"reading\": int-or-None, \"attempts\": attempts actually made, \"waited\": total simulated pause}</code>.</p>",
+        "constraints": [
+          "len(plan) >= max_attempts >= 1",
+          "plan entries are ints or the exact string 'fail'",
+          "readings may be negative — temperature sensors go below zero",
+          "no time or sleep module: waiting is simulated arithmetic only"
+        ],
+        "examples": [
+          {
+            "call": "fetch_with_retry([42], 3)",
+            "returns": "{'status': 'ok', 'reading': 42, 'attempts': 1, 'waited': 0}",
+            "why": "the first attempt succeeds, so no retries and no pause"
+          },
+          {
+            "call": "fetch_with_retry([\"fail\", 7], 3)",
+            "returns": "{'status': 'ok', 'reading': 7, 'attempts': 2, 'waited': 1}",
+            "why": "one timeout costs a 1-second pause, then the second attempt succeeds"
+          }
+        ],
+        "starter": "class SensorTimeout(Exception):\n    \"\"\"The sensor did not answer within its window.\"\"\"\n\n\ndef fetch_with_retry(plan, max_attempts):\n    \"\"\"Simulate up to max_attempts sensor reads from the plan.\n\n    plan[i] is the reading for attempt i+1, or \"fail\" for a timeout\n    (the helper must RAISE SensorTimeout in that case, and this loop\n    must CATCH it). Waits 2**(k-1) seconds after failed attempt k\n    whenever another attempt follows. Returns the outcome dict.\n    \"\"\"\n    pass\n",
+        "func": "fetch_with_retry",
+        "tests": [
+          {
+            "label": "first try wins",
+            "args": [
+              [
+                42
+              ],
+              3
+            ],
+            "expected": {
+              "status": "ok",
+              "reading": 42,
+              "attempts": 1,
+              "waited": 0
+            },
+            "hidden": false
+          },
+          {
+            "label": "one timeout then success",
+            "args": [
+              [
+                "fail",
+                7
+              ],
+              3
+            ],
+            "expected": {
+              "status": "ok",
+              "reading": 7,
+              "attempts": 2,
+              "waited": 1
+            },
+            "hidden": false
+          },
+          {
+            "label": "all attempts fail",
+            "args": [
+              [
+                "fail",
+                "fail",
+                "fail"
+              ],
+              3
+            ],
+            "expected": {
+              "status": "failed",
+              "reading": null,
+              "attempts": 3,
+              "waited": 3
+            },
+            "hidden": true
+          },
+          {
+            "label": "success on the last allowed try",
+            "args": [
+              [
+                "fail",
+                "fail",
+                9
+              ],
+              3
+            ],
+            "expected": {
+              "status": "ok",
+              "reading": 9,
+              "attempts": 3,
+              "waited": 3
+            },
+            "hidden": true
+          },
+          {
+            "label": "budget spent before plan runs out",
+            "args": [
+              [
+                "fail",
+                "fail",
+                "fail",
+                "fail"
+              ],
+              3
+            ],
+            "expected": {
+              "status": "failed",
+              "reading": null,
+              "attempts": 3,
+              "waited": 3
+            },
+            "hidden": true
+          },
+          {
+            "label": "single attempt allowed",
+            "args": [
+              [
+                5
+              ],
+              1
+            ],
+            "expected": {
+              "status": "ok",
+              "reading": 5,
+              "attempts": 1,
+              "waited": 0
+            },
+            "hidden": true
+          },
+          {
+            "label": "five timeouts then success",
+            "args": [
+              [
+                "fail",
+                "fail",
+                "fail",
+                "fail",
+                "fail",
+                3
+              ],
+              6
+            ],
+            "expected": {
+              "status": "ok",
+              "reading": 3,
+              "attempts": 6,
+              "waited": 31
+            },
+            "hidden": true
+          },
+          {
+            "label": "negative reading",
+            "args": [
+              [
+                "fail",
+                -4
+              ],
+              2
+            ],
+            "expected": {
+              "status": "ok",
+              "reading": -4,
+              "attempts": 2,
+              "waited": 1
+            },
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "Who should know that attempt i failed — the caller checking a return code, or a helper that raises and a loop that catches? Which one keeps the retry loop readable?",
+          "attempt(i) raises SensorTimeout on 'fail' and returns the reading otherwise. The loop calls it in a try; on success return the ok dict immediately; on timeout, add the pause (1, 2, 4, ...) only if another attempt is coming.",
+          "waited = 0; for i in range(max_attempts): try: reading = attempt(i); return ok-dict — except SensorTimeout: if i + 1 < max_attempts: waited += 2 ** i. After the loop, return the failed dict with attempts = max_attempts."
+        ],
+        "reasoning": "<p>The custom exception turns a messy return-code protocol into clean separation: the helper's only job is to <i>signal</i> (raise), and the loop's only job is to <i>decide</i> (catch and retry). The two bookkeeping invariants are where correctness lives. First, <code>attempts</code> counts tries actually made, so it is <code>i + 1</code> on success and <code>max_attempts</code> on exhaustion — never a counter you increment in two places. Second, the pause after failure k is charged <b>only when a retry follows</b>: waiting after your final failure wastes a second nobody uses, which is why the all-fail case with 3 attempts waits 1 + 2 = 3 seconds, not 7. Getting both right is exactly the discipline real retry policies (and their unit tests) demand.</p>",
+        "solution": "class SensorTimeout(Exception):\n    \"\"\"The sensor did not answer within its window.\"\"\"\n\n\ndef fetch_with_retry(plan, max_attempts):\n    def attempt(i):\n        if plan[i] == \"fail\":\n            raise SensorTimeout(\"attempt \" + str(i + 1) + \" timed out\")\n        return plan[i]\n\n    waited = 0\n    for i in range(max_attempts):\n        try:\n            reading = attempt(i)\n            return {\"status\": \"ok\", \"reading\": reading,\n                    \"attempts\": i + 1, \"waited\": waited}\n        except SensorTimeout:\n            if i + 1 < max_attempts:   # no pause after the last try\n                waited += 2 ** i       # backoff: 1, 2, 4, 8, ...\n    return {\"status\": \"failed\", \"reading\": None,\n            \"attempts\": max_attempts, \"waited\": waited}\n"
+      }
+    }
+  ]
+}

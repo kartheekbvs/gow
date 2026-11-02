@@ -1,0 +1,459 @@
+{
+  "id": "py-decorators",
+  "title": "Decorators",
+  "icon": "🎀",
+  "level": "advanced",
+  "order": 120,
+  "conceptRef": "python-basics.html#s15",
+  "blurb": "Functions that wrap functions: transparent pass-through, preserved identity, and state carried on the wrapper.",
+  "cells": [
+    {
+      "type": "concept",
+      "title": "@ is a rebinding, nothing more",
+      "body": "<p>A decorator is just a function that takes a function and returns a function. The <code>@</code> line is pure sugar: <code>@emphasize<br>def note(): ...</code> means <code>note = emphasize(note)</code> — call the decorator with the function object, then rebind the name to whatever comes back. Once you see that, decorators stop being magic and become ordinary higher-order functions you can write, test and debug by hand.</p><p>The reasoning habit: after decoration, the name refers to the <b>wrapper</b>, not the original. Every call through the name goes through the wrapper; the original function survives only if the wrapper's closure kept a reference to it. That is simultaneously the power (a seam where you can add behavior) and the hazard (forget to call the original and you silently break the function).</p>",
+      "demo": {
+        "code": "def emphasize(func):\n    def wrapper(text):\n        return func(text) + \"!!\"\n    return wrapper\n\nloud = emphasize(lambda t: \"note: \" + t)  # manual application\nprint(loud(\"wheels checked\"))\n\n@emphasize\ndef memo(t):\n    return \"memo: \" + t\n\nprint(memo(\"brakes ok\"))"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "Be a transparent wrapper",
+      "body": "<p>A good wrapper is invisible to its callers: it accepts whatever arguments the wrapped function accepts and returns what it returns, unchanged except for the added behavior. The tool for that is <code>*args, **kwargs</code> in the wrapper signature, forwarded verbatim to the wrapped call — hard-coding one parameter works for one function but breaks the moment the decorator decorates anything else.</p><p>The other half of transparency is identity. By default, the decorated name loses its <code>__name__</code> and <code>__doc__</code> (they now belong to the wrapper). <code>functools.wraps(func)</code> copies them over, so introspection, help output and debug logs keep showing the real function. 'Wrap generically, restore identity' is the difference between a toy decorator and one you can ship.</p>",
+      "demo": {
+        "code": "import functools\n\ndef traced(func):\n    @functools.wraps(func)\n    def wrapper(*args, **kwargs):\n        print(\"calling\", func.__name__, \"with\", args)\n        return func(*args, **kwargs)\n    return wrapper\n\n@traced\ndef add(a, b):\n    return a + b\n\nprint(add(2, 3), add.__name__)"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "Wrappers that remember things",
+      "body": "<p>Function objects can carry attributes, and a wrapper is a function object — so it can own state. Set <code>wrapper.calls = 0</code> before returning it, increment it inside, and suddenly every decorated function keeps its own call counter. The same mechanism holds caches: a dict attribute keyed by the arguments turns any pure function into a memoizing one, with no globals and no classes.</p><p>Each application of the decorator creates a <i>fresh</i> wrapper with fresh attributes, which is exactly the isolation you want: two functions decorated by the same <code>@count_calls</code> count separately. This is how instrumentation (hit counters, timers), caching, and access control are built in the wild — behavior added at the seam, state owned by the wrapper, the original function untouched.</p>",
+      "demo": {
+        "code": "import functools\n\ndef counted(func):\n    @functools.wraps(func)\n    def wrapper(*args):\n        wrapper.hits += 1\n        return func(*args)\n    wrapper.hits = 0\n    return wrapper\n\n@counted\ndef tick():\n    return \"tock\"\n\ntick(); tick(); print(\"hits:\", tick.hits)"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-decorators-1",
+        "title": "Shout It",
+        "difficulty": "easy",
+        "tags": [
+          "decorators",
+          "wraps"
+        ],
+        "statement": "<p>A stadium scoreboard API returns polite lowercase strings, and the big screen wants them LOUD. Write the decorator <code>shout(func)</code>: it wraps a <b>one-argument</b> function that returns a string, and the wrapper returns the original result uppercased with an exclamation mark appended — <code>\"hi ada\"</code> becomes <code>\"HI ADA!\"</code>. Use <code>functools.wraps</code> so the wrapped function keeps its identity.</p><p>Then write the tested driver <code>shout_report(names)</code>: inside it, define <code>greet(name)</code> returning <code>\"hi \" + name</code>, decorate it with <code>@shout</code>, call it once per name, and return <code>[results, greet.__name__]</code> — the list of shouted results plus the function's name, which proves the identity survived the wrapping.</p>",
+        "constraints": [
+          "names contains 0 to 50 strings, possibly empty strings",
+          "greet is exactly 'hi ' + name — do not change it",
+          "the decorator must work on ANY one-argument function returning a string, not just greet"
+        ],
+        "examples": [
+          {
+            "call": "shout_report([\"ada\", \"bob\"])",
+            "returns": "[['HI ADA!', 'HI BOB!'], 'greet']",
+            "why": "each result is uppercased with a bang, and the name is still 'greet' thanks to wraps"
+          },
+          {
+            "call": "shout_report([])",
+            "returns": "[[], 'greet']",
+            "why": "no names, but the identity check still runs"
+          }
+        ],
+        "starter": "import functools\n\n\ndef shout(func):\n    \"\"\"Decorate a one-arg str->str function: uppercase + '!'.\"\"\"\n    pass\n\n\ndef shout_report(names):\n    \"\"\"Decorate greet with @shout and report results + greet.__name__.\"\"\"\n    pass\n",
+        "func": "shout_report",
+        "tests": [
+          {
+            "label": "two names",
+            "args": [
+              [
+                "ada",
+                "bob"
+              ]
+            ],
+            "expected": [
+              [
+                "HI ADA!",
+                "HI BOB!"
+              ],
+              "greet"
+            ],
+            "hidden": false
+          },
+          {
+            "label": "no names",
+            "args": [
+              []
+            ],
+            "expected": [
+              [],
+              "greet"
+            ],
+            "hidden": false
+          },
+          {
+            "label": "mixed case input",
+            "args": [
+              [
+                "Tim"
+              ]
+            ],
+            "expected": [
+              [
+                "HI TIM!"
+              ],
+              "greet"
+            ],
+            "hidden": true
+          },
+          {
+            "label": "already uppercase",
+            "args": [
+              [
+                "zoe",
+                "AMY"
+              ]
+            ],
+            "expected": [
+              [
+                "HI ZOE!",
+                "HI AMY!"
+              ],
+              "greet"
+            ],
+            "hidden": true
+          },
+          {
+            "label": "empty name",
+            "args": [
+              [
+                ""
+              ]
+            ],
+            "expected": [
+              [
+                "HI !"
+              ],
+              "greet"
+            ],
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "What two strings do you have to combine in the wrapper — and in which order relative to calling the original function?",
+          "wrapper(name) returns func(name).upper() + '!'. Decorate wrapper with functools.wraps(func) before returning it, or greet.__name__ will be 'wrapper'.",
+          "Inside shout_report: define greet with @shout above it, build [greet(n) for n in names], and return [that list, greet.__name__]."
+        ],
+        "reasoning": "<p>The wrapper adds behavior at exactly one seam: between the original function's return and the caller. Getting <code>func(name).upper() + \"!\"</code> right is the trivial half; the teaching half is identity. Without <code>functools.wraps</code>, the name <code>greet</code> is rebound to the wrapper, so <code>greet.__name__</code> reports <code>\"wrapper\"</code> — debug logs, tracebacks and documentation tools all silently lie. With it, the metadata is copied and the function looks untouched from the outside. 'Change the behavior, preserve the identity' is the contract every production decorator honors.</p>",
+        "solution": "import functools\n\n\ndef shout(func):\n    @functools.wraps(func)\n    def wrapper(text):\n        return func(text).upper() + \"!\"\n    return wrapper\n\n\ndef shout_report(names):\n    @shout\n    def greet(name):\n        return \"hi \" + name\n\n    results = [greet(n) for n in names]\n    return [results, greet.__name__]\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-decorators-2",
+        "title": "Every Call Counts",
+        "difficulty": "medium",
+        "tags": [
+          "decorators",
+          "state",
+          "wraps"
+        ],
+        "statement": "<p>Ops wants a usage meter on every endpoint: each decorated function should know how many times it has been called. Write the decorator <code>count_calls(func)</code>: the returned wrapper forwards any arguments to the original and maintains a <code>.calls</code> attribute on itself — 0 at the moment of decoration, one more after every call.</p><p>Then write the tested driver <code>echo_report(script)</code>: define <code>echo(x)</code> returning <code>x * 2</code>, decorate it with <code>@count_calls</code>, and return <code>[before, outs, after]</code> — the counter value <b>before</b> any call, the list of <code>echo(x)</code> results for the script in order, and the counter value <b>after</b>.</p>",
+        "constraints": [
+          "script contains 0 to 100 integers",
+          "echo is exactly x * 2",
+          "the wrapper must accept any *args/**kwargs, not just one argument",
+          "the counter starts at 0 the instant the decoration happens, before any call"
+        ],
+        "examples": [
+          {
+            "call": "echo_report([1, 2, 3])",
+            "returns": "[0, [2, 4, 6], 3]",
+            "why": "fresh counter reads 0, three calls double three values, then it reads 3"
+          },
+          {
+            "call": "echo_report([])",
+            "returns": "[0, [], 0]",
+            "why": "an empty script never calls echo"
+          }
+        ],
+        "starter": "import functools\n\n\ndef count_calls(func):\n    \"\"\"Wrap func with a .calls counter starting at 0.\"\"\"\n    pass\n\n\ndef echo_report(script):\n    \"\"\"Decorate echo with @count_calls; return [before, results, after].\"\"\"\n    pass\n",
+        "func": "echo_report",
+        "tests": [
+          {
+            "label": "three calls",
+            "args": [
+              [
+                1,
+                2,
+                3
+              ]
+            ],
+            "expected": [
+              0,
+              [
+                2,
+                4,
+                6
+              ],
+              3
+            ],
+            "hidden": false
+          },
+          {
+            "label": "no calls",
+            "args": [
+              []
+            ],
+            "expected": [
+              0,
+              [],
+              0
+            ],
+            "hidden": false
+          },
+          {
+            "label": "single call",
+            "args": [
+              [
+                5
+              ]
+            ],
+            "expected": [
+              0,
+              [
+                10
+              ],
+              1
+            ],
+            "hidden": true
+          },
+          {
+            "label": "zero and negative",
+            "args": [
+              [
+                -2,
+                0
+              ]
+            ],
+            "expected": [
+              0,
+              [
+                -4,
+                0
+              ],
+              2
+            ],
+            "hidden": true
+          },
+          {
+            "label": "repeated arguments still count",
+            "args": [
+              [
+                7,
+                7,
+                7,
+                7
+              ]
+            ],
+            "expected": [
+              0,
+              [
+                14,
+                14,
+                14,
+                14
+              ],
+              4
+            ],
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "Where can a counter live so that each decorated function gets its own, and so that the wrapper can update it on every call?",
+          "Set wrapper.calls = 0 right before returning the wrapper (that is when 'decoration happened'). Inside, do wrapper.calls += 1 and then return func(*args, **kwargs).",
+          "In the driver: before = echo.calls, then outs = [echo(x) for x in script], then return [before, outs, echo.calls]. Reading before any call is what proves the counter starts at zero."
+        ],
+        "reasoning": "<p>Function attributes are the quiet feature doing all the work here: <code>wrapper.calls</code> is per-decoration state — every function wrapped by <code>count_calls</code> gets its own counter, because each application of the decorator builds a new wrapper object with a fresh attribute. The <code>[before, ..., after]</code> shape of the driver is deliberate: reading the counter <i>before any call</i> pins down the initialization contract (0 at decoration time), while the after value pins the increment contract (one bump per call, arguments irrelevant). Instrumentation that can prove both properties is instrumentation you can trust on a dashboard.</p>",
+        "solution": "import functools\n\n\ndef count_calls(func):\n    @functools.wraps(func)\n    def wrapper(*args, **kwargs):\n        wrapper.calls += 1\n        return func(*args, **kwargs)\n    wrapper.calls = 0          # fresh meter per decorated function\n    return wrapper\n\n\ndef echo_report(script):\n    @count_calls\n    def echo(x):\n        return x * 2\n\n    before = echo.calls\n    outs = [echo(x) for x in script]\n    return [before, outs, echo.calls]\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-decorators-3",
+        "title": "The Receipt Cache",
+        "difficulty": "hard",
+        "tags": [
+          "decorators",
+          "caching",
+          "state"
+        ],
+        "statement": "<p>A pricing service computes quotes with a slow lookup, and the same item is priced again and again. Build a memoizing decorator <code>memoize(func)</code> <b>by hand</b> — a plain dict attribute on the wrapper as the cache; <code>functools.lru_cache</code> and every other caching helper are off the table, the point is to build the machinery yourself.</p><p>The wrapper must expose two counters alongside the cache: <code>.calls</code> — how many times the wrapper was invoked — and <code>.misses</code> — how many times the wrapped function actually had to run (a cache miss). Then write the tested driver <code>cost_report(script)</code>: define <code>cost_of(n)</code> returning <code>3 * n + 1</code>, decorate it with <code>@memoize</code>, run the whole script, and return <code>[results, cost_of.calls, cost_of.misses]</code>. If the cache works, repeated arguments drive a wedge between calls and misses.</p>",
+        "constraints": [
+          "script contains 0 to 100 integers between -50 and 50",
+          "cost_of is exactly 3 * n + 1",
+          "the cache is a plain dict living on the wrapper; no functools.lru_cache or imported caching",
+          "counters start at 0; every hit is a call that is not a miss"
+        ],
+        "examples": [
+          {
+            "call": "cost_report([4, 4, 5])",
+            "returns": "[[13, 13, 16], 3, 2]",
+            "why": "three calls, but only the first 4 and the 5 were misses — the second 4 was served from the cache"
+          },
+          {
+            "call": "cost_report([1])",
+            "returns": "[[4], 1, 1]",
+            "why": "a single fresh argument is one call and one miss"
+          }
+        ],
+        "starter": "import functools\n\n\ndef memoize(func):\n    \"\"\"Cache results in a plain dict on the wrapper.\n\n    The wrapper exposes .calls (invocations) and .misses (times the\n    wrapped function actually ran). No functools.lru_cache allowed.\n    \"\"\"\n    pass\n\n\ndef cost_report(script):\n    \"\"\"Decorate cost_of with @memoize; return [results, calls, misses].\"\"\"\n    pass\n",
+        "func": "cost_report",
+        "tests": [
+          {
+            "label": "one repeat",
+            "args": [
+              [
+                4,
+                4,
+                5
+              ]
+            ],
+            "expected": [
+              [
+                13,
+                13,
+                16
+              ],
+              3,
+              2
+            ],
+            "hidden": false
+          },
+          {
+            "label": "single fresh call",
+            "args": [
+              [
+                1
+              ]
+            ],
+            "expected": [
+              [
+                4
+              ],
+              1,
+              1
+            ],
+            "hidden": false
+          },
+          {
+            "label": "empty script",
+            "args": [
+              []
+            ],
+            "expected": [
+              [],
+              0,
+              0
+            ],
+            "hidden": true
+          },
+          {
+            "label": "all the same argument",
+            "args": [
+              [
+                2,
+                2,
+                2,
+                2
+              ]
+            ],
+            "expected": [
+              [
+                7,
+                7,
+                7,
+                7
+              ],
+              4,
+              1
+            ],
+            "hidden": true
+          },
+          {
+            "label": "all distinct",
+            "args": [
+              [
+                1,
+                2,
+                3
+              ]
+            ],
+            "expected": [
+              [
+                4,
+                7,
+                10
+              ],
+              3,
+              3
+            ],
+            "hidden": true
+          },
+          {
+            "label": "interleaved repeats",
+            "args": [
+              [
+                5,
+                1,
+                5,
+                1,
+                5
+              ]
+            ],
+            "expected": [
+              [
+                16,
+                4,
+                16,
+                4,
+                16
+              ],
+              5,
+              2
+            ],
+            "hidden": true
+          },
+          {
+            "label": "zero is a valid key",
+            "args": [
+              [
+                0,
+                0,
+                0
+              ]
+            ],
+            "expected": [
+              [
+                1,
+                1,
+                1
+              ],
+              3,
+              1
+            ],
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "What should the cache be keyed on so that two calls 'with the same input' hit, and what must you check BEFORE calling the wrapped function?",
+          "Key the dict by the argument tuple. In the wrapper: bump .calls; if the key is absent, bump .misses, run the function, and store the result; return the stored value either way.",
+          "wrapper.cache = {}, wrapper.calls = 0, wrapper.misses = 0 at decoration time. Inside: key = args (a one-arg function makes this simple); if key not in wrapper.cache: wrapper.misses += 1 and wrapper.cache[key] = func(*args). Return wrapper.cache[key]."
+        ],
+        "reasoning": "<p>Memoization is one conditional wrapped around one dictionary lookup, and the two counters make its economics observable: <code>calls - misses</code> is the hit count, the number of expensive computations you actually avoided. The ordering inside the wrapper is the correctness core — check the cache <i>before</i> running the function, store on a miss, and return the cached value in both paths — get the order wrong and you either never hit or never populate. Note the precondition the whole design rests on: the wrapped function must be <b>pure</b> (same arguments, same result). Decorate something with side effects or time-dependent output and the cache serves convincing wrong answers, which is exactly why <code>lru_cache</code> is applied deliberately and sparingly in real codebases.</p>",
+        "solution": "import functools\n\n\ndef memoize(func):\n    \"\"\"Cache func's results in a plain dict on the wrapper.\n\n    Exposes .calls (times the wrapper was invoked) and .misses\n    (times the wrapped function actually ran).\n    \"\"\"\n    @functools.wraps(func)\n    def wrapper(*args, **kwargs):\n        key = (args, tuple(sorted(kwargs.items())))\n        wrapper.calls += 1\n        if key not in wrapper.cache:\n            wrapper.misses += 1\n            wrapper.cache[key] = func(*args, **kwargs)\n        return wrapper.cache[key]\n    wrapper.cache = {}\n    wrapper.calls = 0\n    wrapper.misses = 0\n    return wrapper\n\n\ndef cost_report(script):\n    @memoize\n    def cost_of(n):\n        return 3 * n + 1\n\n    results = [cost_of(n) for n in script]\n    return [results, cost_of.calls, cost_of.misses]\n"
+      }
+    }
+  ]
+}

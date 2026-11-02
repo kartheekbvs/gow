@@ -1,0 +1,467 @@
+{
+  "id": "py-control",
+  "title": "Control Flow Logic",
+  "icon": "🔀",
+  "level": "beginner",
+  "order": 60,
+  "conceptRef": "python-basics.html#s7",
+  "blurb": "Branches, loops and early exits: train yourself to see the decision table and the stopping condition before you type.",
+  "cells": [
+    {
+      "type": "concept",
+      "title": "Branches are a decision table, not a pile of ifs",
+      "body": "<p>When a problem says 'sort each item into one of four buckets', the professional move is to write the <b>decision table</b> first: which conditions select each bucket, which buckets overlap, and which check must therefore come first. Python's <code>if / elif / else</code> chain evaluates conditions top to bottom and stops at the first match — so the order of your checks IS part of your logic, not a cosmetic detail.</p><p>The classic trap is overlapping rules. 'Divisible by 3' and 'divisible by 4' both fire for 12, 24, 36. Two fixes exist: order the checks from most specific to least, or collapse the overlap into a single stronger test (divisible by both 3 and 4 means divisible by 12, because 12 is the least common multiple). Learning to see that collapse is a genuinely transferable arithmetic habit — it turns a tangle of overlapping branches into one honest test.</p>",
+      "demo": {
+        "code": "def shelf(n):\n    if n % 15 == 0:\n        return \"aisle-15\"   # 15 = 3 * 5, so this wins over both below\n    if n % 5 == 0:\n        return \"aisle-5\"\n    if n % 3 == 0:\n        return \"aisle-3\"\n    return \"backroom\"\n\nfor sku in (30, 10, 9, 7):\n    print(sku, \"->\", shelf(sku))"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "while loops are state machines with an exit condition",
+      "body": "<p>Use <code>for</code> when you know what you are walking over (a list, a range, a string). Use <code>while</code> when the <i>number of steps is itself part of the answer</i> — a process that repeats until the state reaches some target. In a <code>while</code> loop every variable you update is machine state: pick names that say what the value means <b>right now</b> (<code>reading</code>, <code>cycles</code>), and make sure each pass of the loop moves the state toward the exit condition, or you have written an infinite loop.</p><p>The reasoning habit: before the loop, say the invariant out loud — 'at the top of every pass, <code>cycles</code> counts completed passes and <code>reading</code> is the current value'. If you can say that sentence, the loop body almost writes itself, and boundary questions (does the starting value count as a step?) disappear because the state definition settles them.</p>",
+      "demo": {
+        "code": "for start in (84, 100, 7):\n    n = start\n    halvings = 0\n    while n % 2 == 0:      # repeat while the state is still 'even'\n        n = n // 2\n        halvings += 1\n    print(start, \"-> odd core\", n, \"after\", halvings, \"halvings\")"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "Nested loops, monotonicity, and the early exit",
+      "body": "<p>A nested loop walks a grid: outer loop over columns, inner over rows (or the reverse — decide consciously, because it changes what gets scanned 'fastest'). The underrated skill is noticing <b>monotonicity</b>: if the condition you are testing only gets more false as the inner index grows, then the first failure ends the whole inner pass — <code>break</code> and skip the rest. That one observation routinely turns a full grid scan into scanning only the useful prefix of each column.</p><p>Python also gives loops an <code>else</code> clause: it runs only when the loop finished <i>without</i> hitting <code>break</code>. That is exactly the language you need for 'search for the first X; if none was found, do Y' — no extra flag variable required. Both tools are pure control flow, cost nothing, and make the intent of the code readable.</p>",
+      "demo": {
+        "code": "rows = [[\"cat\", \"snake\", \"ox\"], [\"dog\", \"ox\"], [\"bee\", \"ant\"]]\nfor row in rows:\n    for word in row:\n        if len(word) > 4:\n            print(\"found long word:\", word)\n            break\n    else:\n        print(\"no long word in\", row)"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-control-1",
+        "title": "Pallet Routing by Lot Number",
+        "difficulty": "easy",
+        "tags": [
+          "conditionals",
+          "arithmetic"
+        ],
+        "statement": "<p>A distribution center routes pallets by lot number. A lot divisible by 3 goes to the <b>east belt</b>, a lot divisible by 4 goes to the <b>west belt</b>. If both rules apply, the pallet is urgent and goes to the <b>priority dock</b>; if neither applies, it needs <b>manual checking</b>.</p><p>Implement <code>route_pallet(n)</code> returning one of the strings <code>\"priority-dock\"</code>, <code>\"belt-east\"</code>, <code>\"belt-west\"</code> or <code>\"manual-check\"</code>. Decide your check order deliberately: the two single-belt rules overlap on some lots.</p>",
+        "constraints": [
+          "0 <= n <= 1,000,000",
+          "n is an integer lot number",
+          "lot 0 is divisible by every positive integer — decide where it belongs"
+        ],
+        "examples": [
+          {
+            "call": "route_pallet(9)",
+            "returns": "'belt-east'",
+            "why": "9 is divisible by 3 but not by 4"
+          },
+          {
+            "call": "route_pallet(20)",
+            "returns": "'belt-west'",
+            "why": "20 is divisible by 4 but not by 3"
+          },
+          {
+            "call": "route_pallet(7)",
+            "returns": "'manual-check'",
+            "why": "7 is divisible by neither 3 nor 4"
+          }
+        ],
+        "starter": "def route_pallet(n):\n    \"\"\"Return the routing label for lot number n.\n\n    divisible by 3 and 4 -> \"priority-dock\"\n    divisible by 3 only  -> \"belt-east\"\n    divisible by 4 only  -> \"belt-west\"\n    otherwise            -> \"manual-check\"\n    \"\"\"\n    pass\n",
+        "func": "route_pallet",
+        "tests": [
+          {
+            "label": "east belt",
+            "args": [
+              9
+            ],
+            "expected": "belt-east",
+            "hidden": false
+          },
+          {
+            "label": "west belt",
+            "args": [
+              20
+            ],
+            "expected": "belt-west",
+            "hidden": false
+          },
+          {
+            "label": "both rules -> priority",
+            "args": [
+              36
+            ],
+            "expected": "priority-dock",
+            "hidden": true
+          },
+          {
+            "label": "neither rule -> manual",
+            "args": [
+              7
+            ],
+            "expected": "manual-check",
+            "hidden": true
+          },
+          {
+            "label": "lot 0 is divisible by 12",
+            "args": [
+              0
+            ],
+            "expected": "priority-dock",
+            "hidden": true
+          },
+          {
+            "label": "lot 1 needs a human",
+            "args": [
+              1
+            ],
+            "expected": "manual-check",
+            "hidden": true
+          },
+          {
+            "label": "large east-belt lot",
+            "args": [
+              999999
+            ],
+            "expected": "belt-east",
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "Which lots satisfy both single-belt rules at once? What single divisibility test catches exactly those lots?",
+          "The overlap of 'divisible by 3' and 'divisible by 4' is 'divisible by 12'. Test 12 first, then 3, then 4, and let a final else catch the rest.",
+          "Start with if n % 12 == 0 for the priority dock, then one branch each for % 3 and % 4, and a final return for the manual check. Verify lot 0 by hand: 0 % 12 == 0 is True."
+        ],
+        "reasoning": "<p>Two rules that can fire at once force a priority order on your branches. The clean fix is algebraic: a number is divisible by both 3 and 4 exactly when it is divisible by their least common multiple, 12. Testing <code>n % 12 == 0</code> first makes the remaining branches mutually exclusive, so the chain reads like the routing table itself. The hidden trap is lot 0: <code>0 % 12 == 0</code> is True, so 0 is a priority load — an edge case that falls straight out of the definition of divisibility once you stop assuming zero is special. Ordering checks from most specific to least is the same instinct that keeps overlapping condition stacks sane in any language.</p>",
+        "solution": "def route_pallet(n):\n    if n % 12 == 0:          # 12 = lcm(3, 4): both belts at once\n        return \"priority-dock\"\n    if n % 3 == 0:\n        return \"belt-east\"\n    if n % 4 == 0:\n        return \"belt-west\"\n    return \"manual-check\"\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-control-2",
+        "title": "Counting Tiles Under the Camera Sweep",
+        "difficulty": "medium",
+        "tags": [
+          "nested-loops",
+          "arithmetic",
+          "invariants"
+        ],
+        "statement": "<p>A security camera mounted at the south-west corner of a rectangular courtyard sweeps the region below a straight line. The courtyard is <code>w</code> tiles wide and <code>h</code> tiles deep. Numbering columns <code>x = 1..w</code> (going east) and rows <code>y = 1..h</code> (going north), the sweep boundary rises <code>p</code> tiles for every <code>q</code> tiles of distance across — so tile <code>(x, y)</code> is covered exactly when <code>q * y &lt;= p * x</code>.</p><p>Implement <code>count_sweep(w, h, p, q)</code>: the number of covered tiles. Watch what happens within one column as <code>y</code> grows, and use that observation to avoid walking tiles that cannot possibly be covered.</p>",
+        "constraints": [
+          "0 <= w, h <= 200",
+          "0 <= p <= 50 and 1 <= q <= 50",
+          "a slope of p = 0 covers nothing (q * y is at least 1 for every real tile)"
+        ],
+        "examples": [
+          {
+            "call": "count_sweep(3, 4, 1, 1)",
+            "returns": "6",
+            "why": "the diagonal covers y <= x, so the three columns contribute 1 + 2 + 3 covered tiles"
+          },
+          {
+            "call": "count_sweep(2, 2, 5, 1)",
+            "returns": "4",
+            "why": "the steep line covers every tile of the 2x2 courtyard"
+          }
+        ],
+        "starter": "def count_sweep(w, h, p, q):\n    \"\"\"Count tiles (x, y) with 1 <= x <= w, 1 <= y <= h and q*y <= p*x.\"\"\"\n    pass\n",
+        "func": "count_sweep",
+        "tests": [
+          {
+            "label": "diagonal 3x4",
+            "args": [
+              3,
+              4,
+              1,
+              1
+            ],
+            "expected": 6,
+            "hidden": false
+          },
+          {
+            "label": "steep line covers all",
+            "args": [
+              2,
+              2,
+              5,
+              1
+            ],
+            "expected": 4,
+            "hidden": false
+          },
+          {
+            "label": "diagonal square",
+            "args": [
+              5,
+              5,
+              1,
+              1
+            ],
+            "expected": 15,
+            "hidden": true
+          },
+          {
+            "label": "gentle slope on big grid",
+            "args": [
+              200,
+              200,
+              1,
+              2
+            ],
+            "expected": 10000,
+            "hidden": true
+          },
+          {
+            "label": "line above the far corner",
+            "args": [
+              5,
+              3,
+              10,
+              1
+            ],
+            "expected": 15,
+            "hidden": true
+          },
+          {
+            "label": "zero width",
+            "args": [
+              0,
+              7,
+              1,
+              1
+            ],
+            "expected": 0,
+            "hidden": true
+          },
+          {
+            "label": "zero depth",
+            "args": [
+              7,
+              0,
+              1,
+              1
+            ],
+            "expected": 0,
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "Fix a column x. As y increases, does the left side q * y grow, shrink, or stay put? What does that mean for tiles above the first uncovered one?",
+          "Walk columns in the outer loop and rows in the inner loop. Inside one column, count covered tiles from y = 1 upward and stop the inner loop at the first uncovered tile — everything above it is also out of the sweep.",
+          "covered = 0; for x in range(1, w + 1): for y in range(1, h + 1): check q * y <= p * x, count it, else break out of the row loop. Empty grids (w or h = 0) never enter the loops at all."
+        ],
+        "reasoning": "<p>The whole exercise is one monotonicity observation: for a fixed column <code>x</code>, the left side <code>q * y</code> grows with <code>y</code> while the right side stays fixed. So coverage in a column is a <b>prefix</b> — some number of covered tiles at the bottom, then nothing. Once the inner loop meets its first uncovered tile, <code>break</code> is not just an optimization; it is a proof that the rest of the column is uncovered. Grid scans with a monotone threshold appear everywhere (histograms, skyline sweeps, staircase search in matrices), and 'cut the inner loop at the first failure' is the standard move for all of them.</p>",
+        "solution": "def count_sweep(w, h, p, q):\n    covered = 0\n    for x in range(1, w + 1):\n        for y in range(1, h + 1):\n            if q * y <= p * x:\n                covered += 1\n            else:\n                break  # higher tiles in this column are even further past the line\n    return covered\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-control-3",
+        "title": "Sealing the Cryo Chamber",
+        "difficulty": "medium",
+        "tags": [
+          "while-loops",
+          "simulation"
+        ],
+        "statement": "<p>A cryo chamber runs a fixed cool-down protocol on its integer temperature reading <code>n</code>: while the reading is not <code>1</code>, one cycle is performed — if the reading is even it is halved; if it is odd it is tripled and increased by one. The chamber seals as soon as the reading becomes exactly <code>1</code>.</p><p>Implement <code>cycles_to_seal(n)</code>: the number of cycles needed to reach 1. A chamber already at reading 1 needs zero cycles. You cannot know in advance how many cycles a reading needs — pick the loop shape that matches that uncertainty.</p>",
+        "constraints": [
+          "1 <= n <= 100,000",
+          "every reading in range seals in at most a few hundred cycles",
+          "no imports are needed — while and % are enough"
+        ],
+        "examples": [
+          {
+            "call": "cycles_to_seal(1)",
+            "returns": "0",
+            "why": "the reading is already 1, so no cycle runs"
+          },
+          {
+            "call": "cycles_to_seal(6)",
+            "returns": "8",
+            "why": "6 -> 3 -> 10 -> 5 -> 16 -> 8 -> 4 -> 2 -> 1 is eight cycles"
+          }
+        ],
+        "starter": "def cycles_to_seal(n):\n    \"\"\"Return how many cool-down cycles the reading n needs to reach 1.\n\n    Each cycle: even reading -> halve it; odd reading -> triple and add one.\n    A reading already at 1 needs 0 cycles.\n    \"\"\"\n    pass\n",
+        "func": "cycles_to_seal",
+        "tests": [
+          {
+            "label": "already sealed",
+            "args": [
+              1
+            ],
+            "expected": 0,
+            "hidden": false
+          },
+          {
+            "label": "six takes eight cycles",
+            "args": [
+              6
+            ],
+            "expected": 8,
+            "hidden": false
+          },
+          {
+            "label": "single halving",
+            "args": [
+              2
+            ],
+            "expected": 1,
+            "hidden": true
+          },
+          {
+            "label": "seven wanders a while",
+            "args": [
+              7
+            ],
+            "expected": 16,
+            "hidden": true
+          },
+          {
+            "label": "twenty-seven wanders famously",
+            "args": [
+              27
+            ],
+            "expected": 111,
+            "hidden": true
+          },
+          {
+            "label": "ninety-seven",
+            "args": [
+              97
+            ],
+            "expected": 118,
+            "hidden": true
+          },
+          {
+            "label": "power of two",
+            "args": [
+              16
+            ],
+            "expected": 4,
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "You cannot predict the number of cycles from n with a formula — so which loop shape lets you repeat until a condition on the state holds?",
+          "Keep two pieces of state: the current reading and a cycle counter. The loop guard is 'reading is not 1'; the body applies exactly one rule, chosen by parity, then bumps the counter.",
+          "cycles = 0; while n != 1: apply the even/odd rule to n, then cycles += 1. Return cycles. Check n = 1: the loop body never runs, so the answer is 0."
+        ],
+        "reasoning": "<p>This is a <b>while</b>-shaped problem because the iteration count is a property of the run, not of the input size: reading 27 takes 111 cycles, reading 32 takes 5. The invariant to hold in your head: 'at the top of each pass, <code>n</code> is the current reading and <code>cycles</code> counts completed passes'. Every path through the body updates exactly one half of that sentence, which is why the final count is trustworthy. The zero-cycle edge case is decided by the guard, not by an extra if — the loop simply never starts. That is the general lesson: let the loop condition encode 'when do we stop', and boundary cases fall out for free.</p>",
+        "solution": "def cycles_to_seal(n):\n    cycles = 0\n    while n != 1:\n        if n % 2 == 0:\n            n = n // 2\n        else:\n            n = 3 * n + 1\n        cycles += 1\n    return cycles\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-control-4",
+        "title": "The Read-Aloud Log",
+        "difficulty": "hard",
+        "tags": [
+          "strings",
+          "loops",
+          "invariants"
+        ],
+        "statement": "<p>A night-shift radio operator keeps a log where each entry is dictated by <b>reading the previous entry aloud</b>. Starting from a seed string of digits, every maximal run of one repeated digit is spoken as 'N copies of digit D' and written down as the count <code>N</code> (in plain decimal) immediately followed by the digit <code>D</code>. Entry 1 is the seed itself; entry 2 describes entry 1, and so on.</p><p>Implement <code>transmission(seed, n)</code>: entry number <code>n</code> of the log. Two details decide whether you get this right: the run at the very <b>end</b> of a string still has to be written out, and runs longer than nine produce a <b>two-digit</b> count — twelve 1s in a row is written <code>121</code> (twelve, then one).</p>",
+        "constraints": [
+          "1 <= len(seed) <= 8 and seed consists of the digits 0-9",
+          "1 <= n <= 20 (entries grow quickly — build each entry from the previous one, never recompute from the seed)",
+          "counts are written in decimal with no padding, so long runs yield multi-digit counts"
+        ],
+        "examples": [
+          {
+            "call": "transmission(\"1\", 4)",
+            "returns": "'1211'",
+            "why": "1 -> one 1 = 11 -> two 1s = 21 -> one 2 one 1 = 1211"
+          },
+          {
+            "call": "transmission(\"1\", 5)",
+            "returns": "'111221'",
+            "why": "the fifth entry reads 1211 aloud as one 1, one 2, two 1s"
+          }
+        ],
+        "starter": "def transmission(seed, n):\n    \"\"\"Return entry n of the read-aloud log.\n\n    Entry 1 is seed. Each later entry replaces every maximal run of one\n    repeated digit with the run length (decimal) followed by the digit.\n    \"\"\"\n    pass\n",
+        "func": "transmission",
+        "tests": [
+          {
+            "label": "fourth entry",
+            "args": [
+              "1",
+              4
+            ],
+            "expected": "1211",
+            "hidden": false
+          },
+          {
+            "label": "fifth entry",
+            "args": [
+              "1",
+              5
+            ],
+            "expected": "111221",
+            "hidden": false
+          },
+          {
+            "label": "the seed itself",
+            "args": [
+              "1",
+              1
+            ],
+            "expected": "1",
+            "hidden": true
+          },
+          {
+            "label": "first description",
+            "args": [
+              "1",
+              2
+            ],
+            "expected": "11",
+            "hidden": true
+          },
+          {
+            "label": "a different seed digit",
+            "args": [
+              "2",
+              4
+            ],
+            "expected": "3112",
+            "hidden": true
+          },
+          {
+            "label": "run of three at the end",
+            "args": [
+              "777",
+              2
+            ],
+            "expected": "37",
+            "hidden": true
+          },
+          {
+            "label": "run past nine needs two digits",
+            "args": [
+              "111111111111",
+              2
+            ],
+            "expected": "121",
+            "hidden": true
+          },
+          {
+            "label": "twentieth entry",
+            "args": [
+              "1",
+              20
+            ],
+            "expected": "11131221131211132221232112111312111213111213211231132132211211131221131211221321123113213221123113112221131112311332211211131221131211132211121312211231131112311211232221121321132132211331121321231231121113112221121321133112132112312321123113112221121113122113121113123112112322111213211322211312113211",
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "Describe ONE entry given the previous: how do you detect where a run ends — including the run that ends at the last character of the string?",
+          "Scan with two indices: i at the start of the current run, j advanced past all identical characters. Emit the count followed by term[i], then set i = j. The final run is flushed by the same append because j simply runs off the end.",
+          "term = seed, then loop n - 1 times: build a list of count+digit pieces with the two-index scan (the inner while stops at a different digit or the end of the string), then join the pieces into the new term. Return term."
+        ],
+        "reasoning": "<p>Three invariants have to hold at once, which is what earns this the hard tag. First, run detection: the index pair <code>(i, j)</code> means 'the run starting at i ends just before j', and the run touching the end of the string is flushed by the same append as every other one because <code>j</code> simply runs off the edge — no special last-case code. Second, the output is <b>count then digit</b>, and the count is a decimal number, so a run of twelve automatically writes a two-digit count before the digit — the run length and the digit stay separate concerns, which is why <code>str(j - i) + term[i]</code> handles every run length. Third, the outer repetition: entry n comes from entry n-1, never straight from the seed, so you rebuild the string exactly n-1 times. This 'flush at end of input' discipline is the same skill that run-length coding, tokenizers and streaming parsers all lean on.</p>",
+        "solution": "def transmission(seed, n):\n    term = seed\n    for _ in range(n - 1):\n        parts = []\n        i = 0\n        while i < len(term):\n            j = i\n            while j < len(term) and term[j] == term[i]:\n                j += 1\n            parts.append(str(j - i) + term[i])  # count, then digit\n            i = j\n        term = \"\".join(parts)\n    return term\n"
+      }
+    }
+  ]
+}

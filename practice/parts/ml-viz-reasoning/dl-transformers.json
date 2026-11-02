@@ -1,0 +1,95 @@
+{
+  "id": "dl-transformers",
+  "title": "Transformers & Activations",
+  "icon": "✨",
+  "level": "advanced",
+  "order": 40,
+  "conceptRef": "transformers.html",
+  "blurb": "Reason about softmax invariants, attention shape bookkeeping, and activation failure modes — the math behind every transformer.",
+  "cells": [
+    {
+      "type": "concept",
+      "title": "Softmax: probabilities from logits",
+      "body": "<p>Softmax turns a vector of arbitrary real numbers (logits) into a probability distribution: <code>p_i = exp(z_i) / Σ exp(z_j)</code>. Three properties always hold, and each one is a debugging tool. Every output is <b>positive</b> (an exponential is never zero). The outputs <b>sum to 1</b> whatever the logits are — there is no normalization prerequisite. And softmax is <b>invariant to adding a constant</b> to every logit: <code>exp(z_i + c) = exp(c)·exp(z_i)</code>, and the <code>exp(c)</code> factor cancels between numerator and denominator.</p><p>That shift invariance is why every serious implementation computes <code>exp(z − max(z))</code>: subtracting the largest logit prevents overflow while leaving the result mathematically identical. It also explains a modeling fact: only the <i>differences</i> between logits matter, never their absolute level.</p>",
+      "demo": {
+        "code": "import math\n\ndef softmax(z):\n    e = [math.exp(v) for v in z]\n    total = sum(e)\n    return [v / total for v in e]\n\np = softmax([0.0, 1.0, 2.0])\nprint('probs:', [round(v, 4) for v in p])\nprint('sum:', round(sum(p), 6), ' all positive:', all(v > 0 for v in p))\n\nshifted = softmax([5.0, 6.0, 7.0])       # every logit + 5\nprint('after +5 shift, differences:',\n      [abs(a - b) < 1e-12 for a, b in zip(p, shifted)])"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "Attention is three projections and one recipe",
+      "body": "<p>Self-attention in one recipe, shapes only. Each token's representation is projected three ways — queries <code>Q</code>, keys <code>K</code> and values <code>V</code>, each of shape <code>(batch, T, d)</code>. Scores are <code>Q @ K</code> with K transposed — shape <code>(batch, T, T)</code> — where entry (i, j) asks 'how much does query i match key j?'. A <b>softmax over the last axis</b> (across the keys) turns each query's row into weights summing to 1. Multiplying by <code>V</code> contracts the key axis: <code>(batch, T, T) @ (batch, T, d) = (batch, T, d)</code> — each output token is a weighted average of value vectors.</p><p>Two invariants to carry in your head: the score matrix is always <b>T × T</b> (tokens attend to tokens — the feature dimension is what gets contracted away), and the softmax runs <b>per query row</b>, because each query must distribute a total budget of 1 across the keys. Real attention adds only one thing to this picture: scores are divided by <code>sqrt(d)</code> before the softmax, which changes values, never shapes.</p>",
+      "demo": {
+        "code": "import math\n\ndef softmax(z):\n    e = [math.exp(v) for v in z]\n    s = sum(e)\n    return [v / s for v in e]\n\nQ = [[1.0, 0.0], [0.0, 1.0]]      # 2 tokens, 2 dims\nK = [[1.0, 0.0], [0.0, 1.0]]\nV = [[10.0, 0.0], [0.0, 10.0]]\n\nscores = [[sum(qi * kj for qi, kj in zip(qrow, krow))\n           for krow in K] for qrow in Q]\nprint('scores:', len(scores), 'x', len(scores[0]), ' (queries x keys)')\nweights = [softmax(row) for row in scores]      # each ROW sums to 1\nprint('row sums:', [round(sum(r), 4) for r in weights])\ncontext = [[sum(w * v for w, v in zip(wrow, vrow))\n            for vrow in V] for wrow in weights]\nprint('context:', len(context), 'x', len(context[0]), ' (tokens x dims)')\nprint('token 0 output:', [round(v, 3) for v in context[0]])"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "Activation ranges and their failure modes",
+      "body": "<p>Activation functions are chosen for their <b>ranges and slopes</b>, because backpropagation multiplies slopes along the chain. Sigmoid squashes into <code>(0, 1)</code> with slope <code>s·(1 − s)</code> — at most <b>0.25</b> (at z = 0, where s = 0.5) and nearly 0 once the output saturates near 0.0 or 1.0. Stack several sigmoid layers and even the best case multiplies small factors (0.25³ ≈ 0.016); with saturated units, the gradient reaching early layers collapses — the <b>vanishing gradient</b> problem.</p><p>ReLU outputs <code>max(0, z)</code>: range <code>[0, ∞)</code>, slope exactly 1 for positive inputs and exactly 0 for negative ones. Its failure mode is different: a unit whose pre-activation is negative for <i>every</i> sample outputs 0 and passes <b>zero gradient</b> through every path — its weights freeze. That is a <b>dead neuron</b>, diagnosed by outputs stuck at exactly 0.0 for all samples, not merely by zeros appearing sometimes.</p>",
+      "demo": {
+        "code": "import math\n\ndef sigmoid(z):\n    return 1.0 / (1.0 + math.exp(-z))\n\nprint('  z | sigmoid | slope s*(1-s)')\nfor z in (-6, 0, 6):\n    s = sigmoid(z)\n    print('%3d |  %.4f  |  %.4f' % (z, s, s * (1 - s)))\n\nprint('relu(-3) =', max(0.0, -3.0), ' relu(2.5) =', max(0.0, 2.5))\nprint('three stacked sigmoids: best-case slope product =',\n      round(0.25 * 0.25 * 0.25, 4))"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "dl-transformers-1",
+        "title": "Predict: which softmax statement is true",
+        "difficulty": "easy",
+        "tags": ["softmax", "activations"],
+        "mode": "predict",
+        "statement": "<p>First, the math every transformer sits on. The snippet computes the same softmax twice — once on small logits, once on the same logits with 50 added to every one — and prints a comparison. Read it, run it in your head, and decide which statement about softmax is TRUE.</p>",
+        "code": "import numpy as np\n\ndef softmax(z):\n    z = np.asarray(z, dtype=float)\n    e = np.exp(z - z.max())      # the classic stability shift\n    return e / e.sum()\n\np1 = softmax([2.0, 1.0, 0.1])\np2 = softmax([52.0, 51.0, 50.1])   # every logit + 50\nprint(p1)\nprint(p1.sum())\nprint(np.allclose(p1, p2))",
+        "options": [
+          "A. Every output is positive, the three outputs sum to 1, and p1 equals p2 (up to float rounding): adding 50 to every logit changes nothing.",
+          "B. The outputs sum to 1, but p2 differs from p1 — adding 50 to every logit stretches the largest probability further away from the others.",
+          "C. The largest logit always receives probability exactly 1.0; the other two receive 0.0.",
+          "D. The outputs sum to 1 only because all three logits here are positive; with negative logits, softmax needs renormalization first."
+        ],
+        "answer": 0,
+        "explain": "<p>Compute it: e² ≈ 7.389, e¹ ≈ 2.718, e^0.1 ≈ 1.105, total ≈ 11.213, so p1 ≈ [0.659, 0.242, 0.099] — all positive, summing to 1. Now add 50 to every logit: each exponential grows by a factor of e^50, but that same factor appears in <i>every</i> numerator and in the denominator, so it cancels — softmax(z + c) = softmax(z). That is why the printed <code>allclose</code> is True, and it is exactly why the stability trick <code>z − z.max()</code> inside the function is legal: subtracting a constant is free. B misses the cancellation; C confuses softmax with argmax — the top logit gets 7.389/11.213 ≈ 0.66, and softmax only approaches a one-hot as the gaps grow toward infinity ('soft' is the whole point); D invents a non-negativity requirement — logits may be any real numbers, and the sum is 1 regardless.</p>"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "dl-transformers-2",
+        "title": "Predict: attention shapes",
+        "difficulty": "medium",
+        "tags": ["attention", "shapes"],
+        "mode": "predict",
+        "statement": "<p>Attention is mostly shape bookkeeping — if you can multiply matrices in your head, you can read any attention implementation. Predict the shapes of <code>scores</code> and <code>context</code>, and the axis the softmax normalizes over.</p>",
+        "code": "import numpy as np\n\ndef softmax_lastaxis(a):\n    e = np.exp(a - a.max(axis=-1, keepdims=True))\n    return e / e.sum(axis=-1, keepdims=True)\n\nbatch, T, d = 2, 5, 16\nQ = np.random.rand(batch, T, d)\nK = np.random.rand(batch, T, d)\nV = np.random.rand(batch, T, d)\n\nscores  = Q @ K.transpose(0, 2, 1)    # (batch, ?, ?)\nweights = softmax_lastaxis(scores)    # softmax over which axis?\ncontext = weights @ V                 # (batch, ?, ?)\nprint(scores.shape, context.shape)",
+        "options": [
+          "A. scores (2, 16, 16); softmax over the last axis; context (2, 16, 16)",
+          "B. scores (2, 5, 5); softmax over the first of the two matrix axes (each key's column across the 5 queries); context (2, 5, 16)",
+          "C. scores (2, 5, 5); softmax over the last axis; context (2, 5, 5)",
+          "D. scores (2, 5, 5); softmax over the last axis (each query's row across the 5 keys); context (2, 5, 16)"
+        ],
+        "answer": 3,
+        "explain": "<p><code>K.transpose(0, 2, 1)</code> has shape <code>(2, 16, 5)</code>; the batched matmul contracts Q's last axis (16) against K-transposed's last axis (16), leaving the two 5s: <code>scores = (2, 5, 5)</code>. Entry [b, i, j] measures how much query i attends to key j. The softmax must normalize over <b>j — the last axis</b> — so each query's row of weights sums to 1 and can act as a mixing distribution over the values. Finally <code>weights @ V</code>: (2, 5, 5) @ (2, 5, 16) contracts the key axis (5) against V's rows, producing <code>(2, 5, 16)</code> — for each token, one 16-dimensional weighted average of value vectors. A contracts the wrong things: the feature dimension is what disappears, so the score matrix is T × T, never d × d; B normalizes over queries, which would make each key <i>column</i> sum to 1 — weights that no longer form a per-query distribution; C forgets that multiplying by V replaces the key axis with V's feature axis. Real attention divides the scores by sqrt(d) first — that changes values, never shapes.</p>"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "dl-transformers-3",
+        "title": "Diagnose: saturation vs dead neurons",
+        "difficulty": "hard",
+        "tags": ["activations", "gradients", "diagnosis"],
+        "mode": "predict",
+        "statement": "<p>A diagnosis question to finish — the kind that shows up in every deep-learning code review. Two tiny networks were trained on the same task; only their hidden activations differ. Read the observations and pick the correct diagnosis for <b>both</b> networks.</p>",
+        "code": "# Two tiny MLPs, same data, same optimizer, same epochs.\n#\n# Net A: Dense(32, 'sigmoid') -> Dense(32, 'sigmoid')\n#        -> Dense(32, 'sigmoid') -> Dense(1, 'sigmoid')\n#\n# Net B: Dense(32, 'relu') -> Dense(32, 'relu')\n#        -> Dense(32, 'relu') -> Dense(1, 'sigmoid')\n#\n# Observed after training:\n#   Net A: 71% of hidden activations lie within 0.02 of 0.0 or 1.0;\n#          the gradient norm at hidden layer 1 is ~0.001x the norm at\n#          the last hidden layer; the loss stops improving early.\n#   Net B: 8 of the 32 units in hidden layer 1 output exactly 0.0 for\n#          EVERY training sample, and their weights stop changing\n#          after a few epochs.",
+        "options": [
+          "A. Net A: exploding gradients — activations pinned at 0/1 mean the weights grew too fast. Net B: healthy sparsity; always-zero units are exactly what ReLU is designed to produce.",
+          "B. Net A: the flat loss comes from the final sigmoid alone; hidden activations near 0/1 do not affect gradients. Net B: the always-zero units have saturated at the ReLU ceiling.",
+          "C. Net A: sigmoid saturation drives vanishing gradients — near 0.0/1.0 the slope s·(1−s) is ~0, and it is at most 0.25 anywhere, so three stacked sigmoids shrink early gradients by at best 0.25³ ≈ 0.016. Net B: dead ReLU units — always-negative pre-activations give zero output and zero gradient, so those units cannot recover on their own.",
+          "D. Net A: overfitting — activations near 0 and 1 mean the network memorized the training set. Net B: underfitting, because ReLU outputs can never be negative."
+        ],
+        "answer": 2,
+        "explain": "<p>Check the ranges and slopes. Sigmoid lives in (0, 1) with slope <code>s·(1−s)</code>: it peaks at 0.25 when the output is 0.5 and collapses toward 0 as the output approaches 0.0 or 1.0 — at s = 0.98 the slope is 0.98 × 0.02 ≈ 0.02. Backprop <b>multiplies</b> slopes, so three hidden sigmoid layers cap the layer-1 gradient at 0.25³ ≈ 0.016 of the top gradient even in the best case; with 71% of units pinned near the extremes, the products collapse to the observed ~0.001 — early layers barely learn and the loss stalls: <b>saturation with vanishing gradients</b>. ReLU is <code>max(0, z)</code>: range [0, ∞), slope 1 for z &gt; 0 and exactly 0 for z &lt; 0. A unit that is negative for every sample outputs 0.0 always and passes zero gradient through every path — its weights and bias receive no updates: a <b>dead neuron</b>, matching 'weights stop changing'. A confuses vanishing with exploding (exploding shows <i>growing</i> gradient norms and an unstable loss); B forgets that the chain rule multiplies the hidden slopes too, and invents a 'ReLU ceiling' — ReLU is unbounded above and never saturates that way; D tells a memorization story: saturation is about gradient flow, not memory, and ReLU's non-negativity is by design.</p>"
+      }
+    }
+  ]
+}

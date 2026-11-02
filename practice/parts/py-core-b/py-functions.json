@@ -1,0 +1,731 @@
+{
+  "id": "py-functions",
+  "title": "Functions & Scope",
+  "icon": "⚙",
+  "level": "beginner",
+  "order": 70,
+  "conceptRef": "python-basics.html#s8",
+  "blurb": "Signatures, packing and unpacking, closures: design functions that state exactly what shape of input they accept and remember what they need to.",
+  "cells": [
+    {
+      "type": "concept",
+      "title": "The signature is a contract",
+      "body": "<p>A function's signature tells every caller — including future you — what shapes of input it accepts and what it hands back. Python lets the contract be flexible: <code>*args</code> collects any extra positional arguments into a <b>tuple</b>, and <code>**kwargs</code> collects any extra keyword arguments into a <b>dict</b>. That means a function can honestly say 'give me at least one reading, then as many more as you have' instead of forcing callers to wrap everything in a list by hand.</p><p>The discipline that separates clean code from spaghetti: a function should <b>return</b> its answer, not print it; every parameter should have a default or a reason not to; and the moment you write a function that takes four booleans, redesign the signature (flags-as-parameters is a design smell). Reasoning about a call is only possible when the contract is small and sharp.</p>",
+      "demo": {
+        "code": "def mix(base, *extras, sep=\"-\"):\n    return sep.join([base] + list(extras))\n\nprint(mix(\"a\"))\nprint(mix(\"a\", \"b\", \"c\"))\nprint(mix(\"a\", \"b\", sep=\"+\"))"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "Packing at the definition, unpacking at the call",
+      "body": "<p>The <code>*</code> and <code>**</code> symbols do two mirrored jobs. In a <b>definition</b> they pack many incoming values into one tuple/dict. In a <b>call</b> they unpack: <code>f(*parts)</code> feeds each element of <code>parts</code> as its own argument, and <code>{**a, **b}</code> splats two dicts into a new one — where keys in <code>b</code> win because it is unpacked later. Precedence from unpacking order is a precise, mechanical rule: <i>the rightmost source for a key decides its value</i>.</p><p>This one construct is the idiomatic answer to a whole family of 'merge these settings' problems. Note what it does NOT do: it replaces values wholesale — a dict from the right completely replaces a dict from the left, there is no recursive merging unless you write it. Knowing exactly where the built-in behavior stops is what lets you reach for it with confidence.</p>",
+      "demo": {
+        "code": "defaults = {\"retries\": 2, \"mode\": \"auto\"}\noverride = {\"retries\": 5}\nprint({**defaults, **override})   # override wins: later unpacking\nprint({**override, **defaults})   # order flips the winner\nprint(*[1, 2], *[3])              # unpacking in a call"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "Closures: functions that carry their own state",
+      "body": "<p>When you return a function from a function, the inner function keeps a live reference to the variables of the function that built it. That bundle — the code plus the captured environment — is a <b>closure</b>. Each call of the outer factory creates a <i>fresh</i> set of captured variables, so two counters built by the same factory count independently: this is object-like state without writing a class.</p><p>To <i>modify</i> a captured variable (not just read it), the inner function must declare <code>nonlocal</code>; otherwise assignment silently creates a new local and the captured value goes untouched — a classic bug. Closures power decorators, callback registration, and partial application, so being able to reason about 'which variable cell does this function object refer to?' is a core fluency.</p>",
+      "demo": {
+        "code": "def make_meter(start):\n    reading = start\n    def meter():\n        nonlocal reading\n        reading += 1\n        return reading\n    return meter\n\nm1, m2 = make_meter(10), make_meter(0)\nprint(m1(), m1(), m2(), m1())  # two independent meters"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-functions-1",
+        "title": "Weigh Station Bounds",
+        "difficulty": "easy",
+        "tags": [
+          "varargs",
+          "aggregation"
+        ],
+        "statement": "<p>A weigh station checks a truck whose crates arrive one at a time, so the scale reports each crate weight as its own argument — the station cannot know in advance how many crates a truck carries. Some crates contain buoyant foam and register <b>negative</b> weights.</p><p>Write <code>load_bounds(*weights)</code> that accepts any number of integer weights and returns a tuple <code>(lightest, heaviest)</code>. A truck with no crates at all yields <code>(0, 0)</code>. Use the varargs signature — the whole point is not forcing callers to build a list.</p>",
+        "constraints": [
+          "0 to 50 arguments",
+          "each weight is an integer between -500 and 500",
+          "a single argument means lightest == heaviest"
+        ],
+        "examples": [
+          {
+            "call": "load_bounds(3, 9, 4)",
+            "returns": "(3, 9)",
+            "why": "the smallest reading is 3, the largest is 9"
+          },
+          {
+            "call": "load_bounds(-5, -2, -9)",
+            "returns": "(-9, -2)",
+            "why": "foam crates pull the lightest bound below zero"
+          }
+        ],
+        "starter": "def load_bounds(*weights):\n    \"\"\"Return (lightest, heaviest) of the given weights.\n\n    No arguments at all -> (0, 0).\n    \"\"\"\n    pass\n",
+        "func": "load_bounds",
+        "tests": [
+          {
+            "label": "three crates",
+            "args": [
+              3,
+              9,
+              4
+            ],
+            "expected": {
+              "__tuple__": [
+                3,
+                9
+              ]
+            },
+            "hidden": false
+          },
+          {
+            "label": "single crate",
+            "args": [
+              7
+            ],
+            "expected": {
+              "__tuple__": [
+                7,
+                7
+              ]
+            },
+            "hidden": false
+          },
+          {
+            "label": "empty truck",
+            "args": [],
+            "expected": {
+              "__tuple__": [
+                0,
+                0
+              ]
+            },
+            "hidden": true
+          },
+          {
+            "label": "all foam crates",
+            "args": [
+              -5,
+              -2,
+              -9
+            ],
+            "expected": {
+              "__tuple__": [
+                -9,
+                -2
+              ]
+            },
+            "hidden": true
+          },
+          {
+            "label": "identical readings",
+            "args": [
+              4,
+              4,
+              4
+            ],
+            "expected": {
+              "__tuple__": [
+                4,
+                4
+              ]
+            },
+            "hidden": true
+          },
+          {
+            "label": "mixed with duplicates",
+            "args": [
+              12,
+              -3,
+              7,
+              12,
+              0
+            ],
+            "expected": {
+              "__tuple__": [
+                -3,
+                12
+              ]
+            },
+            "hidden": true
+          },
+          {
+            "label": "a dozen crates",
+            "args": [
+              2,
+              5,
+              8,
+              1,
+              9,
+              9,
+              3,
+              0,
+              -1,
+              7,
+              6,
+              4
+            ],
+            "expected": {
+              "__tuple__": [
+                -1,
+                9
+              ]
+            },
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "What does the * in *weights already do for you — what kind of value is weights inside the function body?",
+          "weights arrives as a tuple. The empty case is the only special one; after guarding it, built-ins do the aggregation.",
+          "if not weights: return (0, 0) — otherwise return (min(weights), max(weights)). Remember to return a tuple, not two separate values."
+        ],
+        "reasoning": "<p>The varargs signature moves a structural decision into the function: callers never package the data, so there is no 'do I pass a list or spread it?' confusion at every call site. Inside, <code>weights</code> is just a tuple, so aggregation functions that accept any iterable apply directly. The one branch worth writing deliberately is the empty input: <code>min()</code> of nothing raises <code>ValueError</code>, so the contract '(0, 0) for an empty truck' has to be handled before any aggregation runs. Deciding empty-input behavior up front — and putting it in the docstring — is what makes a varargs contract trustworthy.</p>",
+        "solution": "def load_bounds(*weights):\n    if not weights:            # empty truck: nothing to aggregate\n        return (0, 0)\n    return (min(weights), max(weights))\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-functions-2",
+        "title": "Layered Release Settings",
+        "difficulty": "medium",
+        "tags": [
+          "dicts",
+          "unpacking",
+          "precedence"
+        ],
+        "statement": "<p>A deployment tool resolves configuration in layers: a <b>base</b> dict, then a sequence of <b>override layers</b> from a config file, a CI job, and finally a command line. A key set in a later layer always wins over the same key in an earlier layer; layers may also introduce keys the base never had. A value that is itself a dict is replaced <b>wholesale</b> — there is no deep merging.</p><p>Implement <code>merge_config(base, *patches)</code> returning the resolved dict as a <b>new</b> dict (never mutate the inputs). Later patches override earlier ones and the base.</p>",
+        "constraints": [
+          "base and every patch is a dict with string keys",
+          "0 to 10 patch layers",
+          "values may be ints, strings, lists or nested dicts; a patch value always replaces the previous value entirely"
+        ],
+        "examples": [
+          {
+            "call": "merge_config({\"mode\": \"auto\", \"retries\": 2}, {\"retries\": 5})",
+            "returns": "{'mode': 'auto', 'retries': 5}",
+            "why": "the patch overrides retries but mode survives from the base"
+          },
+          {
+            "call": "merge_config({\"a\": 1}, {\"b\": 2}, {\"a\": 9, \"c\": 3})",
+            "returns": "{'a': 9, 'b': 2, 'c': 3}",
+            "why": "the last layer to mention a key decides it; new keys accumulate"
+          }
+        ],
+        "starter": "def merge_config(base, *patches):\n    \"\"\"Resolve layered config dicts into one new dict.\n\n    base is the foundation; each patch (in order) overrides keys it\n    mentions and adds keys it introduces. Inputs are never mutated.\n    \"\"\"\n    pass\n",
+        "func": "merge_config",
+        "tests": [
+          {
+            "label": "patch overrides one key",
+            "args": [
+              {
+                "mode": "auto",
+                "retries": 2
+              },
+              {
+                "retries": 5
+              }
+            ],
+            "expected": {
+              "mode": "auto",
+              "retries": 5
+            },
+            "hidden": false
+          },
+          {
+            "label": "two layers, new keys",
+            "args": [
+              {
+                "a": 1
+              },
+              {
+                "b": 2
+              },
+              {
+                "a": 9,
+                "c": 3
+              }
+            ],
+            "expected": {
+              "a": 9,
+              "b": 2,
+              "c": 3
+            },
+            "hidden": false
+          },
+          {
+            "label": "no patches returns base copy",
+            "args": [
+              {
+                "x": 1
+              }
+            ],
+            "expected": {
+              "x": 1
+            },
+            "hidden": true
+          },
+          {
+            "label": "empty base, two patches",
+            "args": [
+              {},
+              {
+                "b": 2
+              },
+              {
+                "c": 3
+              }
+            ],
+            "expected": {
+              "b": 2,
+              "c": 3
+            },
+            "hidden": true
+          },
+          {
+            "label": "empty patch is a no-op",
+            "args": [
+              {
+                "k": [
+                  1,
+                  2
+                ]
+              },
+              {}
+            ],
+            "expected": {
+              "k": [
+                1,
+                2
+              ]
+            },
+            "hidden": true
+          },
+          {
+            "label": "nested dict replaced wholesale",
+            "args": [
+              {
+                "db": {
+                  "host": "a",
+                  "port": 1
+                }
+              },
+              {
+                "db": {
+                  "host": "b"
+                }
+              }
+            ],
+            "expected": {
+              "db": {
+                "host": "b"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "three layers, later wins",
+            "args": [
+              {
+                "a": 1,
+                "b": 1
+              },
+              {
+                "a": 2
+              },
+              {
+                "b": 3
+              },
+              {
+                "a": 4
+              }
+            ],
+            "expected": {
+              "a": 4,
+              "b": 3
+            },
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "If you merged exactly two dicts in one expression, which one would win? How does that extend when you fold in a third?",
+          "Start from a copy of base, then fold each patch in, in order. dict.update (or {**merged, **patch}) applied left to right gives later layers the final say.",
+          "merged = dict(base); for patch in patches: merged.update(patch); return merged. Making a copy first is what guarantees the inputs are untouched."
+        ],
+        "reasoning": "<p>Precedence is nothing more than <b>order of application</b>: if you fold layers left to right and each fold lets the incoming dict overwrite existing keys, then 'later wins' is automatic — you never need an explicit rule about precedence because the fold encodes it. Two correctness details make the function production-grade: starting from <code>dict(base)</code> (a copy) so inputs are never mutated, and documenting that nested dicts are replaced rather than deep-merged, which is exactly what <code>update</code> does. When you genuinely need a deep merge, that is a recursive function you write on purpose — knowing where the shallow default ends is the point.</p>",
+        "solution": "def merge_config(base, *patches):\n    merged = dict(base)          # copy: never touch the caller's dicts\n    for patch in patches:        # later layers overwrite earlier ones\n        merged.update(patch)\n    return merged\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-functions-3",
+        "title": "Two Turnstiles",
+        "difficulty": "medium",
+        "tags": [
+          "closures",
+          "state"
+        ],
+        "statement": "<p>A venue gate has two turnstiles, A and B, each with its own clicker. A clicker is made by <code>make_counter(start)</code>: it returns a zero-argument callable whose first call returns <code>start</code>, second call <code>start + 1</code>, and so on — each turnstile remembers its own clicks, independent of the other.</p><p>Implement <code>make_counter(start)</code> and the driver <code>interleaved_trace(start_a, start_b, script)</code>. The script is a list of the tags <code>\"a\"</code> and <code>\"b\"</code>; the driver builds one counter per turnstile from the given starts and returns the list of counter outputs in script order. If your two counters accidentally share state, the interleaved output exposes it immediately.</p>",
+        "constraints": [
+          "script contains only the tags 'a' and 'b'",
+          "0 <= len(script) <= 200",
+          "start values are integers between -1000 and 1000"
+        ],
+        "examples": [
+          {
+            "call": "interleaved_trace(0, 100, [\"a\", \"b\", \"a\"])",
+            "returns": "[0, 100, 1]",
+            "why": "counter A emits 0 then 1; counter B emits 100 — each keeps its own place"
+          },
+          {
+            "call": "interleaved_trace(10, 0, [\"a\", \"a\"])",
+            "returns": "[10, 11]",
+            "why": "two clicks of turnstile A only"
+          }
+        ],
+        "starter": "def make_counter(start):\n    \"\"\"Return a zero-arg callable counting start, start+1, start+2, ...\n\n    Every call of make_counter produces an INDEPENDENT counter.\n    \"\"\"\n    pass\n\n\ndef interleaved_trace(start_a, start_b, script):\n    \"\"\"Click turnstile counters A and B per the script tags.\n\n    Build counter_a from start_a and counter_b from start_b, then for\n    each tag in script append that counter's next value. Return the\n    list of values in order.\n    \"\"\"\n    pass\n",
+        "func": "interleaved_trace",
+        "tests": [
+          {
+            "label": "interleaved a-b-a",
+            "args": [
+              0,
+              100,
+              [
+                "a",
+                "b",
+                "a"
+              ]
+            ],
+            "expected": [
+              0,
+              100,
+              1
+            ],
+            "hidden": false
+          },
+          {
+            "label": "two clicks of A",
+            "args": [
+              10,
+              0,
+              [
+                "a",
+                "a"
+              ]
+            ],
+            "expected": [
+              10,
+              11
+            ],
+            "hidden": false
+          },
+          {
+            "label": "empty script",
+            "args": [
+              3,
+              4,
+              []
+            ],
+            "expected": [],
+            "hidden": true
+          },
+          {
+            "label": "only turnstile B",
+            "args": [
+              5,
+              50,
+              [
+                "b",
+                "b",
+                "b"
+              ]
+            ],
+            "expected": [
+              50,
+              51,
+              52
+            ],
+            "hidden": true
+          },
+          {
+            "label": "perfect alternation",
+            "args": [
+              0,
+              50,
+              [
+                "a",
+                "b",
+                "a",
+                "b",
+                "a"
+              ]
+            ],
+            "expected": [
+              0,
+              50,
+              1,
+              51,
+              2
+            ],
+            "hidden": true
+          },
+          {
+            "label": "negative starts",
+            "args": [
+              -3,
+              -1,
+              [
+                "a",
+                "b"
+              ]
+            ],
+            "expected": [
+              -3,
+              -1
+            ],
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "Where must the 'current value' live so that two counters built by the same factory do not see each other's clicks?",
+          "The state lives in a variable of make_counter itself, captured by the inner function. Declare nonlocal to update it, and remember to return the value BEFORE advancing (the first call returns start).",
+          "value = start; def counter(): nonlocal value; result = value; value += 1; return result; return counter. The driver then appends counter_a() or counter_b() per tag."
+        ],
+        "reasoning": "<p>Each call of <code>make_counter</code> runs the outer function's body again, creating a <i>brand new</i> variable cell that only the returned function can see. That is the entire mechanism behind 'independent counters' — no class, no shared dict, just one closure per factory call. The <code>nonlocal</code> declaration matters because assignment without it would create a fresh local named <code>value</code> inside the inner function, and the captured cell would never advance. The interleaved driver is a state-separation test in disguise: a shared or global counter produces the right values for each turnstile in isolation but the wrong interleaved sequence — which is precisely the class of bug that closures, used correctly, make impossible.</p>",
+        "solution": "def make_counter(start):\n    value = start\n    def counter():\n        nonlocal value\n        result = value\n        value += 1\n        return result\n    return counter\n\n\ndef interleaved_trace(start_a, start_b, script):\n    counter_a = make_counter(start_a)\n    counter_b = make_counter(start_b)\n    out = []\n    for tag in script:\n        out.append(counter_a() if tag == \"a\" else counter_b())\n    return out\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-functions-4",
+        "title": "Controlled Unpacking",
+        "difficulty": "hard",
+        "tags": [
+          "recursion",
+          "lists",
+          "invariants"
+        ],
+        "statement": "<p>A shipping manifest represents cargo as nested lists: a crate contains parts and sub-crates, sub-crates may contain more sub-crates, and so on. The dock crew can only open <code>depth</code> levels of packaging per order — anything nested deeper than that stays inside its box.</p><p>Implement <code>flatten_nested(items, depth)</code>: expand list nesting up to <code>depth</code> levels; lists still nested deeper than the budget remain intact as list values. Only lists count as packaging — tuples and strings are ordinary parts. An empty list holds nothing, so opening it contributes no elements. A budget of 0 opens nothing (but still returns a fresh list).</p>",
+        "constraints": [
+          "items contains ints, strings and lists; only lists are packaging",
+          "0 <= depth <= 10 and nesting never exceeds 10 levels",
+          "at most 5,000 total elements",
+          "the result must be a NEW list even when nothing is expanded"
+        ],
+        "examples": [
+          {
+            "call": "flatten_nested([1, [2, [3, [4]]]], 2)",
+            "returns": "[1, 2, 3, [4]]",
+            "why": "two levels of packaging open; the list around 4 is three deep and stays sealed"
+          },
+          {
+            "call": "flatten_nested([[['x']]], 0)",
+            "returns": "[[['x']]]",
+            "why": "a zero budget opens nothing at all"
+          }
+        ],
+        "starter": "def flatten_nested(items, depth):\n    \"\"\"Expand nested lists up to depth levels of packaging.\n\n    Lists nested deeper than depth stay intact as values. Only lists\n    count as packaging; depth 0 returns the items unchanged (as a new\n    list).\n    \"\"\"\n    pass\n",
+        "func": "flatten_nested",
+        "tests": [
+          {
+            "label": "two levels of packaging",
+            "args": [
+              [
+                1,
+                [
+                  2,
+                  [
+                    3,
+                    [
+                      4
+                    ]
+                  ]
+                ]
+              ],
+              2
+            ],
+            "expected": [
+              1,
+              2,
+              3,
+              [
+                4
+              ]
+            ],
+            "hidden": false
+          },
+          {
+            "label": "zero budget opens nothing",
+            "args": [
+              [
+                [
+                  "x"
+                ]
+              ],
+              0
+            ],
+            "expected": [
+              [
+                "x"
+              ]
+            ],
+            "hidden": false
+          },
+          {
+            "label": "budget deeper than the manifest",
+            "args": [
+              [
+                1,
+                [
+                  2,
+                  3
+                ]
+              ],
+              5
+            ],
+            "expected": [
+              1,
+              2,
+              3
+            ],
+            "hidden": true
+          },
+          {
+            "label": "empty manifest",
+            "args": [
+              [],
+              3
+            ],
+            "expected": [],
+            "hidden": true
+          },
+          {
+            "label": "empty crates vanish",
+            "args": [
+              [
+                [],
+                [
+                  []
+                ],
+                3
+              ],
+              2
+            ],
+            "expected": [
+              3
+            ],
+            "hidden": true
+          },
+          {
+            "label": "tuples are not packaging",
+            "args": [
+              [
+                1,
+                {
+                  "__tuple__": [
+                    "a",
+                    "b"
+                  ]
+                },
+                [
+                  2
+                ]
+              ],
+              2
+            ],
+            "expected": [
+              1,
+              {
+                "__tuple__": [
+                  "a",
+                  "b"
+                ]
+              },
+              2
+            ],
+            "hidden": true
+          },
+          {
+            "label": "six-deep nesting, budget three",
+            "args": [
+              [
+                1,
+                [
+                  2,
+                  [
+                    3,
+                    [
+                      4,
+                      [
+                        5,
+                        [
+                          6,
+                          [
+                            7
+                          ]
+                        ]
+                      ]
+                    ]
+                  ]
+                ]
+              ],
+              3
+            ],
+            "expected": [
+              1,
+              2,
+              3,
+              4,
+              [
+                5,
+                [
+                  6,
+                  [
+                    7
+                  ]
+                ]
+              ]
+            ],
+            "hidden": true
+          },
+          {
+            "label": "large repeated manifest",
+            "args": [
+              {
+                "__repeat__": {
+                  "item": [
+                    7,
+                    [
+                      8
+                    ]
+                  ],
+                  "times": 100
+                }
+              },
+              1
+            ],
+            "expected": {
+              "__repeat__": {
+                "item": [
+                  7,
+                  8
+                ],
+                "times": 100
+              }
+            },
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "If you open one level of packaging, what is the remaining budget for the contents that were inside it? What does a budget of 0 tell you to do?",
+          "Recurse: for each item, if it is a list and the budget is positive, splice in flatten_nested(item, depth - 1); otherwise keep the item as-is. The base case is depth == 0 — return a copy with nothing opened.",
+          "if depth <= 0: return list(items). Then loop: out = []; for item in items: out.extend(flatten_nested(item, depth - 1)) if it is a list, else out.append(item). Note isinstance(item, list) — tuples must not match."
+        ],
+        "reasoning": "<p>The recursion is driven by one number: the <b>remaining budget</b>. Each level of the recursion answers the same question at a smaller scale — 'open up to k levels of what I was given' — and the list case answers it by delegating with <code>depth - 1</code>. The base case is not 'empty list' but 'zero budget', and getting that choice right is the whole exercise: an empty list and a budget of zero are different situations, and the sealed-lists-deeper-down requirement falls out of the budget running out, not of any special-case check. Guarding the recursion with <code>isinstance(item, list)</code> (never a looser check) is what keeps tuples and strings sealed — a detail that quietly tests whether you know which types your code actually matches.</p>",
+        "solution": "def flatten_nested(items, depth):\n    if depth <= 0:\n        return list(items)          # budget spent: shallow copy\n    out = []\n    for item in items:\n        if isinstance(item, list):\n            out.extend(flatten_nested(item, depth - 1))\n        else:\n            out.append(item)\n    return out\n"
+      }
+    }
+  ]
+}

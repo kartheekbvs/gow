@@ -1,0 +1,777 @@
+{
+  "id": "py-strings",
+  "title": "String Reasoning",
+  "icon": "🔤",
+  "level": "beginner",
+  "order": 20,
+  "conceptRef": "python-basics.html#s2",
+  "blurb": "Count, compare and shift text with tables and character codes — one honest pass at a time.",
+  "cells": [
+    {
+      "type": "concept",
+      "title": "Immutable means: plan where the answer is assembled",
+      "body": "<p>Strings never change in place — every operation returns a <b>new</b> string, and the original is untouched. If you build output with <code>s = s + piece</code> inside a long loop, each concatenation may copy everything built so far, so the total work grows with the square of the output. Collecting pieces in a list and joining once at the end (<code>''.join(pieces)</code>) keeps the work proportional to the output size: each piece is created once and copied once.</p><p>The reasoning habit: before writing any loop that transforms a sequence, decide <b>where the result gets assembled</b>. That decision — not the loop body — is what makes a solution fast or quietly quadratic.</p>",
+      "demo": {
+        "code": "s = 'mississippi'\nprint(s.replace('iss', 'X'))   # a NEW string\nprint(s)                       # original untouched\nprint(''.join(sorted(set(s)))) # assemble once from pieces"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "Count first, ask questions second",
+      "body": "<p>A huge family of string questions — 'which letter dominates?', 'do these two use the same letters?', 'which words repeat?' — collapse into one move: build a small table of <b>counts</b> in a single pass, then answer the real question by inspecting the table. The table is tiny (at most one entry per distinct character or word) and can be queried in any order, which is why building it first and asking questions second is almost always simpler than trying to answer while still scanning.</p><p>Notice the shape of the data: a dict mapping 'thing I care about' to 'how many times I saw it'. Once that table exists, re-scanning the string for each question is pure waste — the answer is already sitting in memory.</p>",
+      "demo": {
+        "code": "table = {}\nfor ch in 'abracadabra':\n    table[ch] = table.get(ch, 0) + 1\nprint(table)\nprint(max(table, key=table.get))"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "The alphabet is just numbers",
+      "body": "<p>Every character has a code: <code>ord('a')</code> is 97 and <code>ord('z')</code> is 122, with the lowercase letters packed contiguously in between. That turns letter questions into arithmetic: <code>ord(ch) - 97</code> maps a-z onto 0-25, and <code>chr(97 + k)</code> maps back. Cyclic behaviour — wrapping past z back to a — becomes modular arithmetic: <code>(position + shift) % 26</code>.</p><p>This is the bridge between text and math: comparisons, distances in the alphabet, and cyclic shifts all become one-line expressions. Whenever a rule talks about 'letters in order' or 'shift by k', translate to codes first and the logic writes itself.</p>",
+      "demo": {
+        "code": "print(ord('a'), ord('z'), chr(97))\nfor ch in 'xyzab':\n    print(ch, '->', chr((ord(ch) - 97 + 3) % 26 + 97))"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-strings-1",
+        "title": "Catchy call signs",
+        "difficulty": "easy",
+        "tags": [
+          "strings",
+          "uniqueness"
+        ],
+        "statement": "<p>Air-traffic trainees read call signs aloud all day. A sign is easier to catch by ear when <b>no letter appears more than once</b> — repeated letters blur together over a scratchy radio channel.</p><p>The dispatcher wants a checker for the merge list. Implement <code>is_catchy(sign)</code>: return <code>True</code> when every letter in the sign is distinct (an empty sign trivially qualifies), otherwise <code>False</code>.</p>",
+        "constraints": [
+          "0 <= len(sign) <= 1,000",
+          "sign consists of lowercase letters a-z only"
+        ],
+        "examples": [
+          {
+            "call": "is_catchy('galaxy')",
+            "why": "the letter 'a' appears twice (g-a-l-a-x-y)",
+            "returns": "False"
+          },
+          {
+            "call": "is_catchy('flow')",
+            "why": "f, l, o, w are all different",
+            "returns": "True"
+          }
+        ],
+        "starter": "def is_catchy(sign):\n    \"\"\"Return True when no letter of sign repeats.\"\"\"\n    pass\n",
+        "func": "is_catchy",
+        "tests": [
+          {
+            "label": "repeated letter",
+            "args": [
+              "galaxy"
+            ],
+            "expected": false,
+            "hidden": false
+          },
+          {
+            "label": "all distinct",
+            "args": [
+              "flow"
+            ],
+            "expected": true,
+            "hidden": false
+          },
+          {
+            "label": "empty sign",
+            "args": [
+              ""
+            ],
+            "expected": true,
+            "hidden": true
+          },
+          {
+            "label": "single letter",
+            "args": [
+              "x"
+            ],
+            "expected": true,
+            "hidden": true
+          },
+          {
+            "label": "double letter",
+            "args": [
+              "aa"
+            ],
+            "expected": false,
+            "hidden": true
+          },
+          {
+            "label": "repeats far apart",
+            "args": [
+              "abcabcdefdef"
+            ],
+            "expected": false,
+            "hidden": true
+          },
+          {
+            "label": "full alphabet",
+            "args": [
+              "abcdefghijklmnopqrstuvwxyz"
+            ],
+            "expected": true,
+            "hidden": true
+          },
+          {
+            "label": "long run of one letter",
+            "args": [
+              "zzzzzzzzzz"
+            ],
+            "expected": false,
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "The question is only about how many DISTINCT letters the sign contains. What is the size of the set of its letters, compared to the sign's length, when nothing repeats?",
+          "len(set(sign)) collapses duplicates; if that equals len(sign), no letter was lost to deduplication, so nothing repeats.",
+          "One expression does it: return len(set(sign)) == len(sign). For '' both sides are 0, so an empty sign is catchy; 'aa' gives 1 != 2."
+        ],
+        "reasoning": "<p>A no-repeats property is a statement about <i>cardinality</i>: the sign has n positions and k distinct letters, and nothing repeats exactly when k equals n. <code>set(sign)</code> computes the distinct letters in one pass, so the whole check is one expression — and it stays correct at the edges: an empty sign has k = n = 0 (trivially no repeats), and a single letter can never collide with itself. The transferable instinct: when a question asks 'does anything appear twice?', compare a deduplicated view of the data against the original instead of scheduling pairwise comparisons.</p>",
+        "solution": "def is_catchy(sign):\n    # distinct letters must equal total letters for nothing to repeat\n    return len(set(sign)) == len(sign)\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-strings-2",
+        "title": "Shelf labels after the firmware shift",
+        "difficulty": "easy",
+        "tags": [
+          "strings",
+          "arithmetic"
+        ],
+        "statement": "<p>A warehouse robot prints shelf labels like <code>'bay-3-shelf'</code>. A firmware upgrade shifted every <b>lowercase letter</b> of the old labels forward by a fixed number of positions in the alphabet, wrapping <code>z</code> back around to <code>a</code>. Digits and hyphens were never touched.</p><p>Write the decoder's core: <code>shift_letters(text, k)</code> returns <code>text</code> with every a-z letter moved forward by <code>k</code> positions (mod 26), leaving every other character exactly as it was. <code>k</code> may be negative (shift backward) or larger than 26 (only its remainder matters).</p>",
+        "constraints": [
+          "0 <= len(text) <= 10,000",
+          "text consists of lowercase a-z, digits, hyphens and spaces only",
+          "-1,000 <= k <= 1,000"
+        ],
+        "examples": [
+          {
+            "call": "shift_letters('xyz', 3)",
+            "why": "x, y, z shift to a, b, c — z wraps around past the end of the alphabet",
+            "returns": "'abc'"
+          },
+          {
+            "call": "shift_letters('b-7', -1)",
+            "why": "'b' moves back one letter; the hyphen and digit are copied unchanged",
+            "returns": "'a-7'"
+          }
+        ],
+        "starter": "def shift_letters(text, k):\n    \"\"\"Shift each a-z letter of text forward by k (mod 26).\"\"\"\n    pass\n",
+        "func": "shift_letters",
+        "tests": [
+          {
+            "label": "wrap around",
+            "args": [
+              "xyz",
+              3
+            ],
+            "expected": "abc",
+            "hidden": false
+          },
+          {
+            "label": "backward with punctuation",
+            "args": [
+              "b-7",
+              -1
+            ],
+            "expected": "a-7",
+            "hidden": false
+          },
+          {
+            "label": "zero shift",
+            "args": [
+              "same",
+              0
+            ],
+            "expected": "same",
+            "hidden": true
+          },
+          {
+            "label": "large shift reduces",
+            "args": [
+              "zap",
+              29
+            ],
+            "expected": "cds",
+            "hidden": true
+          },
+          {
+            "label": "full cycle",
+            "args": [
+              "q",
+              26
+            ],
+            "expected": "q",
+            "hidden": true
+          },
+          {
+            "label": "negative wraps below a",
+            "args": [
+              "cab",
+              -5
+            ],
+            "expected": "xvw",
+            "hidden": true
+          },
+          {
+            "label": "phrase shift",
+            "args": [
+              "the quick fox",
+              5
+            ],
+            "expected": "ymj vznhp ktc",
+            "hidden": true
+          },
+          {
+            "label": "empty text",
+            "args": [
+              "",
+              9
+            ],
+            "expected": "",
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "How would you turn a letter into a number you can add k to, and back into a letter afterwards? What should happen when the addition walks past 'z' or before 'a'?",
+          "Map a-z onto 0-25 with ord(ch) - 97, add k, take % 26 (Python's % is non-negative for a positive modulus, so negative k needs no special case), then map back with chr(... + 97). Non-letters are appended unchanged.",
+          "Loop over text; if 'a' <= ch <= 'z': append chr((ord(ch) - 97 + k) % 26 + 97), else append ch. Join the pieces once at the end. k = 29 behaves like 3; k = -5 walks five steps backwards with wraparound."
+        ],
+        "reasoning": "<p>The alphabet becomes arithmetic once you anchor it: <code>ord(ch) - 97</code> maps a-z onto 0-25, and adding <code>k</code> then taking <code>% 26</code> makes the walk cyclic — wrapping past z is the same as starting over. Python's <code>%</code> returns a non-negative remainder for a positive modulus, so negative or oversized shifts need no special casing: <code>(0 - 5) % 26</code> is <code>21</code>, exactly 'five before a'. The chained comparison <code>'a' &lt;= ch &lt;= 'z'</code> guards the transformation so digits and hyphens pass through untouched. The transferable idea: give symbols contiguous integer codes, and cyclic behaviour becomes modular arithmetic.</p>",
+        "solution": "def shift_letters(text, k):\n    pieces = []\n    for ch in text:\n        if 'a' <= ch <= 'z':\n            pieces.append(chr((ord(ch) - 97 + k) % 26 + 97))\n        else:\n            pieces.append(ch)\n    return ''.join(pieces)\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-strings-3",
+        "title": "Daily digest keywords",
+        "difficulty": "medium",
+        "tags": [
+          "strings",
+          "counting",
+          "sorting"
+        ],
+        "statement": "<p>The support team concatenates a day of chat transcripts into one lowercase string of space-separated words. The daily digest lists the <code>k</code> most frequent words — and when two words occurred equally often, the word that <b>appeared earlier in the transcript</b> must be listed first, so the digest is identical no matter who runs it.</p><p>Implement <code>top_words(text, k)</code>: return at most <code>k</code> words, most frequent first, ties by first appearance. If fewer than <code>k</code> distinct words exist, return all of them under the same rules.</p>",
+        "constraints": [
+          "0 <= len(text) <= 100,000",
+          "text is lowercase words separated by single spaces (no punctuation)",
+          "0 <= k <= 100,000"
+        ],
+        "examples": [
+          {
+            "call": "top_words('wifi slow wifi drops slow wifi', 2)",
+            "why": "'wifi' occurs 3 times, 'slow' twice; 'drops' misses the top 2",
+            "returns": "['wifi', 'slow']"
+          },
+          {
+            "call": "top_words('gold lead gold lead bronze', 2)",
+            "why": "gold and lead tie at 2 occurrences; gold appeared first, so it wins the tie",
+            "returns": "['gold', 'lead']"
+          }
+        ],
+        "starter": "def top_words(text, k):\n    \"\"\"Return the k most frequent words; ties by first appearance.\"\"\"\n    pass\n",
+        "func": "top_words",
+        "tests": [
+          {
+            "label": "clear ranking",
+            "args": [
+              "wifi slow wifi drops slow wifi",
+              2
+            ],
+            "expected": [
+              "wifi",
+              "slow"
+            ],
+            "hidden": false
+          },
+          {
+            "label": "tie by first appearance",
+            "args": [
+              "gold lead gold lead bronze",
+              2
+            ],
+            "expected": [
+              "gold",
+              "lead"
+            ],
+            "hidden": false
+          },
+          {
+            "label": "k exceeds distinct",
+            "args": [
+              "a b a",
+              5
+            ],
+            "expected": [
+              "a",
+              "b"
+            ],
+            "hidden": true
+          },
+          {
+            "label": "empty transcript",
+            "args": [
+              "",
+              3
+            ],
+            "expected": [],
+            "hidden": true
+          },
+          {
+            "label": "k is zero",
+            "args": [
+              "a a b",
+              0
+            ],
+            "expected": [],
+            "hidden": true
+          },
+          {
+            "label": "one word only",
+            "args": [
+              "solo",
+              1
+            ],
+            "expected": [
+              "solo"
+            ],
+            "hidden": true
+          },
+          {
+            "label": "all the same word",
+            "args": [
+              "echo echo echo",
+              2
+            ],
+            "expected": [
+              "echo"
+            ],
+            "hidden": true
+          },
+          {
+            "label": "three-way tie",
+            "args": [
+              "x y x z y x z",
+              3
+            ],
+            "expected": [
+              "x",
+              "y",
+              "z"
+            ],
+            "hidden": true
+          },
+          {
+            "label": "late bloomer overtakes",
+            "args": [
+              "b a a a b b a",
+              2
+            ],
+            "expected": [
+              "a",
+              "b"
+            ],
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "Two facts per word decide its rank: how often it occurred, and where it first appeared. Could you collect both in one walk over the words?",
+          "Count occurrences in a dict; also record each word's first index in a second dict. Then sort the distinct words by the composite key (-count, first index).",
+          "Build counts and first_at in one enumerate loop over text.split(); ranked = sorted(counts, key=lambda w: (-counts[w], first_at[w])); return ranked[:k]. text.split() yields no words for an empty transcript, and slicing handles k = 0 and k beyond the vocabulary."
+        ],
+        "reasoning": "<p>Rankings with ties are only well-defined once you add a second sort key; 'count descending, then first appearance' is a total order, so the digest is reproducible. Building both tables in one pass costs one walk over the words; the sort then orders only the distinct vocabulary. The negative count in the key (<code>-counts[w]</code>) inverts just the frequency while leaving the tie key ascending — a trick worth internalizing, because it avoids sorting twice. <code>text.split()</code> makes the empty transcript naturally produce zero words, so the edge cases fall out of the design rather than being patched on.</p>",
+        "solution": "def top_words(text, k):\n    counts, first_at = {}, {}\n    for i, w in enumerate(text.split()):\n        if w not in counts:\n            counts[w] = 0\n            first_at[w] = i\n        counts[w] += 1\n    ranked = sorted(counts, key=lambda w: (-counts[w], first_at[w]))\n    return ranked[:k]\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-strings-4",
+        "title": "Lock sync point",
+        "difficulty": "medium",
+        "tags": [
+          "strings",
+          "distinctness"
+        ],
+        "statement": "<p>A smart lock streams a lowercase status string one character at a time. The receiver considers the channel <b>synced</b> at the first position where the four characters ending there are <b>all different from each other</b> — until then, the stream is treated as noise.</p><p>Implement <code>sync_point(stream)</code>: return the index of the character that completes the first such group of four; if the stream never contains four consecutive distinct characters (or is shorter than four), return <code>-1</code>.</p>",
+        "constraints": [
+          "0 <= len(stream) <= 100,000",
+          "stream consists of lowercase letters a-z only"
+        ],
+        "examples": [
+          {
+            "call": "sync_point('bcaadefx')",
+            "why": "the group a, d, e, f ends at index 6 and is the first all-distinct group; every earlier window repeats a letter",
+            "returns": "6"
+          },
+          {
+            "call": "sync_point('aabbccdd')",
+            "why": "every window of four repeats a letter, so the channel never syncs",
+            "returns": "-1"
+          }
+        ],
+        "starter": "def sync_point(stream):\n    \"\"\"Return the index completing the first 4 distinct chars, else -1.\"\"\"\n    pass\n",
+        "func": "sync_point",
+        "tests": [
+          {
+            "label": "syncs mid-stream",
+            "args": [
+              "bcaadefx"
+            ],
+            "expected": 6,
+            "hidden": false
+          },
+          {
+            "label": "never syncs",
+            "args": [
+              "aabbccdd"
+            ],
+            "expected": -1,
+            "hidden": false
+          },
+          {
+            "label": "syncs at the very end",
+            "args": [
+              "xxabc"
+            ],
+            "expected": 4,
+            "hidden": true
+          },
+          {
+            "label": "syncs immediately at index 3",
+            "args": [
+              "abcd"
+            ],
+            "expected": 3,
+            "hidden": true
+          },
+          {
+            "label": "too short",
+            "args": [
+              "abc"
+            ],
+            "expected": -1,
+            "hidden": true
+          },
+          {
+            "label": "empty stream",
+            "args": [
+              ""
+            ],
+            "expected": -1,
+            "hidden": true
+          },
+          {
+            "label": "one blocking duplicate",
+            "args": [
+              "aabcd"
+            ],
+            "expected": 4,
+            "hidden": true
+          },
+          {
+            "label": "all same character",
+            "args": [
+              "zzzzzzzz"
+            ],
+            "expected": -1,
+            "hidden": true
+          },
+          {
+            "label": "sync after noisy prefix",
+            "args": [
+              "aabbcef"
+            ],
+            "expected": 6,
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "For each ending position i, the question is whether the four characters ending at i are four different characters. How can you collapse a group of characters down to its distinct members?",
+          "Walk i from 3 to the end; take the slice stream[i-3:i+1]; if its set has size 4, then i completes the first all-distinct group — return i.",
+          "for i in range(3, len(stream)): if len(set(stream[i-3:i+1])) == 4: return i. Falling off the loop (which also covers streams shorter than 4) returns -1."
+        ],
+        "reasoning": "<p>The problem is a moving question over a fixed-size group: 'are the last four characters pairwise different?' Collapsing the group with <code>set(...)</code> answers it in one step, because a set keeps one copy of each distinct character — four distinct characters survive as four members. Indexing the scan from 3 (the first position with four characters behind it) makes the short-stream case fall out naturally: the loop body never runs and <code>-1</code> is returned. The transferable habit: when a rule is about a <i>bounded neighbourhood</i>, index by the ENDING position and slice out exactly the neighbourhood, so all off-by-one boundaries live in one place (<code>i-3</code> up to <code>i+1</code>).</p>",
+        "solution": "def sync_point(stream):\n    for i in range(3, len(stream)):\n        if len(set(stream[i - 3:i + 1])) == 4:\n            return i\n    return -1\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-strings-5",
+        "title": "Dominant character, with a budget",
+        "difficulty": "medium",
+        "tags": [
+          "strings",
+          "counting",
+          "efficiency"
+        ],
+        "statement": "<p>A factory camera writes one lowercase character per inspected unit into a quality log. The engineering summary needs the character that occurs <b>most often</b>; when two characters tie, the one that <b>appeared earliest</b> in the log wins.</p><p>Implement <code>dominant_char(log)</code>: return the winning character, or the empty string <code>''</code> if the log is empty. The log arrives as an <code>OpCountList</code>: every element inspection costs 1, and your algorithm may inspect at most <b>3 × len(log)</b> elements. Re-scanning the whole log for each of the 26 letters (about 26 × len(log) inspections) will blow the budget on the large hidden test, and nested re-scanning is far worse.</p>",
+        "constraints": [
+          "0 <= len(log) <= 200,000",
+          "log consists of lowercase letters a-z only",
+          "inspection budget: at most 3 × len(log) element inspections (len() itself is free)"
+        ],
+        "examples": [
+          {
+            "call": "dominant_char('mississippi')",
+            "why": "'i' and 's' both occur 4 times; 'i' first appears at index 1, before 's' at 2, so 'i' wins the tie",
+            "returns": "'i'"
+          },
+          {
+            "call": "dominant_char('zzzoo')",
+            "why": "z occurs 3 times against o's 2 — a clear winner",
+            "returns": "'z'"
+          }
+        ],
+        "starter": "def dominant_char(log):\n    \"\"\"Return the most frequent character (earliest wins ties), or ''.\"\"\"\n    pass\n",
+        "func": "dominant_char",
+        "tests": [
+          {
+            "label": "clear winner",
+            "args": [
+              {
+                "__opcount__": {
+                  "data": "zzzoo"
+                }
+              }
+            ],
+            "expected": "z",
+            "hidden": false
+          },
+          {
+            "label": "tie goes to earliest",
+            "args": [
+              {
+                "__opcount__": {
+                  "data": "mississippi"
+                }
+              }
+            ],
+            "expected": "i",
+            "hidden": false
+          },
+          {
+            "label": "empty log",
+            "args": [
+              {
+                "__opcount__": {
+                  "data": ""
+                }
+              }
+            ],
+            "expected": "",
+            "hidden": true
+          },
+          {
+            "label": "single character",
+            "args": [
+              {
+                "__opcount__": {
+                  "data": "q"
+                }
+              }
+            ],
+            "expected": "q",
+            "hidden": true
+          },
+          {
+            "label": "all the same",
+            "args": [
+              {
+                "__opcount__": {
+                  "data": "dddddd"
+                }
+              }
+            ],
+            "expected": "d",
+            "hidden": true
+          },
+          {
+            "label": "late pair ties",
+            "args": [
+              {
+                "__opcount__": {
+                  "data": "bbaa"
+                }
+              }
+            ],
+            "expected": "b",
+            "hidden": true
+          },
+          {
+            "label": "two-letter alphabet",
+            "args": [
+              {
+                "__opcount__": {
+                  "data": "xyxyxyzz"
+                }
+              }
+            ],
+            "expected": "x",
+            "hidden": true
+          },
+          {
+            "label": "budget: 10k alternating",
+            "hidden": true,
+            "args": [
+              {
+                "__opcount__": {
+                  "data": {
+                    "__repeat__": {
+                      "item": "ab",
+                      "times": 5000
+                    }
+                  }
+                }
+              }
+            ],
+            "expected": "a",
+            "max_ops": 30000
+          }
+        ],
+        "hints": [
+          "What single table would let you answer 'how many of each character?' without ever re-reading the log? And after counting, what does the earliest-position tie need?",
+          "Pass one: build a counts dict over the log (one inspection per character). Then find the max count, and pass two: walk from the front and return the first character whose count equals the max — that one is automatically the earliest.",
+          "counts = {}; for ch in log: counts[ch] = counts.get(ch, 0) + 1. best = max(counts.values()). Then for ch in log: if counts[ch] == best: return ch. Two passes cost about 2 × len(log); the budget allows 3 × len(log)."
+        ],
+        "reasoning": "<p>The budget makes the cost structure explicit: a counting pass buys the answer to 'how many of each?' for exactly one inspection per character, and once that table exists every count question is a lookup. The tie rule is where the second pass earns its keep: by walking the log <i>from the front</i> and returning the first character whose count equals the maximum, the earliest-position tie-break happens by construction — no index bookkeeping needed. That is the general shape to remember: build a small summary table in one honest pass, then answer questions against the table instead of re-scanning the data for each question.</p>",
+        "solution": "def dominant_char(log):\n    if len(log) == 0:\n        return ''\n    counts = {}\n    for ch in log:                       # pass 1: the counts table\n        counts[ch] = counts.get(ch, 0) + 1\n    best = max(counts.values())\n    for ch in log:                       # pass 2: earliest at max count\n        if counts[ch] == best:\n            return ch\n    return ''   # not reached: some character attains the max\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-strings-6",
+        "title": "Spreadsheet column labels",
+        "difficulty": "hard",
+        "tags": [
+          "strings",
+          "math",
+          "numbering"
+        ],
+        "statement": "<p>A warehouse app prints grid headers the way spreadsheets label columns: <code>A</code>, <code>B</code>, …, <code>Z</code>, then <code>AA</code>, <code>AB</code>, …, <code>AZ</code>, then <code>BA</code> — and after <code>ZZ</code> comes <code>AAA</code>. Notice there is <b>no zero</b> in this system: after <code>Z</code> (column 26) the next label is <code>AA</code> (column 27), the way 9 is followed by 10 — except that the 'digits' here run 1-26 and the alphabet never prints a placeholder.</p><p>Implement <code>column_label(n)</code>: return the label of column <code>n</code>, where column 1 is <code>'A'</code>.</p>",
+        "constraints": [
+          "1 <= n <= 1,000,000",
+          "the label never contains a character outside A-Z"
+        ],
+        "examples": [
+          {
+            "call": "column_label(1)",
+            "why": "the first column",
+            "returns": "'A'"
+          },
+          {
+            "call": "column_label(27)",
+            "why": "26 columns fit in one letter; column 27 is the first two-letter label",
+            "returns": "'AA'"
+          },
+          {
+            "call": "column_label(702)",
+            "why": "702 = 26 + 26*26 is the last two-letter label",
+            "returns": "'ZZ'"
+          }
+        ],
+        "starter": "def column_label(n):\n    \"\"\"Return the spreadsheet label of column n (column 1 is 'A').\"\"\"\n    pass\n",
+        "func": "column_label",
+        "tests": [
+          {
+            "label": "first column",
+            "args": [
+              1
+            ],
+            "expected": "A",
+            "hidden": false
+          },
+          {
+            "label": "wrap to two letters",
+            "args": [
+              27
+            ],
+            "expected": "AA",
+            "hidden": false
+          },
+          {
+            "label": "last single letter",
+            "args": [
+              26
+            ],
+            "expected": "Z",
+            "hidden": true
+          },
+          {
+            "label": "mid two letters",
+            "args": [
+              52
+            ],
+            "expected": "AZ",
+            "hidden": true
+          },
+          {
+            "label": "start of the B range",
+            "args": [
+              53
+            ],
+            "expected": "BA",
+            "hidden": true
+          },
+          {
+            "label": "last two letters",
+            "args": [
+              702
+            ],
+            "expected": "ZZ",
+            "hidden": true
+          },
+          {
+            "label": "first three letters",
+            "args": [
+              703
+            ],
+            "expected": "AAA",
+            "hidden": true
+          },
+          {
+            "label": "last three letters",
+            "args": [
+              18278
+            ],
+            "expected": "ZZZ",
+            "hidden": true
+          },
+          {
+            "label": "deep label",
+            "args": [
+              1000
+            ],
+            "expected": "ALL",
+            "hidden": true
+          },
+          {
+            "label": "very deep label",
+            "args": [
+              1000000
+            ],
+            "expected": "BDWGN",
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "In ordinary base 26 the digits would be 0-25, but here they are 1-26 and there is no zero symbol. What single adjustment turns 'digits 1-26, no zero' into ordinary 'digits 0-25' at every step?",
+          "Repeat until nothing is left: subtract 1 from n, so the current place maps onto 0-25 (0 means 'A'); take n % 26 as the letter index; then divide n by 26 and continue.",
+          "letters = []; while n > 0: n -= 1; letters.append(chr(65 + n % 26)); n //= 26. Return ''.join(reversed(letters)). Check by hand: n=1 gives 'A', n=26 gives 'Z', n=27 gives 'AA'."
+        ],
+        "reasoning": "<p>This numbering is a <i>bijective</i> base-26 system: every column gets a label, no label is wasted, and there is no zero symbol. The classic off-by-one disappears with one move — decrement before each digit extraction. After <code>n -= 1</code>, the remainder <code>n % 26</code> is a clean 0-25 digit (0 = 'A'), and <code>n //= 26</code> consumes the place. Without that decrement, 26 would wrongly print as 'BA': 26 % 26 = 0 then 26 // 26 = 1, giving 'A' followed by 'B'. Digits come out least-significant first, so the result is reversed once at the end. The transferable lesson: when a numbering has no zero, shift by one at <i>every</i> step rather than patching special cases at the boundaries.</p>",
+        "solution": "def column_label(n):\n    letters = []\n    while n > 0:\n        n -= 1                      # shift into the 0-25 digit range\n        letters.append(chr(65 + n % 26))\n        n //= 26\n    return ''.join(reversed(letters))\n"
+      }
+    }
+  ]
+}

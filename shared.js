@@ -67,6 +67,13 @@ const SEARCH_INDEX = [
   { title:'collections & functools & itertools', page:'stdlib.html', section:'s3', snippet:'defaultdict Counter deque namedtuple lru_cache partial reduce wraps count cycle chain product combinations permutations' },
   { title:'typing & dataclasses & threading', page:'stdlib.html', section:'s4', snippet:'Optional Union List Dict Callable TypeVar Protocol dataclass field frozen Thread Lock Event Queue Pool subprocess' },
   { title:'logging & argparse & unittest', page:'stdlib.html', section:'s5', snippet:'basicConfig getLogger DEBUG INFO WARNING ERROR critical FileHandler ArgumentParser add_argument TestCase setUp assertRaises mock' },
+  // Practice Dojo
+  { title:'Practice Dojo — Python Core', page:'practice.html', section:'t=py-core', snippet:'notebook exercises lists dicts strings comprehensions functions oop iterators decorators graded hidden tests' },
+  { title:'Practice Dojo — Stdlib Power Tools', page:'practice.html', section:'t=stdlib-power', snippet:'exercises collections Counter deque itertools functools lru_cache regex json datetime graded tests' },
+  { title:'Practice Dojo — NumPy Reasoning', page:'practice.html', section:'t=numpy-reasoning', snippet:'exercises broadcasting axis aggregation reshape vectorize boolean masks efficiency budget' },
+  { title:'Practice Dojo — Pandas Reasoning', page:'practice.html', section:'t=pandas-reasoning', snippet:'exercises groupby merge pivot melt loc iloc boolean selection cleaning graded tests' },
+  { title:'Practice Dojo — ML & Viz Predictions', page:'practice.html', section:'t=ml-viz-reasoning', snippet:'predict the output matplotlib sklearn tensorflow transformers NotFittedError shapes' },
+  { title:'Practice Dojo — LeetCode Intuition', page:'practice.html', section:'t=leet-intuition', snippet:'operation budgets invariants reductions reasoning derive approach from first principles' },
 ];
 
 // ─── Sidebar Navigation Data ─────────────────────────────────────────────────
@@ -150,6 +157,15 @@ const NAV_SECTIONS = [
     { text:'threading & multiprocessing', href:'stdlib.html#s8' },
     { text:'subprocess & hashlib', href:'stdlib.html#s9' },
     { text:'logging & argparse & unittest', href:'stdlib.html#s10' },
+  ]},
+  { label:'🥋 Practice Dojo — 141 Exercises', links:[
+    { text:'Dojo Home (all tracks)', href:'practice.html#/' },
+    { text:'🐍 Python Core — 12 notebooks', href:'practice.html#t=py-core' },
+    { text:'🧰 Stdlib Power Tools', href:'practice.html#t=stdlib-power' },
+    { text:'🔢 NumPy Reasoning', href:'practice.html#t=numpy-reasoning' },
+    { text:'🐼 Pandas Reasoning', href:'practice.html#t=pandas-reasoning' },
+    { text:'🧠 ML & Viz Predictions', href:'practice.html#t=ml-viz-reasoning' },
+    { text:'🎯 LeetCode Intuition', href:'practice.html#t=leet-intuition' },
   ]},
 ];
 

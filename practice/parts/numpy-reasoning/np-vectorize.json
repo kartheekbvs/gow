@@ -1,0 +1,804 @@
+{
+  "id": "np-vectorize",
+  "title": "Think in Ufuncs",
+  "icon": "⚡",
+  "level": "intermediate",
+  "order": 40,
+  "conceptRef": "numpy.html#s6",
+  "blurb": "One ufunc call replaces a thousand iterations: clip, band, and window whole signals at once.",
+  "cells": [
+    {
+      "type": "concept",
+      "title": "One call, every element",
+      "body": "<p>A <b>ufunc</b> ('universal function') applies one operation to an entire array in compiled code: <code>np.maximum(v, 0)</code> clamps every element, <code>v * 2 + 1</code> is two full-array passes, and <code>np.sqrt(np.abs(v))</code> chains three. There is no visible loop because the loop is inside numpy, over contiguous memory.</p><p>The reasoning shift: stop asking 'how do I iterate?' and start asking 'which whole-array transformation maps my input to my output?'. Most day-one loops — scale, offset, clip, negate, compare — are each a single ufunc expression. This notebook trains the next tier: branching with <code>np.where</code> and windowed reductions with cumulative sums.</p>",
+      "demo": {
+        "code": "import numpy as np\n\nv = np.array([-1.0, 0.5, 2.0, 4.5])\nprint(np.maximum(v, 0.0))     # elementwise clamp at zero\nprint(v * 2 + 1)              # two whole-array passes\nprint(np.sqrt(np.abs(v)))"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "np.where is an array-valued if/else",
+      "body": "<p><code>np.where(cond, x, y)</code> evaluates <b>both</b> branches as arrays and then picks elementwise: <code>cond[i]</code> true yields <code>x[i]</code>, else <code>y[i]</code>. Nesting them builds priority ladders: the outermost condition claims its cells first, and whatever it rejects falls through to the inner expression.</p><p>Order matters when categories overlap. A banding rule like 'code 3 if v is at least 3.6, else code 2 if v is at least 3.3, else...' must be written consistently from one end of the ladder: each condition must be complete for its band, otherwise cells fall through to the wrong branch. Getting the boundary comparisons right (<code>&gt;=</code> vs <code>&gt;</code>) is the classic off-by-one of banding.</p>",
+      "demo": {
+        "code": "import numpy as np\n\nv = np.array([2.9, 3.1, 3.4, 3.9])\ncode = np.where(v >= 3.6, 3,\n       np.where(v >= 3.3, 2,\n       np.where(v >= 3.0, 1, 0)))\nprint(code)\nprint(np.where(v < 3.2, 'low', 'high'))   # branches can be strings"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "np.diff turns a signal into its change points",
+      "body": "<p><code>np.diff(x)</code> is the array of consecutive differences: element <code>i</code> is <code>x[i+1] - x[i]</code>, and the result is one shorter than the input. That single definition converts 'when did something change?' into 'where is the difference array nonzero?' — the same move as calculus, where questions about levels become questions about slopes.</p><p>Combine it with a threshold comparison and you can count crossings: cast a boolean above/below array to int, and an upward crossing is exactly a <code>+1</code> step in that indicator — a one-liner that replaces scanning the signal with a loop. The same skeleton counts downcrossings, toggles, or 'any switch'.</p>",
+      "demo": {
+        "code": "import numpy as np\n\nx = np.array([0, 0, 5, 5, 0, 5, 5])\nover = (x >= 5).astype(int)\nprint(np.diff(over))                    # +1 marks an upcrossing\nprint(np.count_nonzero(np.diff(over) == 1))"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "np-vectorize-1",
+        "title": "Saturating ADC",
+        "difficulty": "easy",
+        "tags": [
+          "numpy",
+          "ufuncs",
+          "clipping"
+        ],
+        "statement": "<p>An analog-to-digital converter is only trustworthy inside its rails: readings below <code>lo</code> or above <code>hi</code> have already clipped (saturated) at the rail value, and the downstream filter expects exactly that.</p><p>Implement <code>clamp(x, lo, hi)</code>: given a 1-D <code>int64</code> array <code>x</code> and plain ints <code>lo &lt;= hi</code>, return a 1-D <code>int64</code> array of the same length where every value below <code>lo</code> is replaced by <code>lo</code> and every value above <code>hi</code> by <code>hi</code> — one vectorized call, no loops.</p>",
+        "constraints": [
+          "x is 1-D int64 with at least 1 element; lo <= hi are plain ints",
+          "the result is 1-D int64 with the same length; every value lies in [lo, hi]"
+        ],
+        "examples": [
+          {
+            "call": "clamp(np.array([-3, 1, 5, 9, 12]), 0, 10)",
+            "returns": "array([ 0,  1,  5,  9, 10])",
+            "why": "-3 clips up to 0 and 12 clips down to 10; the middle readings pass through"
+          },
+          {
+            "call": "clamp(np.array([7, 7, 7]), 0, 10)",
+            "returns": "array([7, 7, 7])",
+            "why": "values already inside the rails are untouched"
+          }
+        ],
+        "starter": "import numpy as np\n\ndef clamp(x, lo, hi):\n    \"\"\"Saturate x into [lo, hi], elementwise.\n\n    x is 1-D int64; lo and hi are plain ints with lo <= hi.\n    \"\"\"\n    pass\n",
+        "func": "clamp",
+        "tests": [
+          {
+            "label": "mixed outside",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    -3,
+                    1,
+                    5,
+                    9,
+                    12
+                  ],
+                  "dtype": "int64"
+                }
+              },
+              0,
+              10
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  0,
+                  1,
+                  5,
+                  9,
+                  10
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": false
+          },
+          {
+            "label": "all inside",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    7,
+                    7,
+                    7
+                  ],
+                  "dtype": "int64"
+                }
+              },
+              0,
+              10
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  7,
+                  7,
+                  7
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": false
+          },
+          {
+            "label": "all below",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    1,
+                    2,
+                    3
+                  ],
+                  "dtype": "int64"
+                }
+              },
+              5,
+              10
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  5,
+                  5,
+                  5
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "all above",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    11,
+                    20
+                  ],
+                  "dtype": "int64"
+                }
+              },
+              0,
+              10
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  10,
+                  10
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "pinned lo == hi",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    4,
+                    -4,
+                    9
+                  ],
+                  "dtype": "int64"
+                }
+              },
+              3,
+              3
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  3,
+                  3,
+                  3
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "negative rails",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    -7,
+                    -5,
+                    -1
+                  ],
+                  "dtype": "int64"
+                }
+              },
+              -6,
+              -2
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  -6,
+                  -5,
+                  -2
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "You could write a loop with an if/elif/else per element — but there is a single numpy call whose entire job is 'push every value into an interval'. What is it called?",
+          "np.clip(x, lo, hi) applies the clamp elementwise in compiled code; plain Python ints for lo and hi broadcast against the int64 array without changing its dtype.",
+          "return np.clip(x, lo, hi). That is the whole function: length, dtype and values are preserved by the ufunc."
+        ],
+        "reasoning": "<p>Clipping is the canonical job where the loop version and the ufunc version differ enormously in speed and readability. <code>np.clip</code> composes <code>minimum</code> and <code>maximum</code> — clamp above, then below — and preserves dtype and shape, which is why the int64 contract holds without any casting in your code. The transferable habit: before writing an elementwise <code>if</code> ladder, scan the ufunc list (<code>clip</code>, <code>maximum</code>, <code>abs</code>, <code>sign</code>, <code>around</code>). A surprising share of 'per element' logic is already a named function — and when it is, the named version is both faster and self-documenting.</p>",
+        "solution": "import numpy as np\n\ndef clamp(x, lo, hi):\n    \"\"\"Saturate x into [lo, hi], elementwise.\"\"\"\n    return np.clip(x, lo, hi)\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "np-vectorize-2",
+        "title": "Voltage Bands",
+        "difficulty": "medium",
+        "tags": [
+          "numpy",
+          "np.where",
+          "banding"
+        ],
+        "statement": "<p>A battery stack reports cell voltages. Operations classifies each cell into one of four bands, with exact boundary semantics:</p><ul><li>band <code>0</code>: <code>v &lt; 3.0</code> — critical</li><li>band <code>1</code>: <code>3.0 &lt;= v &lt; 3.3</code> — low</li><li>band <code>2</code>: <code>3.3 &lt;= v &lt; 3.6</code> — nominal</li><li>band <code>3</code>: <code>v &gt;= 3.6</code> — full</li></ul><p>Implement <code>voltage_zone(v)</code>: return the per-cell band codes as a 1-D <code>int64</code> array of the same length, built with nested <code>np.where</code> (or <code>np.select</code>). No loops. Every interval is half-open on the right, and band 0 catches everything below 3.0 — including negative readings.</p>",
+        "constraints": [
+          "v is 1-D float64 with at least 1 element; values may be negative",
+          "the result is 1-D int64, same length",
+          "boundaries are exact: 3.0 is band 1, 3.3 is band 2, 3.6 is band 3"
+        ],
+        "examples": [
+          {
+            "call": "voltage_zone(np.array([2.98, 3.1, 3.5, 3.9]))",
+            "returns": "array([0, 1, 2, 3])",
+            "why": "one cell in each band, no cell on a boundary"
+          },
+          {
+            "call": "voltage_zone(np.array([3.0, 3.3, 3.6]))",
+            "returns": "array([1, 2, 3])",
+            "why": "the three boundary values land in the band above them: 1, 2, 3"
+          }
+        ],
+        "starter": "import numpy as np\n\ndef voltage_zone(v):\n    \"\"\"Map each voltage to its band code 0..3.\n\n    Bands: 0 v<3.0; 1 3.0<=v<3.3; 2 3.3<=v<3.6; 3 v>=3.6.\n    Returns int64 codes, same length as v.\n    \"\"\"\n    pass\n",
+        "func": "voltage_zone",
+        "tests": [
+          {
+            "label": "one per band",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    2.98,
+                    3.1,
+                    3.5,
+                    3.9
+                  ],
+                  "dtype": "float64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  0,
+                  1,
+                  2,
+                  3
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": false
+          },
+          {
+            "label": "exact boundaries",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    3.0,
+                    3.3,
+                    3.6
+                  ],
+                  "dtype": "float64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  1,
+                  2,
+                  3
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": false
+          },
+          {
+            "label": "all critical",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    2.5,
+                    2.99,
+                    1.0
+                  ],
+                  "dtype": "float64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  0,
+                  0,
+                  0
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "all full",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    3.6,
+                    4.0,
+                    3.7
+                  ],
+                  "dtype": "float64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  3,
+                  3,
+                  3
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "negatives",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    -1.0,
+                    -3.5,
+                    0.0
+                  ],
+                  "dtype": "float64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  0,
+                  0,
+                  0
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "single nominal",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    3.45
+                  ],
+                  "dtype": "float64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  2
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "Four bands but only three decisions: if you check thresholds from the top down, what does the innermost else branch have to catch?",
+          "Nest np.where outside-in on the upper edges: np.where(v >= 3.6, 3, np.where(v >= 3.3, 2, np.where(v >= 3.0, 1, 0))). Each true test claims its cell; the final else is band 0.",
+          "Finish with .astype(np.int64) so the code dtype is a contract, not an accident of int promotion: code = nested wheres; return code.astype(np.int64)."
+        ],
+        "reasoning": "<p>A band ladder is a sequence of half-open intervals, and nested <code>np.where</code> encodes it as <b>priority from the outside in</b>: the outermost test (v ≥ 3.6) claims its cells first; whatever it rejects falls to the next test, so each inner condition only needs to separate its band from the ones below it. That is why three thresholds define four bands — the last branch is the remainder, and it automatically catches negatives and anything below 3.0. The boundary semantics (3.0 → band 1, not band 0) come from using <code>&gt;=</code> at each edge; this is the classic off-by-one of banding, and the boundary-visible test pins it. The trailing <code>.astype(np.int64)</code> makes the output dtype a contract rather than an implementation detail.</p>",
+        "solution": "import numpy as np\n\ndef voltage_zone(v):\n    \"\"\"Map each voltage to its band code 0..3.\"\"\"\n    v = np.asarray(v)\n    code = np.where(v >= 3.6, 3,\n           np.where(v >= 3.3, 2,\n           np.where(v >= 3.0, 1, 0)))\n    return code.astype(np.int64)\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "np-vectorize-3",
+        "title": "Count the Upcrossings",
+        "difficulty": "medium",
+        "tags": [
+          "numpy",
+          "np.diff",
+          "signals"
+        ],
+        "statement": "<p>A relay triggers when a monitored signal rises <b>onto or above</b> a trip level. An <b>upward crossing at position i</b> means: <code>x[i] &lt; level</code> and <code>x[i+1] &gt;= level</code>. Touching the level from below counts; sliding along above it does not.</p><p>Implement <code>count_upcrossings(x, level)</code>: return the number of upward crossings as a <b>plain integer</b>, computed from <code>np.diff</code> of a 0/1 indicator — no loops, no sign scans.</p>",
+        "constraints": [
+          "x is 1-D numeric (int64 or float64) with at least 1 element; level is a plain number",
+          "upcrossing at i means x[i] < level and x[i+1] >= level",
+          "a signal of length 1 has 0 crossings (no adjacent pair exists)"
+        ],
+        "examples": [
+          {
+            "call": "count_upcrossings(np.array([0, 5, 0, 10, 0]), 5)",
+            "returns": "2",
+            "why": "the signal rises onto the level at positions 0 and 2"
+          },
+          {
+            "call": "count_upcrossings(np.array([1, 2, 3]), 10)",
+            "returns": "0",
+            "why": "the signal never reaches the level, so nothing crosses"
+          }
+        ],
+        "starter": "import numpy as np\n\ndef count_upcrossings(x, level):\n    \"\"\"Count positions i with x[i] < level and x[i+1] >= level.\n\n    Returns a plain integer; x may be int64 or float64.\n    \"\"\"\n    pass\n",
+        "func": "count_upcrossings",
+        "tests": [
+          {
+            "label": "two crossings",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    0,
+                    5,
+                    0,
+                    10,
+                    0
+                  ],
+                  "dtype": "int64"
+                }
+              },
+              5
+            ],
+            "expected": 2,
+            "hidden": false
+          },
+          {
+            "label": "never above",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    1,
+                    2,
+                    3
+                  ],
+                  "dtype": "int64"
+                }
+              },
+              10
+            ],
+            "expected": 0,
+            "hidden": false
+          },
+          {
+            "label": "touch and go",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    0,
+                    5,
+                    5,
+                    0
+                  ],
+                  "dtype": "int64"
+                }
+              },
+              5
+            ],
+            "expected": 1,
+            "hidden": true
+          },
+          {
+            "label": "single sample",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    7
+                  ],
+                  "dtype": "int64"
+                }
+              },
+              5
+            ],
+            "expected": 0,
+            "hidden": true
+          },
+          {
+            "label": "float signal",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    0.5,
+                    2.5,
+                    1.0,
+                    2.5
+                  ],
+                  "dtype": "float64"
+                }
+              },
+              2.0
+            ],
+            "expected": 2,
+            "hidden": true
+          },
+          {
+            "label": "always above",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    6,
+                    7,
+                    8
+                  ],
+                  "dtype": "int64"
+                }
+              },
+              5
+            ],
+            "expected": 0,
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "Convert the level question into a 0/1 question first: over = (x >= level). What does np.diff(over.astype(int)) look like at a crossing, and what values does it take elsewhere?",
+          "over is 1 at-or-above the level and 0 below; np.diff of that int indicator is +1 exactly at an upcrossing (0 to 1), -1 at a downcrossing, and 0 while the signal stays on one side.",
+          "over = (np.asarray(x) >= level).astype(np.int64); return int(np.count_nonzero(np.diff(over) == 1)). The == 1 keeps only upward transitions."
+        ],
+        "reasoning": "<p>Level questions become <b>edge</b> questions once you replace the signal by a 0/1 indicator: <code>over[i]</code> answers 'is sample i at or above the level?'. <code>np.diff</code> of that indicator is +1 precisely where the indicator steps 0→1 — which is the definition of an upcrossing, including the 'touching counts' rule, because the indicator uses <code>&gt;=</code>. This is the discrete-derivative view: a threshold event is a property of the <i>change</i> array, not of the level array, and counting events becomes counting pattern matches. The same skeleton counts downcrossings (<code>== -1</code>), toggles, or 'any switch' (<code>!= 0</code>) — one idiom for every 'how many times did it flip?' question in sensor and event data.</p>",
+        "solution": "import numpy as np\n\ndef count_upcrossings(x, level):\n    \"\"\"Count positions i with x[i] < level and x[i+1] >= level.\"\"\"\n    over = (np.asarray(x) >= level).astype(np.int64)\n    return int(np.count_nonzero(np.diff(over) == 1))\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "np-vectorize-4",
+        "title": "Moving Average by Cumulative Sum",
+        "difficulty": "hard",
+        "tags": [
+          "numpy",
+          "cumsum",
+          "windows"
+        ],
+        "statement": "<p>A smoothing pass replaces each full window of <code>w</code> consecutive samples by its mean — a <b>valid</b> moving average: the output has <code>len(x) - w + 1</code> entries, with no partial windows at the edges.</p><p>Implement <code>moving_average(x, w)</code>: return a 1-D <code>float64</code> array of length <code>n - w + 1</code> where entry <code>i</code> is <code>mean(x[i:i+w])</code>, each value <b>rounded to 4 decimal places</b>. Compute every window sum from a single cumulative sum — <code>np.cumsum</code> plus one subtraction of two shifted views. No loops, no <code>np.convolve</code>, no per-window <code>.mean()</code> calls.</p>",
+        "constraints": [
+          "x is 1-D int64; 1 <= w <= len(x)",
+          "the output length is exactly len(x) - w + 1 (valid windows only)",
+          "entry i is the mean of x[i:i+w], as float64 rounded to 4 decimal places"
+        ],
+        "examples": [
+          {
+            "call": "moving_average(np.array([1, 2, 3, 4, 5]), 2)",
+            "returns": "array([1.5, 2.5, 3.5, 4.5])",
+            "why": "four valid windows of width 2: means 1.5, 2.5, 3.5, 4.5"
+          },
+          {
+            "call": "moving_average(np.array([1, 2, 3, 4, 5]), 5)",
+            "returns": "array([3.])",
+            "why": "the widest legal window covers everything: a single mean, output length 1"
+          }
+        ],
+        "starter": "import numpy as np\n\ndef moving_average(x, w):\n    \"\"\"Valid-window moving average via one cumulative sum.\n\n    x is 1-D int64, 1 <= w <= len(x); the result has length\n    len(x) - w + 1 and is rounded to 4 decimal places.\n    \"\"\"\n    pass\n",
+        "func": "moving_average",
+        "tests": [
+          {
+            "label": "w=2",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5
+                  ],
+                  "dtype": "int64"
+                }
+              },
+              2
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  1.5,
+                  2.5,
+                  3.5,
+                  4.5
+                ],
+                "dtype": "float64"
+              }
+            },
+            "hidden": false
+          },
+          {
+            "label": "w=n",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5
+                  ],
+                  "dtype": "int64"
+                }
+              },
+              5
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  3.0
+                ],
+                "dtype": "float64"
+              }
+            },
+            "hidden": false
+          },
+          {
+            "label": "w=1 identity",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5
+                  ],
+                  "dtype": "int64"
+                }
+              },
+              1
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  1.0,
+                  2.0,
+                  3.0,
+                  4.0,
+                  5.0
+                ],
+                "dtype": "float64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "repeating decimals",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    1,
+                    1,
+                    1,
+                    2
+                  ],
+                  "dtype": "int64"
+                }
+              },
+              3
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  1.0,
+                  1.3333
+                ],
+                "dtype": "float64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "negatives",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    -4,
+                    -2,
+                    -6,
+                    -8
+                  ],
+                  "dtype": "int64"
+                }
+              },
+              2
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  -3.0,
+                  -4.0,
+                  -7.0
+                ],
+                "dtype": "float64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "constant signal",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    5,
+                    5,
+                    5
+                  ],
+                  "dtype": "int64"
+                }
+              },
+              3
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  5.0
+                ],
+                "dtype": "float64"
+              }
+            },
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "Window i's sum is c[i+w] - c[i] if c is the cumulative sum with a 0 prepended. Why must the 0 be prepended, and how long is c?",
+          "c = np.concatenate(([0.0], np.cumsum(x))) has length n+1; then (c[w:] - c[:-w]) is the vector of all window sums at once — for w=1 it degenerates to c[1:] - c[:-1], which is x itself.",
+          "x = np.asarray(x, dtype=np.float64); c = np.concatenate(([0.0], np.cumsum(x))); return np.round((c[w:] - c[:-w]) / w, 4)."
+        ],
+        "reasoning": "<p>The cumulative sum turns <i>range sums</i> into <i>two array reads</i>: with a 0 prepended, <code>c[k]</code> is the total of the first k samples, so the sum of window <code>i</code> is <code>c[i+w] - c[i]</code> — and slicing <code>c[w:]</code> against <code>c[:-w]</code> produces all n-w+1 window sums in one subtraction. Total cost: one cumsum pass plus one vectorized subtract-divide, instead of touching every window separately (w times more work) or looping in Python. The prepended 0 is what makes the first window work with no special case: window 0 needs 'the sum of nothing before the array began'. This prefix-sum trick underlies running totals, range queries, box filters and integral images — anywhere 'sum of a slice' gets asked more than once.</p>",
+        "solution": "import numpy as np\n\ndef moving_average(x, w):\n    \"\"\"Valid-window moving average via one cumulative sum.\"\"\"\n    x = np.asarray(x, dtype=np.float64)\n    c = np.concatenate(([0.0], np.cumsum(x)))\n    return np.round((c[w:] - c[:-w]) / w, 4)\n"
+      }
+    }
+  ]
+}

@@ -1,0 +1,2220 @@
+{
+  "id": "std-collections",
+  "title": "collections: Counter, defaultdict, deque",
+  "icon": "📦",
+  "level": "intermediate",
+  "order": 10,
+  "conceptRef": "stdlib.html#s3",
+  "blurb": "Count, group, and slide: the container tools that turn scan-and-manage loops into one honest pass over the data.",
+  "cells": [
+    {
+      "type": "concept",
+      "title": "Count first, ask questions second",
+      "body": "<p>A remarkable share of data questions are counting questions in disguise: which product sold most, what is missing from an order, do these two lists hold the same multiset of items. The move that solves all of them is the same: make one honest pass over the data that builds a <b>count table</b>, and only then answer the real question from the table.</p><p><code>collections.Counter</code> is that table. It counts any hashable items in a single pass, a missing key reads as zero instead of raising, and it supports arithmetic between tables, so comparing two inventories becomes one expression. The habit to build is the order of operations: <i>count everything first, interrogate second</i>. Trying to answer while still scanning is what turns simple problems into index juggling.</p>",
+      "demo": {
+        "code": "from collections import Counter\n\nscans = [\"apple\", \"banana\", \"apple\", \"cherry\", \"apple\"]\ncounts = Counter(scans)\nprint(counts)\nprint(counts.most_common(2))\nprint(counts[\"apple\"], counts[\"fig\"])  # missing keys read as 0\nprint(Counter(\"aab\") + Counter(\"bcc\"))"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "defaultdict: grouping without the existence dance",
+      "body": "<p>Grouping is the second great pattern: put every ticket under its department, every word under its first letter, every reading under its sensor. With a plain dict you must ask <i>does this key exist yet?</i> before every append — three lines of ceremony around one line of intent. <code>defaultdict(list)</code> removes the ceremony: a missing key is created as an empty list exactly when you first touch it, and the loop body shrinks to a single append.</p><p>Two order guarantees make the result worth trusting: keys appear in the dict in the order they were <b>first inserted</b> (first-seen order), and each group keeps the order in which items arrived. Grouping therefore preserves the story the log told — which is usually exactly what a report needs.</p>",
+      "demo": {
+        "code": "from collections import defaultdict\n\nboard = defaultdict(list)\ntickets = [(\"billing\", 101), (\"tech\", 200),\n           (\"billing\", 104), (\"sales\", 300)]\nfor dept, tid in tickets:\n    board[dept].append(tid)\n\nprint(list(board.items()))\nprint(list(board))  # departments in first-seen order"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "deque: cheap ends make rolling windows honest",
+      "body": "<p>Many rules in real systems are about a <b>recent window</b> of events: at most k requests per minute, the average of the last n readings, the previous few moves in a game log. The structural question is which end of the container you touch. <code>list.pop(0)</code> shifts every remaining element left, so treating a list like a queue makes a long stream cost quadratic time; a <code>deque</code> (double-ended queue) adds and removes at both ends in constant time.</p><p>The pattern to internalize: keep the window in a deque, <b>evict stale items from the left, admit fresh ones on the right</b>. Because each event enters and leaves the window at most once, a stream of n events costs work proportional to n, not window-size times n. Passing <code>maxlen</code> even makes the deque drop old items for you.</p>",
+      "demo": {
+        "code": "from collections import deque\n\nwindow = deque(maxlen=3)\nfor reading in [5, 6, 7, 8, 9]:\n    window.append(reading)\n    print(list(window))\n\nevents = deque()\nfor t in [1, 2, 3, 4]:\n    while events and events[0] <= t - 3:  # stale: t-3 or older\n        events.popleft()\n    events.append(t)\nprint(list(events))"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "std-collections-1",
+        "title": "Bestseller shelf",
+        "difficulty": "easy",
+        "tags": [
+          "collections",
+          "counting",
+          "sorting"
+        ],
+        "statement": "<p>A corner store's till records one entry per scan, in the order the scans happened. To plan restocking you need the top <code>k</code> bestsellers: the <code>k</code> products with the highest scan counts, returned as a list of <code>(product, count)</code> tuples.</p><p>Two products often sell equally well. When counts tie, the product whose <b>first scan happened earlier</b> ranks higher. If the log holds fewer than <code>k</code> distinct products, return all of them, still ranked by this rule.</p>",
+        "constraints": [
+          "0 <= len(log) <= 100,000",
+          "product names are short non-empty strings",
+          "1 <= k <= 1,000",
+          "an empty log yields an empty list"
+        ],
+        "examples": [
+          {
+            "call": "bestsellers([\"apple\", \"banana\", \"apple\", \"cherry\", \"banana\", \"apple\"], 2)",
+            "returns": "[('apple', 3), ('banana', 2)]",
+            "why": "apple was scanned 3 times and banana twice; cherry's single scan does not make the top 2"
+          },
+          {
+            "call": "bestsellers([\"fig\", \"date\", \"fig\", \"date\"], 2)",
+            "returns": "[('fig', 2), ('date', 2)]",
+            "why": "both were scanned twice; fig's first scan (index 0) came before date's, so fig ranks first"
+          }
+        ],
+        "starter": "def bestsellers(log, k):\n    \"\"\"Return the k best sellers as (product, count) tuples.\n\n    Ranking rule: scan count descending, then earliest\n    first scan wins the tie.\n    \"\"\"\n    pass\n",
+        "func": "bestsellers",
+        "tests": [
+          {
+            "label": "top two clear winners",
+            "args": [
+              [
+                "apple",
+                "banana",
+                "apple",
+                "cherry",
+                "banana",
+                "apple"
+              ],
+              2
+            ],
+            "expected": [
+              {
+                "__tuple__": [
+                  "apple",
+                  3
+                ]
+              },
+              {
+                "__tuple__": [
+                  "banana",
+                  2
+                ]
+              }
+            ],
+            "hidden": false
+          },
+          {
+            "label": "tie broken by first scan",
+            "args": [
+              [
+                "fig",
+                "date",
+                "fig",
+                "date"
+              ],
+              2
+            ],
+            "expected": [
+              {
+                "__tuple__": [
+                  "fig",
+                  2
+                ]
+              },
+              {
+                "__tuple__": [
+                  "date",
+                  2
+                ]
+              }
+            ],
+            "hidden": false
+          },
+          {
+            "label": "empty log",
+            "args": [
+              [],
+              3
+            ],
+            "expected": [],
+            "hidden": true
+          },
+          {
+            "label": "fewer products than k",
+            "args": [
+              [
+                "mint",
+                "mint",
+                "mint"
+              ],
+              5
+            ],
+            "expected": [
+              {
+                "__tuple__": [
+                  "mint",
+                  3
+                ]
+              }
+            ],
+            "hidden": true
+          },
+          {
+            "label": "three-way tie keeps first-seen order",
+            "args": [
+              [
+                "b",
+                "a",
+                "c",
+                "c",
+                "a",
+                "b"
+              ],
+              2
+            ],
+            "expected": [
+              {
+                "__tuple__": [
+                  "b",
+                  2
+                ]
+              },
+              {
+                "__tuple__": [
+                  "a",
+                  2
+                ]
+              }
+            ],
+            "hidden": true
+          },
+          {
+            "label": "large log, one-pass budget",
+            "args": [
+              {
+                "__opcount__": {
+                  "data": {
+                    "__repeat__": {
+                      "item": "abcabcdefg",
+                      "times": 6000
+                    }
+                  }
+                }
+              },
+              3
+            ],
+            "expected": [
+              {
+                "__tuple__": [
+                  "a",
+                  12000
+                ]
+              },
+              {
+                "__tuple__": [
+                  "b",
+                  12000
+                ]
+              },
+              {
+                "__tuple__": [
+                  "c",
+                  12000
+                ]
+              }
+            ],
+            "hidden": true,
+            "max_ops": 180000
+          }
+        ],
+        "hints": [
+          "Counting each product's scans is the easy half. When two counts are equal, what other fact about the log decides the ranking, and how could you capture it in one extra pass?",
+          "Build a count table over the whole log, and in a second pass record the index of each product's first scan. Rank products by count descending, using the first-scan index to settle ties.",
+          "Counter(log) gives the counts; one enumerate(log) pass fills a first_index dict. Then sorted(counts, key=lambda p: (-counts[p], first_index[p])) is the ranking — slice the first k and pair each product with its count."
+        ],
+        "reasoning": "<p>The exercise is one ranking plus a tie rule, and the clean way to express a tie rule is to fold it into the sort key: <code>(-count, first_index)</code> orders primarily by count descending and secondarily by earliest appearance, so no special-case code is needed for ties. The count table is what keeps this linear: after one honest pass, every 'how many?' question is a dictionary lookup instead of a re-scan. The same design shows up wherever rankings can tie — leaderboards, search results, picking winners: <i>choose a total order up front, encode it as a tuple key, and let the sort do the arguing</i>. The efficiency test makes the point measurable: re-scanning the log once per product costs count-times-length inspections, while table-building costs one pass.</p>",
+        "solution": "from collections import Counter\n\n\ndef bestsellers(log, k):\n    \"\"\"Return the k best sellers as (product, count) tuples.\n\n    Ranking rule: scan count descending, then earliest\n    first scan wins the tie.\n    \"\"\"\n    counts = Counter(log)\n    first_index = {}\n    for i, product in enumerate(log):\n        if product not in first_index:\n            first_index[product] = i\n    ranked = sorted(counts, key=lambda p: (-counts[p], first_index[p]))\n    return [(p, counts[p]) for p in ranked[:k]]\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "std-collections-2",
+        "title": "Shortfall report",
+        "difficulty": "easy",
+        "tags": [
+          "collections",
+          "counting",
+          "multisets"
+        ],
+        "statement": "<p>A workshop's stock room is inventoried as a list of part names — one entry per physical unit on the shelf. A customer places an order written the same way: one entry per unit wanted. The foreman needs a <b>shortfall report</b>: for every part, how many units the order needs <i>beyond</i> what the shelf holds.</p><p>Return the report as a list of <code>(part, missing_units)</code> tuples sorted by part name. Parts the shelf can fully cover, and parts the order does not mention, do not appear at all — a fully covered order yields an empty list.</p>",
+        "constraints": [
+          "0 <= len(stock), len(order) <= 50,000",
+          "part names are short lowercase strings"
+        ],
+        "examples": [
+          {
+            "call": "shortage([\"nail\", \"nail\", \"screw\", \"bolt\"], [\"nail\", \"nail\", \"nail\", \"bolt\", \"bolt\"])",
+            "returns": "[('bolt', 1), ('nail', 1)]",
+            "why": "three nails are wanted but two are stocked; two bolts wanted, one stocked; screws are not ordered"
+          },
+          {
+            "call": "shortage([\"nail\", \"nail\"], [\"nail\"])",
+            "returns": "[]",
+            "why": "the shelf covers the order completely, so nothing is missing"
+          }
+        ],
+        "starter": "def shortage(stock, order):\n    \"\"\"Return (part, missing units) the stock cannot cover.\n\n    Output is sorted by part name; covered parts are\n    left out entirely.\n    \"\"\"\n    pass\n",
+        "func": "shortage",
+        "tests": [
+          {
+            "label": "mixed shortfall",
+            "args": [
+              [
+                "nail",
+                "nail",
+                "screw",
+                "bolt"
+              ],
+              [
+                "nail",
+                "nail",
+                "nail",
+                "bolt",
+                "bolt"
+              ]
+            ],
+            "expected": [
+              {
+                "__tuple__": [
+                  "bolt",
+                  1
+                ]
+              },
+              {
+                "__tuple__": [
+                  "nail",
+                  1
+                ]
+              }
+            ],
+            "hidden": false
+          },
+          {
+            "label": "fully covered order",
+            "args": [
+              [
+                "nail",
+                "nail"
+              ],
+              [
+                "nail"
+              ]
+            ],
+            "expected": [],
+            "hidden": false
+          },
+          {
+            "label": "empty order",
+            "args": [
+              [
+                "nail"
+              ],
+              []
+            ],
+            "expected": [],
+            "hidden": true
+          },
+          {
+            "label": "empty stock",
+            "args": [
+              [],
+              [
+                "bolt",
+                "bolt",
+                "ax"
+              ]
+            ],
+            "expected": [
+              {
+                "__tuple__": [
+                  "ax",
+                  1
+                ]
+              },
+              {
+                "__tuple__": [
+                  "bolt",
+                  2
+                ]
+              }
+            ],
+            "hidden": true
+          },
+          {
+            "label": "exact stock, zero shortfall",
+            "args": [
+              [
+                "a",
+                "b"
+              ],
+              [
+                "a",
+                "b"
+              ]
+            ],
+            "expected": [],
+            "hidden": true
+          },
+          {
+            "label": "bulk order against thin stock",
+            "args": [
+              {
+                "__repeat__": {
+                  "item": [
+                    "nut",
+                    "bolt"
+                  ],
+                  "times": 3000
+                }
+              },
+              {
+                "__repeat__": {
+                  "item": [
+                    "nut",
+                    "nut",
+                    "bolt"
+                  ],
+                  "times": 3000
+                }
+              }
+            ],
+            "expected": [
+              {
+                "__tuple__": [
+                  "nut",
+                  3000
+                ]
+              }
+            ],
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "Both lists are really bags of parts — identity and multiplicity matter, position does not. What does 'missing' mean when you subtract one bag from the other?",
+          "Count both sides into tables, then subtract order counts minus stock counts per part. Counter already implements that subtraction, and it keeps only the positive results.",
+          "Counter(order) - Counter(stock) drops parts whose difference is zero or negative; sorted(...) over its .items() produces the alphabetical report."
+        ],
+        "reasoning": "<p>An inventory and an order are <b>multisets</b>: identity matters, multiplicity matters, position does not. Multiset difference is exactly the shortfall report, and <code>Counter</code> overloads the minus operator to compute it — keeping only counts that stay positive, which is precisely the 'beyond what the shelf holds' rule. Doing this by hand (loop, compare, clamp negatives to zero) works, but the subtraction form states the business rule in one readable expression. The transferable idea: when a question is about <i>how many of each thing</i>, turn both inputs into count tables first — comparisons, unions and differences then become single operations instead of nested loops. Sorting the report by part name adds determinism, so two runs on the same data always print the same answer.</p>",
+        "solution": "from collections import Counter\n\n\ndef shortage(stock, order):\n    \"\"\"Return (part, missing units) the stock cannot cover.\n\n    Output is sorted by part name; covered parts are\n    left out entirely.\n    \"\"\"\n    shortfall = Counter(order) - Counter(stock)\n    return sorted(shortfall.items())\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "std-collections-3",
+        "title": "Ticket triage board",
+        "difficulty": "medium",
+        "tags": [
+          "collections",
+          "grouping",
+          "ordering"
+        ],
+        "statement": "<p>A help desk receives tickets as <code>(department, ticket_id)</code> pairs, in the exact order they arrived. The triage board should show every ticket exactly once, grouped by department: each department appears once, followed by its ticket ids <b>in arrival order</b>.</p><p>Departments must be listed in the order their <b>first</b> ticket arrived — a department that showed up later sits lower on the board even if its name would sort earlier alphabetically. Return the board as a list of <code>(department, [ticket ids])</code> pairs.</p>",
+        "constraints": [
+          "0 <= len(tickets) <= 100,000",
+          "department names and ticket ids are arbitrary values",
+          "a department may hold any number of tickets"
+        ],
+        "examples": [
+          {
+            "call": "group_tickets([(\"billing\", 101), (\"tech\", 200), (\"billing\", 104), (\"sales\", 300), (\"tech\", 205)])",
+            "returns": "[('billing', [101, 104]), ('tech', [200, 205]), ('sales', [300])]",
+            "why": "billing's first ticket arrived first and sales' last; within a department, ids keep arrival order"
+          },
+          {
+            "call": "group_tickets([(\"tech\", 9), (\"tech\", 4)])",
+            "returns": "[('tech', [9, 4])]",
+            "why": "one department only; its ids keep arrival order, not numeric order"
+          }
+        ],
+        "starter": "def group_tickets(tickets):\n    \"\"\"Group ticket ids by department for the triage board.\n\n    Departments appear in first-ticket order; ids inside\n    a department keep arrival order.\n    \"\"\"\n    pass\n",
+        "func": "group_tickets",
+        "tests": [
+          {
+            "label": "interleaved departments",
+            "args": [
+              [
+                {
+                  "__tuple__": [
+                    "billing",
+                    101
+                  ]
+                },
+                {
+                  "__tuple__": [
+                    "tech",
+                    200
+                  ]
+                },
+                {
+                  "__tuple__": [
+                    "billing",
+                    104
+                  ]
+                },
+                {
+                  "__tuple__": [
+                    "sales",
+                    300
+                  ]
+                },
+                {
+                  "__tuple__": [
+                    "tech",
+                    205
+                  ]
+                }
+              ]
+            ],
+            "expected": [
+              {
+                "__tuple__": [
+                  "billing",
+                  [
+                    101,
+                    104
+                  ]
+                ]
+              },
+              {
+                "__tuple__": [
+                  "tech",
+                  [
+                    200,
+                    205
+                  ]
+                ]
+              },
+              {
+                "__tuple__": [
+                  "sales",
+                  [
+                    300
+                  ]
+                ]
+              }
+            ],
+            "hidden": false
+          },
+          {
+            "label": "one department keeps arrival order",
+            "args": [
+              [
+                {
+                  "__tuple__": [
+                    "tech",
+                    9
+                  ]
+                },
+                {
+                  "__tuple__": [
+                    "tech",
+                    4
+                  ]
+                }
+              ]
+            ],
+            "expected": [
+              {
+                "__tuple__": [
+                  "tech",
+                  [
+                    9,
+                    4
+                  ]
+                ]
+              }
+            ],
+            "hidden": false
+          },
+          {
+            "label": "no tickets at all",
+            "args": [
+              []
+            ],
+            "expected": [],
+            "hidden": true
+          },
+          {
+            "label": "board order is first-seen, not alphabetical",
+            "args": [
+              [
+                {
+                  "__tuple__": [
+                    "b",
+                    2
+                  ]
+                },
+                {
+                  "__tuple__": [
+                    "a",
+                    1
+                  ]
+                }
+              ]
+            ],
+            "expected": [
+              {
+                "__tuple__": [
+                  "b",
+                  [
+                    2
+                  ]
+                ]
+              },
+              {
+                "__tuple__": [
+                  "a",
+                  [
+                    1
+                  ]
+                ]
+              }
+            ],
+            "hidden": true
+          },
+          {
+            "label": "single ticket",
+            "args": [
+              [
+                {
+                  "__tuple__": [
+                    "ops",
+                    7
+                  ]
+                }
+              ]
+            ],
+            "expected": [
+              {
+                "__tuple__": [
+                  "ops",
+                  [
+                    7
+                  ]
+                ]
+              }
+            ],
+            "hidden": true
+          },
+          {
+            "label": "long interleaved stream",
+            "args": [
+              {
+                "__repeat__": {
+                  "item": [
+                    {
+                      "__tuple__": [
+                        "x",
+                        1
+                      ]
+                    },
+                    {
+                      "__tuple__": [
+                        "y",
+                        2
+                      ]
+                    },
+                    {
+                      "__tuple__": [
+                        "x",
+                        3
+                      ]
+                    }
+                  ],
+                  "times": 400
+                }
+              }
+            ],
+            "expected": [
+              {
+                "__tuple__": [
+                  "x",
+                  [
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3,
+                    1,
+                    3
+                  ]
+                ]
+              },
+              {
+                "__tuple__": [
+                  "y",
+                  [
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2
+                  ]
+                ]
+              }
+            ],
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "Grouping keeps asking the dict to 'append under this key' — what has to happen the first time a department appears, and who creates that first empty list?",
+          "A defaultdict(list) creates the missing list at the moment of first touch, so the loop body is a single append. Both order guarantees you need then arrive for free.",
+          "board = defaultdict(list); loop 'for dept, tid in tickets: board[dept].append(tid)'; return list(board.items()). Dict insertion order is first-seen order, and each group's list preserves arrival order."
+        ],
+        "reasoning": "<p>Two guarantees hide inside one data structure here. Python dicts remember <b>insertion order</b>: a department enters the dict the moment its first ticket is appended, so iterating the dict yields departments in first-seen order with no explicit bookkeeping. Inside each group, appending while scanning preserves arrival order because lists never reorder themselves. <code>defaultdict(list)</code> exists precisely to remove the 'does this key exist yet?' ceremony — the place where hand-rolled grouping loops most often acquire bugs (create-on-read for lookups but not for writes, or the reverse). The general lesson: when the required output order equals a natural construction order, pick the structure that constructs it that way, instead of sorting afterwards — sorting by first-seen index is possible, but it re-derives a fact the dict already kept for free.</p>",
+        "solution": "from collections import defaultdict\n\n\ndef group_tickets(tickets):\n    \"\"\"Group ticket ids by department for the triage board.\n\n    Departments appear in first-ticket order; ids inside\n    a department keep arrival order.\n    \"\"\"\n    board = defaultdict(list)\n    for dept, tid in tickets:\n        board[dept].append(tid)\n    # dict insertion order == order of first appearance\n    return list(board.items())\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "std-collections-4",
+        "title": "Rolling-window admissions",
+        "difficulty": "medium",
+        "tags": [
+          "collections",
+          "deque",
+          "sliding-window"
+        ],
+        "statement": "<p>A public API lets each account send at most <code>k</code> requests inside any rolling window of <code>w</code> seconds. You are given one account's request timestamps — non-decreasing whole seconds — and must replay the admission rule in order.</p><p>A request at time <code>t</code> is <b>admitted</b> if, after every previously admitted request whose timestamp is <code>t - w</code> or older has been dropped from the window, fewer than <code>k</code> admitted requests remain in it. Admitted requests occupy the window; rejected requests vanish and never take up space. Return the list of admitted timestamps, in order.</p>",
+        "constraints": [
+          "0 <= len(times) <= 100,000",
+          "timestamps are non-decreasing integers, 0 <= t <= 1,000,000",
+          "1 <= k <= 1,000 and 1 <= w <= 1,000,000"
+        ],
+        "examples": [
+          {
+            "call": "admit_events([1, 2, 3, 4, 5], 2, 3)",
+            "returns": "[1, 2, 4, 5]",
+            "why": "at t=3 the window still holds 1 and 2 (both newer than 3-3=0) and is full; at t=4 the request from second 1 is dropped (1 <= 4-3), which reopens a slot"
+          },
+          {
+            "call": "admit_events([5, 5, 5, 5], 2, 10)",
+            "returns": "[5, 5]",
+            "why": "only the first two fit; the later identical timestamps find the window full and are rejected"
+          }
+        ],
+        "starter": "def admit_events(times, k, w):\n    \"\"\"Replay the rolling-window admission rule.\n\n    A request at t is admitted when fewer than k\n    admitted requests are newer than t - w.\n    \"\"\"\n    pass\n",
+        "func": "admit_events",
+        "tests": [
+          {
+            "label": "window slides, slots reopen",
+            "args": [
+              [
+                1,
+                2,
+                3,
+                4,
+                5
+              ],
+              2,
+              3
+            ],
+            "expected": [
+              1,
+              2,
+              4,
+              5
+            ],
+            "hidden": false
+          },
+          {
+            "label": "burst capped at k",
+            "args": [
+              [
+                5,
+                5,
+                5,
+                5
+              ],
+              2,
+              10
+            ],
+            "expected": [
+              5,
+              5
+            ],
+            "hidden": false
+          },
+          {
+            "label": "no requests",
+            "args": [
+              [],
+              3,
+              5
+            ],
+            "expected": [],
+            "hidden": true
+          },
+          {
+            "label": "boundary: exactly t-w is stale",
+            "args": [
+              [
+                1,
+                4
+              ],
+              1,
+              3
+            ],
+            "expected": [
+              1,
+              4
+            ],
+            "hidden": true
+          },
+          {
+            "label": "sparse traffic always admitted",
+            "args": [
+              [
+                1,
+                10,
+                20
+              ],
+              1,
+              5
+            ],
+            "expected": [
+              1,
+              10,
+              20
+            ],
+            "hidden": true
+          },
+          {
+            "label": "tight window, every step evicts",
+            "args": [
+              [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6
+              ],
+              1,
+              1
+            ],
+            "expected": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6
+            ],
+            "hidden": true
+          },
+          {
+            "label": "long stream, window never empties",
+            "args": [
+              {
+                "__repeat__": {
+                  "item": [
+                    5
+                  ],
+                  "times": 20000
+                }
+              },
+              3,
+              1
+            ],
+            "expected": [
+              5,
+              5,
+              5
+            ],
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "The decision at time t only looks at admitted requests newer than t - w. Which container lets you drop the oldest such item without shifting all the others?",
+          "Keep admitted timestamps in a deque. For each arrival: popleft while the oldest entry is t - w or older, then admit only if the deque still holds fewer than k.",
+          "Walk times in order maintaining the invariant 'the deque is exactly the admitted events newer than t - w'. Append t to deque and result together; rejected arrivals touch neither."
+        ],
+        "reasoning": "<p>The deque buys two things. First, <b>correctness by invariant</b>: at the moment you decide about time <code>t</code>, the deque contains exactly the admitted requests newer than <code>t - w</code> — every earlier decision already evicted its stale items, and since timestamps never decrease, eviction can stop at the first fresh one. Second, <b>cost</b>: each timestamp is appended at most once and popped at most once, so a stream of n requests costs O(n) total work even though a single decision may evict many items at once. Two boundary details trip people up: a timestamp exactly <code>t - w</code> is already stale (the window is open on the left), and <b>rejected requests never enter the window</b> — counting them would slowly strangle the account. The 'each element crosses the boundary once' argument is the standard amortized tool for judging any streaming algorithm.</p>",
+        "solution": "from collections import deque\n\n\ndef admit_events(times, k, w):\n    \"\"\"Replay the rolling-window admission rule.\n\n    A request at t is admitted when fewer than k\n    admitted requests are newer than t - w.\n    \"\"\"\n    window = deque()\n    admitted = []\n    for t in times:\n        # drop admitted events that are t - w or older\n        while window and window[0] <= t - w:\n            window.popleft()\n        if len(window) < k:\n            window.append(t)\n            admitted.append(t)\n    return admitted\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "std-collections-5",
+        "title": "Nearest maintenance crew",
+        "difficulty": "hard",
+        "tags": [
+          "collections",
+          "namedtuple",
+          "parsing"
+        ],
+        "statement": "<p>Repair crews across a warehouse campus radio in their positions as one text row per crew: <code>\"name x y\"</code> — a callsign, then integer x and y coordinates (either may be negative), separated by single spaces. Radios being unreliable, some rows arrive mangled: wrong field count, or coordinates that are not integers. Mangled rows must be ignored.</p><p>A conveyor jams at grid point <code>target</code>. Dispatch the <code>k</code> nearest crews, where distance is the Manhattan distance |x - target_x| + |y - target_y|, and ties are broken by report order: the crew that radioed in earlier wins. Return the names of the <code>k</code> dispatchable crews, nearest first.</p>",
+        "constraints": [
+          "0 <= len(rows) <= 100,000",
+          "a valid row is exactly three space-separated fields; the last two must parse as integers",
+          "coordinates fit comfortably in an int; names never contain spaces",
+          "1 <= k <= 100; if fewer crews are valid, return all of them"
+        ],
+        "examples": [
+          {
+            "call": "nearest_crews([\"a 3 4\", \"b 0 0\", \"oops 1\", \"c -2 -3\"], (0, 0), 2)",
+            "returns": "['b', 'c']",
+            "why": "b sits on the target (distance 0) and c is 5 away; the mangled row is skipped; a is 7 away and loses"
+          },
+          {
+            "call": "nearest_crews([\"a 2 0\", \"b 0 2\", \"c 1 1\"], (0, 0), 2)",
+            "returns": "['a', 'b']",
+            "why": "all three crews are distance 2 away; a reported first and b second, so c loses the tie"
+          }
+        ],
+        "starter": "def nearest_crews(rows, target, k):\n    \"\"\"Return the names of the k crews nearest to target.\n\n    Rows look like \"name x y\"; mangled rows are\n    skipped. Distance is Manhattan; earlier reports\n    win ties.\n    \"\"\"\n    pass\n",
+        "func": "nearest_crews",
+        "tests": [
+          {
+            "label": "skip mangled rows, rank the rest",
+            "args": [
+              [
+                "a 3 4",
+                "b 0 0",
+                "oops 1",
+                "c -2 -3"
+              ],
+              {
+                "__tuple__": [
+                  0,
+                  0
+                ]
+              },
+              2
+            ],
+            "expected": [
+              "b",
+              "c"
+            ],
+            "hidden": false
+          },
+          {
+            "label": "distance tie keeps report order",
+            "args": [
+              [
+                "a 2 0",
+                "b 0 2",
+                "c 1 1"
+              ],
+              {
+                "__tuple__": [
+                  0,
+                  0
+                ]
+              },
+              2
+            ],
+            "expected": [
+              "a",
+              "b"
+            ],
+            "hidden": false
+          },
+          {
+            "label": "no rows at all",
+            "args": [
+              [],
+              {
+                "__tuple__": [
+                  0,
+                  0
+                ]
+              },
+              3
+            ],
+            "expected": [],
+            "hidden": true
+          },
+          {
+            "label": "every row mangled",
+            "args": [
+              [
+                "nope",
+                "1 2 3 4",
+                "x y z"
+              ],
+              {
+                "__tuple__": [
+                  0,
+                  0
+                ]
+              },
+              2
+            ],
+            "expected": [],
+            "hidden": true
+          },
+          {
+            "label": "fractional coordinates are mangled",
+            "args": [
+              [
+                "a 1.5 2",
+                "b 1 2"
+              ],
+              {
+                "__tuple__": [
+                  0,
+                  0
+                ]
+              },
+              1
+            ],
+            "expected": [
+              "b"
+            ],
+            "hidden": true
+          },
+          {
+            "label": "k larger than the valid crews",
+            "args": [
+              [
+                "z 9 9",
+                "y 1 1"
+              ],
+              {
+                "__tuple__": [
+                  0,
+                  0
+                ]
+              },
+              5
+            ],
+            "expected": [
+              "y",
+              "z"
+            ],
+            "hidden": true
+          },
+          {
+            "label": "duplicate callsigns in a big log",
+            "args": [
+              {
+                "__repeat__": {
+                  "item": [
+                    "a 1 1",
+                    "b 5 5",
+                    "c x y"
+                  ],
+                  "times": 500
+                }
+              },
+              {
+                "__tuple__": [
+                  -1,
+                  -1
+                ]
+              },
+              3
+            ],
+            "expected": [
+              "a",
+              "a",
+              "a"
+            ],
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "Two different jobs hide here: cleaning the rows, then ranking them. What goes wrong if you try to do both inside the parse loop?",
+          "Parse into (name, x, y) records, keeping each row's original position, and skip anything malformed. Then a single sort with the key (manhattan_distance, row_position) settles both the ranking and the tie rule.",
+          "A namedtuple makes records readable: Crew = namedtuple('Crew', ['name', 'x', 'y']). Build (crew, index) pairs, sort by (abs(x - tx) + abs(y - ty), index), then take the first k names."
+        ],
+        "reasoning": "<p>The robust shape is a <b>two-phase pipeline</b>: normalize, then compute. Parsing is defensive — wrong field counts and non-integer coordinates are filtered before any arithmetic happens, so the ranking phase never sees half-valid data. Keeping the row index alongside each parsed record is the small trick that makes the output deterministic: the sort key <code>(distance, index)</code> is a <i>total order</i>, no two crews ever compare equal, and the result cannot depend on sort-implementation quirks. The namedtuple is not decoration: accessing <code>crew.x</code> instead of <code>row[1]</code> keeps the four-term distance formula auditable, which matters exactly when all its terms look alike. Clean-then-rank pipelines generalize widely — logs, CSV imports and sensor feeds all hand you messy rows and expect tidy decisions.</p>",
+        "solution": "from collections import namedtuple\n\nCrew = namedtuple(\"Crew\", [\"name\", \"x\", \"y\"])\n\n\ndef _parse(rows):\n    \"\"\"Yield (crew, row_index) for every well-formed row.\"\"\"\n    for order, row in enumerate(rows):\n        parts = row.split()\n        if len(parts) != 3:\n            continue\n        name, xs, ys = parts\n        try:\n            x, y = int(xs), int(ys)\n        except ValueError:\n            continue\n        yield Crew(name, x, y), order\n\n\ndef nearest_crews(rows, target, k):\n    \"\"\"Return the names of the k crews nearest to target.\n\n    Rows look like \"name x y\"; mangled rows are\n    skipped. Distance is Manhattan; earlier reports\n    win ties.\n    \"\"\"\n    tx, ty = target\n    ranked = sorted(\n        _parse(rows),\n        key=lambda pair: (abs(pair[0].x - tx) + abs(pair[0].y - ty),\n                          pair[1]),\n    )\n    return [crew.name for crew, _ in ranked[:k]]\n"
+      }
+    }
+  ]
+}

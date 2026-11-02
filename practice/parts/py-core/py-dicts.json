@@ -1,0 +1,1107 @@
+{
+  "id": "py-dicts",
+  "title": "Dictionary Reasoning",
+  "icon": "🗂️",
+  "level": "intermediate",
+  "order": 40,
+  "conceptRef": "python-basics.html#s4",
+  "blurb": "Indexes you build on purpose: group, invert, rank with total orders, and walk nested trees safely.",
+  "cells": [
+    {
+      "type": "concept",
+      "title": "Build the table, then consult it",
+      "body": "<p>A dict is an index you build on purpose. The recurring move in dictionary reasoning: pay <b>one pass</b> over the raw data to build a mapping, then answer every later question with a lookup instead of another scan. Grouping entries, inverting a mapping, finding the first occurrence — all of them are 'build, then consult'.</p><p>When the mapping is many-to-one and you need to go backwards, the values must widen: reversing a dict naively loses entries, because several keys share one value. Collecting the collisions into lists (with <code>setdefault</code>) keeps every one of them in first-seen order.</p>",
+      "demo": {
+        "code": "entries = [('ann', '4'), ('bo', '4'), ('cy', '9')]\nby_ext = {}\nfor name, ext in entries:\n    by_ext.setdefault(ext, []).append(name)\nprint(by_ext)\nprint(by_ext.get('4'), by_ext.get('8', 'vacant'))"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "Missing is not None",
+      "body": "<p>Dicts can store any value — including <code>None</code> or <code>False</code> — so 'the key is absent' and 'the key maps to None' are different states. <code>d.get(k, default)</code> merges them into one answer, which is convenient until the distinction matters (settings, caches, caches of negative results).</p><p>Use <code>k in d</code> when you must know <i>whether</i> the key exists; use <code>.get()</code> when a default answer is genuinely equivalent. In configuration code this one distinction is the difference between 'the setting was disabled' and 'the setting was never written'.</p>",
+      "demo": {
+        "code": "cfg = {'audio': None, 'video': True}\nprint(cfg.get('audio', 'MISSING'))\nprint(cfg.get('power', 'MISSING'))\nprint('power' in cfg, 'audio' in cfg)"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "Determinism from ordering rules",
+      "body": "<p>Dicts remember insertion order, but a report needs more than memory to be reproducible: whenever items tie on the primary key, you must choose a <b>total order</b> — 'count descending, then first appearance' or 'count descending, then numeric id'. A partial order makes output depend on accidents of input order, which is a bug that only shows up on Thursdays.</p><p>The tool is the composite sort key: a tuple <code>(-count, tiebreak)</code>. The first component ranks, the second breaks ties, and <code>sorted()</code> compares tuples lexicographically — which is exactly 'rank by the first, then by the second'.</p>",
+      "demo": {
+        "code": "calls = {'ada': 3, 'bo': 3, 'cy': 1}\nprint(list(calls))\nprint(sorted(calls, key=lambda n: (-calls[n], n)))"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-dicts-1",
+        "title": "Reverse phone book",
+        "difficulty": "easy",
+        "tags": [
+          "dicts",
+          "inversion"
+        ],
+        "statement": "<p>A company switchboard stores its phone book as a dict mapping each employee name to an extension code (a digit string like <code>'204'</code>). Several employees can share an extension.</p><p>The front desk needs the reverse view: for each extension, the list of employee names on it — in the order they appear in the book, so the first-listed name answers first. Implement <code>reverse_book(book)</code> and return the reverse mapping. Do not mutate <code>book</code>.</p>",
+        "constraints": [
+          "0 <= len(book) <= 10,000",
+          "names are non-empty lowercase strings",
+          "extension codes are digit strings; many employees may share one code"
+        ],
+        "examples": [
+          {
+            "call": "reverse_book({'ada': '204', 'bo': '118', 'cy': '204'})",
+            "why": "extension '204' is shared by ada and cy (in book order); bo alone holds '118'",
+            "returns": "{'204': ['ada', 'cy'], '118': ['bo']}"
+          },
+          {
+            "call": "reverse_book({'a': '1', 'b': '2'})",
+            "why": "no sharing — every code maps to a single-name list",
+            "returns": "{'1': ['a'], '2': ['b']}"
+          }
+        ],
+        "starter": "def reverse_book(book):\n    \"\"\"Return extension code -> list of names, in book order.\"\"\"\n    pass\n",
+        "func": "reverse_book",
+        "tests": [
+          {
+            "label": "shared extension",
+            "args": [
+              {
+                "ada": "204",
+                "bo": "118",
+                "cy": "204"
+              }
+            ],
+            "expected": {
+              "204": [
+                "ada",
+                "cy"
+              ],
+              "118": [
+                "bo"
+              ]
+            },
+            "hidden": false
+          },
+          {
+            "label": "no sharing",
+            "args": [
+              {
+                "a": "1",
+                "b": "2"
+              }
+            ],
+            "expected": {
+              "1": [
+                "a"
+              ],
+              "2": [
+                "b"
+              ]
+            },
+            "hidden": false
+          },
+          {
+            "label": "empty book",
+            "args": [
+              {}
+            ],
+            "expected": {},
+            "hidden": true
+          },
+          {
+            "label": "everyone on one code",
+            "args": [
+              {
+                "a": "7",
+                "b": "7",
+                "c": "7"
+              }
+            ],
+            "expected": {
+              "7": [
+                "a",
+                "b",
+                "c"
+              ]
+            },
+            "hidden": true
+          },
+          {
+            "label": "single entry",
+            "args": [
+              {
+                "z": "3"
+              }
+            ],
+            "expected": {
+              "3": [
+                "z"
+              ]
+            },
+            "hidden": true
+          },
+          {
+            "label": "book order preserved",
+            "args": [
+              {
+                "late": "5",
+                "early": "5"
+              }
+            ],
+            "expected": {
+              "5": [
+                "late",
+                "early"
+              ]
+            },
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "Iterating a dict yields its items in insertion order. Where should a name go when its code is already a key — and what does the value look like the first time a code appears?",
+          "Build out as code -> list of names; setdefault(code, []) creates the empty list on first sight and returns it, so one line handles both 'new code' and 'seen code'.",
+          "out = {}; for name, code in book.items(): out.setdefault(code, []).append(name); return out. The first name listed for a code is the one that appeared first in the book."
+        ],
+        "reasoning": "<p>An invertible mapping stops being invertible when several keys share a value — the fix is to widen the value type: the reverse mapping's values are <b>lists</b>, collecting every key that mapped to that code. <code>setdefault(code, [])</code> creates the empty list on first sight and returns it, so the same line handles both cases. Dicts preserve insertion order and iteration follows the book, so each list comes out in first-listed order without any sorting. The transferable move: when reversing a many-to-one mapping, decide the collision policy (here: keep all, in order) and let the value type encode it.</p>",
+        "solution": "def reverse_book(book):\n    out = {}\n    for name, code in book.items():\n        out.setdefault(code, []).append(name)\n    return out\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-dicts-2",
+        "title": "Read a setting at a path",
+        "difficulty": "easy",
+        "tags": [
+          "dicts",
+          "nested"
+        ],
+        "statement": "<p>A robot fleet is configured as a tree of settings — nested dicts of arbitrary depth. A controller asks for the value at a key path like <code>['power', 'limits', 'watts']</code>; if the path cannot be walked (a key is missing, or an intermediate value is not a dict), the caller receives a <b>fallback</b> instead.</p><p>Implement <code>read_setting(config, path, fallback)</code>: walk the path and return the found value. A <b>found</b> value of <code>None</code> must be returned as <code>None</code> — only a <i>missing</i> path yields the fallback. An empty path yields the fallback (there is nothing to fetch).</p>",
+        "constraints": [
+          "path is a list of 0..32 non-empty string keys",
+          "config values may be anything, including None or nested dicts",
+          "fallback may be any value, including None"
+        ],
+        "examples": [
+          {
+            "call": "read_setting({'power': {'limits': {'watts': 900}}}, ['power', 'limits', 'watts'], 0)",
+            "why": "all three keys exist; the leaf 900 is returned",
+            "returns": "900"
+          },
+          {
+            "call": "read_setting({'power': {}}, ['power', 'limits', 'watts'], 0)",
+            "why": "'limits' is missing under 'power', so the walk stops and the fallback 0 is returned",
+            "returns": "0"
+          }
+        ],
+        "starter": "def read_setting(config, path, fallback):\n    \"\"\"Return the value at path, or fallback if unwalkable.\"\"\"\n    pass\n",
+        "func": "read_setting",
+        "tests": [
+          {
+            "label": "deep hit",
+            "args": [
+              {
+                "power": {
+                  "limits": {
+                    "watts": 900
+                  }
+                }
+              },
+              [
+                "power",
+                "limits",
+                "watts"
+              ],
+              0
+            ],
+            "expected": 900,
+            "hidden": false
+          },
+          {
+            "label": "missing mid-path",
+            "args": [
+              {
+                "power": {}
+              },
+              [
+                "power",
+                "limits",
+                "watts"
+              ],
+              0
+            ],
+            "expected": 0,
+            "hidden": false
+          },
+          {
+            "label": "found None stays None",
+            "args": [
+              {
+                "audio": null
+              },
+              [
+                "audio"
+              ],
+              "off"
+            ],
+            "expected": null,
+            "hidden": true
+          },
+          {
+            "label": "empty path",
+            "args": [
+              {
+                "a": 1
+              },
+              [],
+              42
+            ],
+            "expected": 42,
+            "hidden": true
+          },
+          {
+            "label": "intermediate not a dict",
+            "args": [
+              {
+                "power": 12
+              },
+              [
+                "power",
+                "limits"
+              ],
+              -1
+            ],
+            "expected": -1,
+            "hidden": true
+          },
+          {
+            "label": "path longer than tree",
+            "args": [
+              {
+                "a": {
+                  "b": 1
+                }
+              },
+              [
+                "a",
+                "b",
+                "c",
+                "d"
+              ],
+              "x"
+            ],
+            "expected": "x",
+            "hidden": true
+          },
+          {
+            "label": "value is a dict itself",
+            "args": [
+              {
+                "a": {
+                  "b": {
+                    "c": 1
+                  }
+                }
+              },
+              [
+                "a",
+                "b"
+              ],
+              {}
+            ],
+            "expected": {
+              "c": 1
+            },
+            "hidden": true
+          },
+          {
+            "label": "missing at the last key",
+            "args": [
+              {
+                "x": {
+                  "y": 2
+                }
+              },
+              [
+                "x",
+                "y",
+                "z"
+              ],
+              -5
+            ],
+            "expected": -5,
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "Walk the path step by step. At each step exactly two things can go wrong — and a legitimately stored None must still be distinguishable from a missing key. How do you test presence?",
+          "Keep cur = the value reached so far. Before each hop: if cur is not a dict, or the key is absent (key not in cur), return the fallback; otherwise descend. After the loop, return cur.",
+          "Guard the empty path up front (return fallback). Then: for key in path: if not isinstance(cur, dict) or key not in cur: return fallback; cur = cur[key]. Return cur at the end — a stored None flows through untouched."
+        ],
+        "reasoning": "<p>The walk has one rule per step: to descend, the current node must be a dict that contains the key; anything else is unwalkable and yields the fallback. The None subtlety is why the loop tests <i>presence</i> (<code>key not in cur</code>) instead of truthiness or a <code>.get()</code> default — a stored <code>None</code> is a real value that must survive, while <code>cur.get(key, fallback)</code> cannot tell 'present None' from 'absent'. Returning the found node itself (which may be a dict) means the function fetches any depth of subtree. The transferable habit: separate 'missing' from 'stored but empty/None' explicitly — conflating them is a classic configuration-code bug.</p>",
+        "solution": "def read_setting(config, path, fallback):\n    if not path:                 # nothing to fetch\n        return fallback\n    cur = config\n    for key in path:\n        if not isinstance(cur, dict) or key not in cur:\n            return fallback       # unwalkable step\n        cur = cur[key]\n    return cur                    # may be None — and that is correct\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-dicts-3",
+        "title": "Busiest extensions",
+        "difficulty": "medium",
+        "tags": [
+          "dicts",
+          "counting",
+          "sorting"
+        ],
+        "statement": "<p>The switchboard logs every answered call as an extension code (a string of digits). The ops report ranks the <code>k</code> busiest codes; when two codes answered the same number of calls, the <b>numerically smaller</b> code comes first — '9' must rank before '10', which plain string ordering would get backwards.</p><p>Implement <code>top_extensions(log, k)</code>: return at most <code>k</code> codes, busiest first, ties by numeric code. If fewer than <code>k</code> distinct codes appear, return all of them under the same rules.</p>",
+        "constraints": [
+          "0 <= len(log) <= 100,000",
+          "codes are strings of 1-4 digits (a lone '0' is allowed, no other leading zeros)",
+          "0 <= k <= 100,000"
+        ],
+        "examples": [
+          {
+            "call": "top_extensions(['204', '118', '204', '118', '204'], 2)",
+            "why": "'204' answered 3 calls, '118' 2 — a clear ranking",
+            "returns": "['204', '118']"
+          },
+          {
+            "call": "top_extensions(['9', '10', '9', '10'], 2)",
+            "why": "a 2-2 tie: numerically 9 < 10, and string order ('10' < '9') would be wrong here",
+            "returns": "['9', '10']"
+          }
+        ],
+        "starter": "def top_extensions(log, k):\n    \"\"\"Return the k busiest codes; ties by numeric code.\"\"\"\n    pass\n",
+        "func": "top_extensions",
+        "tests": [
+          {
+            "label": "clear ranking",
+            "args": [
+              [
+                "204",
+                "118",
+                "204",
+                "118",
+                "204"
+              ],
+              2
+            ],
+            "expected": [
+              "204",
+              "118"
+            ],
+            "hidden": false
+          },
+          {
+            "label": "numeric tie-break",
+            "args": [
+              [
+                "9",
+                "10",
+                "9",
+                "10"
+              ],
+              2
+            ],
+            "expected": [
+              "9",
+              "10"
+            ],
+            "hidden": false
+          },
+          {
+            "label": "k exceeds distinct",
+            "args": [
+              [
+                "204",
+                "118"
+              ],
+              5
+            ],
+            "expected": [
+              "118",
+              "204"
+            ],
+            "hidden": true
+          },
+          {
+            "label": "empty log",
+            "args": [
+              [],
+              3
+            ],
+            "expected": [],
+            "hidden": true
+          },
+          {
+            "label": "k is zero",
+            "args": [
+              [
+                "204",
+                "204"
+              ],
+              0
+            ],
+            "expected": [],
+            "hidden": true
+          },
+          {
+            "label": "one code only",
+            "args": [
+              [
+                "7",
+                "7",
+                "7"
+              ],
+              2
+            ],
+            "expected": [
+              "7"
+            ],
+            "hidden": true
+          },
+          {
+            "label": "three-way tie",
+            "args": [
+              [
+                "5",
+                "50",
+                "500",
+                "5",
+                "50",
+                "500"
+              ],
+              3
+            ],
+            "expected": [
+              "5",
+              "50",
+              "500"
+            ],
+            "hidden": true
+          },
+          {
+            "label": "single call each",
+            "args": [
+              [
+                "3",
+                "1",
+                "2"
+              ],
+              2
+            ],
+            "expected": [
+              "1",
+              "2"
+            ],
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "You need two orderings stacked: count descending, then something fully deterministic for ties. What key function expresses both at once?",
+          "Count calls per code in one pass; then sort the distinct codes by the composite key (-count, int(code)). The int() is what makes '9' beat '10'.",
+          "counts = {}; for code in log: counts[code] = counts.get(code, 0) + 1. ranked = sorted(counts, key=lambda c: (-counts[c], int(c))); return ranked[:k]."
+        ],
+        "reasoning": "<p>A ranking is only well-defined when ties are broken, and the tie-break here is numeric while the data is textual — <code>int(c)</code> inside the sort key reconciles the two. The composite key <code>(-count, int(code))</code> is the whole exercise: the first component inverts frequency without a second sort, the second makes the order total and reproducible. Building the counts table first (one pass) keeps the sort over distinct codes small. The transferable lesson: whenever you sort by one thing and break ties by another, write both into a single tuple key — <code>sorted()</code> compares tuples lexicographically, which is exactly 'rank by the first, then by the second'.</p>",
+        "solution": "def top_extensions(log, k):\n    counts = {}\n    for code in log:\n        counts[code] = counts.get(code, 0) + 1\n    ranked = sorted(counts, key=lambda c: (-counts[c], int(c)))\n    return ranked[:k]\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-dicts-4",
+        "title": "Bucket by letter multiset",
+        "difficulty": "medium",
+        "tags": [
+          "dicts",
+          "grouping"
+        ],
+        "statement": "<p>A word-game club collects submitted words. Two words are <b>rearrangements</b> when they use exactly the same letters with the same counts — 'team' and 'meta' both contain a, e, m, t once each. The club wants every submission bucketed with its rearrangements.</p><p>Implement <code>group_rearrangements(words)</code>: return a dict mapping each word's <b>signature</b> — its letters sorted alphabetically — to the list of words with that signature, in first-submission order.</p>",
+        "constraints": [
+          "0 <= len(words) <= 10,000",
+          "words are non-empty lowercase strings"
+        ],
+        "examples": [
+          {
+            "call": "group_rearrangements(['team', 'meta', 'eat', 'tea', 'meat'])",
+            "why": "'team', 'meta' and 'meat' all sort to 'aemt'; 'eat' and 'tea' sort to 'aet'",
+            "returns": "{'aemt': ['team', 'meta', 'meat'], 'aet': ['eat', 'tea']}"
+          },
+          {
+            "call": "group_rearrangements(['dog', 'cat'])",
+            "why": "no rearrangements — each signature bucket holds one word",
+            "returns": "{'dgo': ['dog'], 'act': ['cat']}"
+          }
+        ],
+        "starter": "def group_rearrangements(words):\n    \"\"\"Group words by their sorted-letters signature.\"\"\"\n    pass\n",
+        "func": "group_rearrangements",
+        "tests": [
+          {
+            "label": "three plus two",
+            "args": [
+              [
+                "team",
+                "meta",
+                "eat",
+                "tea",
+                "meat"
+              ]
+            ],
+            "expected": {
+              "aemt": [
+                "team",
+                "meta",
+                "meat"
+              ],
+              "aet": [
+                "eat",
+                "tea"
+              ]
+            },
+            "hidden": false
+          },
+          {
+            "label": "no rearrangements",
+            "args": [
+              [
+                "dog",
+                "cat"
+              ]
+            ],
+            "expected": {
+              "dgo": [
+                "dog"
+              ],
+              "act": [
+                "cat"
+              ]
+            },
+            "hidden": false
+          },
+          {
+            "label": "empty list",
+            "args": [
+              []
+            ],
+            "expected": {},
+            "hidden": true
+          },
+          {
+            "label": "single word",
+            "args": [
+              [
+                "solo"
+              ]
+            ],
+            "expected": {
+              "loos": [
+                "solo"
+              ]
+            },
+            "hidden": true
+          },
+          {
+            "label": "same word twice",
+            "args": [
+              [
+                "aa",
+                "aa"
+              ]
+            ],
+            "expected": {
+              "aa": [
+                "aa",
+                "aa"
+              ]
+            },
+            "hidden": true
+          },
+          {
+            "label": "same letters, different counts",
+            "args": [
+              [
+                "aabb",
+                "ab"
+              ]
+            ],
+            "expected": {
+              "aabb": [
+                "aabb"
+              ],
+              "ab": [
+                "ab"
+              ]
+            },
+            "hidden": true
+          },
+          {
+            "label": "order kept in buckets",
+            "args": [
+              [
+                "bca",
+                "abc",
+                "cba"
+              ]
+            ],
+            "expected": {
+              "abc": [
+                "bca",
+                "abc",
+                "cba"
+              ]
+            },
+            "hidden": true
+          },
+          {
+            "label": "full anagram set",
+            "args": [
+              [
+                "listen",
+                "silent",
+                "tinsel"
+              ]
+            ],
+            "expected": {
+              "eilnst": [
+                "listen",
+                "silent",
+                "tinsel"
+              ]
+            },
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "What one string could serve as the shared identity of every word built from the same letter multiset? It must not depend on letter order.",
+          "Sort each word's letters: ''.join(sorted(w)) is the same string for any two rearrangements, and different for any two non-rearrangements.",
+          "groups = {}; for w in words: sig = ''.join(sorted(w)); groups.setdefault(sig, []).append(w); return groups. Bucket lists come out in first-submission order."
+        ],
+        "reasoning": "<p>Two words share a letter multiset exactly when their sorted letters are equal — sorting destroys order while preserving counts, so it is a <i>canonical form</i>: many raw words, one representative string. Using the canonical form as the dict key collapses the pairwise question 'are these rearrangements?' (quadratic) into a grouping question (linear). <code>setdefault</code> keeps the code one line: create the bucket on first sight, append the word; dict insertion order preserves first-submission order in every bucket. The transferable idea: when equality should ignore some aspect of the data (order, case, whitespace), map each item to a form where that aspect is gone, and key on the form.</p>",
+        "solution": "def group_rearrangements(words):\n    groups = {}\n    for w in words:\n        sig = ''.join(sorted(w))   # canonical form\n        groups.setdefault(sig, []).append(w)\n    return groups\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-dicts-5",
+        "title": "The tool rack at the end of the day",
+        "difficulty": "medium",
+        "tags": [
+          "simulation",
+          "ordering"
+        ],
+        "statement": "<p>A repair van has a wall rack that holds at most <code>capacity</code> tools. The tech works through a job list; every time a tool is used it must end up at the <b>back</b> of the rack (the most-recently-used end): if it is already racked, it is taken out and put back at the back; if it was in storage, it is racked at the back. Whenever the rack then exceeds <code>capacity</code>, the tool at the <b>front</b> (least recently used) is moved to storage.</p><p>Implement <code>rack_after_jobs(tools, capacity)</code>: <code>tools</code> is the ordered list of tools used; return the rack contents at the end of the day, from front (oldest use) to back (newest use). A capacity of 0 keeps the rack empty forever.</p>",
+        "constraints": [
+          "0 <= len(tools) <= 100,000",
+          "tool names are non-empty lowercase strings",
+          "0 <= capacity <= 100,000"
+        ],
+        "examples": [
+          {
+            "call": "rack_after_jobs(['wrench', 'hammer', 'wrench', 'drill'], 2)",
+            "why": "using wrench again moves it to the back; racking the drill evicts the front hammer, leaving wrench and drill",
+            "returns": "['wrench', 'drill']"
+          },
+          {
+            "call": "rack_after_jobs(['a', 'b', 'c'], 0)",
+            "why": "with capacity 0 nothing ever stays racked",
+            "returns": "[]"
+          }
+        ],
+        "starter": "def rack_after_jobs(tools, capacity):\n    \"\"\"Simulate the rack; return final contents front-to-back.\"\"\"\n    pass\n",
+        "func": "rack_after_jobs",
+        "tests": [
+          {
+            "label": "move-to-back then evict",
+            "args": [
+              [
+                "wrench",
+                "hammer",
+                "wrench",
+                "drill"
+              ],
+              2
+            ],
+            "expected": [
+              "wrench",
+              "drill"
+            ],
+            "hidden": false
+          },
+          {
+            "label": "zero capacity",
+            "args": [
+              [
+                "a",
+                "b",
+                "c"
+              ],
+              0
+            ],
+            "expected": [],
+            "hidden": false
+          },
+          {
+            "label": "evictions in arrival order",
+            "args": [
+              [
+                "a",
+                "b",
+                "c",
+                "d"
+              ],
+              2
+            ],
+            "expected": [
+              "c",
+              "d"
+            ],
+            "hidden": true
+          },
+          {
+            "label": "reinsert after eviction",
+            "args": [
+              [
+                "a",
+                "b",
+                "c",
+                "a"
+              ],
+              2
+            ],
+            "expected": [
+              "c",
+              "a"
+            ],
+            "hidden": true
+          },
+          {
+            "label": "capacity one",
+            "args": [
+              [
+                "x",
+                "y",
+                "x",
+                "x"
+              ],
+              1
+            ],
+            "expected": [
+              "x"
+            ],
+            "hidden": true
+          },
+          {
+            "label": "no eviction needed",
+            "args": [
+              [
+                "a",
+                "b"
+              ],
+              5
+            ],
+            "expected": [
+              "a",
+              "b"
+            ],
+            "hidden": true
+          },
+          {
+            "label": "one tool all day",
+            "args": [
+              [
+                "t",
+                "t",
+                "t"
+              ],
+              2
+            ],
+            "expected": [
+              "t"
+            ],
+            "hidden": true
+          },
+          {
+            "label": "exact capacity",
+            "args": [
+              [
+                "a",
+                "b",
+                "c"
+              ],
+              3
+            ],
+            "expected": [
+              "a",
+              "b",
+              "c"
+            ],
+            "hidden": true
+          },
+          {
+            "label": "reuse prevents eviction",
+            "args": [
+              [
+                "a",
+                "b",
+                "a",
+                "c",
+                "b"
+              ],
+              2
+            ],
+            "expected": [
+              "c",
+              "b"
+            ],
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "The rack is an ordered list where position means recency. What must happen to a tool's position every time it is used — and which end pays the price when the rack is over capacity?",
+          "Simulate directly: on each use, remove the tool if it is racked (list.remove), append it at the back, then while the rack is over capacity drop from the front (pop(0)).",
+          "Handle capacity <= 0 by returning []. Then: if t in rack: rack.remove(t); rack.append(t); while len(rack) > capacity: rack.pop(0). Return rack."
+        ],
+        "reasoning": "<p>The rack encodes recency as position: back = just used, front = stalest. Every use is the same two moves — take the tool out wherever it sits, put it at the back — and every overflow is one eviction from the front. The invariant: after each job, the rack holds the most recently used tools in use-order, so the final list reads 'most recent at the back'. Simulating step by step keeps the reasoning honest; computing the final state without replaying the jobs misses the eviction/reinsert interplay — a tool can be evicted and later return, as the 'reinsert after eviction' test shows. The transferable point: when a spec is a sequence of state changes, replay it; the answer is the final state.</p>",
+        "solution": "def rack_after_jobs(tools, capacity):\n    if capacity <= 0:\n        return []\n    rack = []\n    for t in tools:\n        if t in rack:\n            rack.remove(t)        # take it out of its old spot\n        rack.append(t)           # most recently used at the back\n        while len(rack) > capacity:\n            rack.pop(0)           # stalest tool leaves from the front\n    return rack\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-dicts-6",
+        "title": "Couple two tank cars, with a budget",
+        "difficulty": "hard",
+        "tags": [
+          "dicts",
+          "indices",
+          "efficiency"
+        ],
+        "statement": "<p>A rail yard lines up tank cars; each car carries a tonnage (an integer; tonnages can repeat). A switcher must couple exactly <b>two</b> cars whose tonnages sum to the crane limit <code>target</code> — and shunting is expensive, so the wanted pair is the one whose <b>second car stands earliest</b> in the line; among pairs sharing that second car, the one whose <b>first car stands earliest</b>.</p><p>Implement <code>pair_scan(cars, target)</code>: return the pair as a tuple of indices <code>(i, j)</code> with <code>i &lt; j</code>, or <code>None</code> when no two cars total exactly <code>target</code>. The tonnage list arrives as an <code>OpCountList</code>: each element inspection costs 1, and your algorithm may inspect at most <b>2.5 × len(cars)</b> elements. Comparing every car with every later car is quadratic and will blow the budget on the large hidden test.</p>",
+        "constraints": [
+          "0 <= len(cars) <= 150,000",
+          "-1,000 <= each tonnage <= 1,000",
+          "inspection budget: at most 2.5 × len(cars) element inspections (len() is free)"
+        ],
+        "examples": [
+          {
+            "call": "pair_scan([3, 4, 6, 7], 10)",
+            "why": "cars 4 and 6 (indices 1 and 2) total 10; their second car stands at index 2, earlier than any other completing pair (3 + 7 completes only at index 3)",
+            "returns": "(1, 2)"
+          },
+          {
+            "call": "pair_scan([5, 1, 9], 100)",
+            "why": "no two tonnages total 100",
+            "returns": "None"
+          }
+        ],
+        "starter": "def pair_scan(cars, target):\n    \"\"\"Return (i, j) of the earliest-completing pair, or None.\"\"\"\n    pass\n",
+        "func": "pair_scan",
+        "tests": [
+          {
+            "label": "completes at index 2",
+            "args": [
+              {
+                "__opcount__": {
+                  "data": [
+                    3,
+                    4,
+                    6,
+                    7
+                  ]
+                }
+              },
+              10
+            ],
+            "expected": {
+              "__tuple__": [
+                1,
+                2
+              ]
+            },
+            "hidden": false
+          },
+          {
+            "label": "no pair exists",
+            "args": [
+              {
+                "__opcount__": {
+                  "data": [
+                    5,
+                    1,
+                    9
+                  ]
+                }
+              },
+              100
+            ],
+            "expected": null,
+            "hidden": false
+          },
+          {
+            "label": "pair at the front",
+            "args": [
+              {
+                "__opcount__": {
+                  "data": [
+                    2,
+                    8
+                  ]
+                }
+              },
+              10
+            ],
+            "expected": {
+              "__tuple__": [
+                0,
+                1
+              ]
+            },
+            "hidden": true
+          },
+          {
+            "label": "earliest partner wins",
+            "args": [
+              {
+                "__opcount__": {
+                  "data": [
+                    6,
+                    2,
+                    9,
+                    4,
+                    6
+                  ]
+                }
+              },
+              10
+            ],
+            "expected": {
+              "__tuple__": [
+                0,
+                3
+              ]
+            },
+            "hidden": true
+          },
+          {
+            "label": "empty line",
+            "args": [
+              {
+                "__opcount__": {
+                  "data": []
+                }
+              },
+              5
+            ],
+            "expected": null,
+            "hidden": true
+          },
+          {
+            "label": "single car",
+            "args": [
+              {
+                "__opcount__": {
+                  "data": [
+                    5
+                  ]
+                }
+              },
+              10
+            ],
+            "expected": null,
+            "hidden": true
+          },
+          {
+            "label": "one car of each needed value",
+            "args": [
+              {
+                "__opcount__": {
+                  "data": [
+                    5,
+                    9
+                  ]
+                }
+              },
+              10
+            ],
+            "expected": null,
+            "hidden": true
+          },
+          {
+            "label": "two zeros hit zero",
+            "args": [
+              {
+                "__opcount__": {
+                  "data": [
+                    0,
+                    0
+                  ]
+                }
+              },
+              0
+            ],
+            "expected": {
+              "__tuple__": [
+                0,
+                1
+              ]
+            },
+            "hidden": true
+          },
+          {
+            "label": "duplicates pick earliest first car",
+            "args": [
+              {
+                "__opcount__": {
+                  "data": [
+                    7,
+                    3,
+                    7,
+                    3
+                  ]
+                }
+              },
+              10
+            ],
+            "expected": {
+              "__tuple__": [
+                0,
+                1
+              ]
+            },
+            "hidden": true
+          },
+          {
+            "label": "budget: 12k cars, no pair",
+            "hidden": true,
+            "args": [
+              {
+                "__opcount__": {
+                  "data": {
+                    "__repeat__": {
+                      "item": [
+                        1,
+                        2
+                      ],
+                      "times": 6000
+                    }
+                  }
+                }
+              },
+              100
+            ],
+            "expected": null,
+            "max_ops": 30000
+          }
+        ],
+        "hints": [
+          "Walking the line once, what would you need to know about the cars ALREADY behind you to recognize a completing pair the instant you see its second car?",
+          "Keep a dict value -> earliest index seen so far. At each car x: if target - x was seen, you have found the earliest-completing pair — return (its stored index, current index). Otherwise record x's first index and walk on.",
+          "first_at = {}; for j, x in enumerate(cars): need = target - x; if need in first_at: return (first_at[need], j); if x not in first_at: first_at[x] = j. Return None after the loop. One pass is about len(cars) inspections; the budget allows 2.5 × len(cars)."
+        ],
+        "reasoning": "<p>The spec's ordering ('earliest second car, then earliest first car') is exactly what a single left-to-right walk produces: at each car, ask 'has a partner for this car appeared before?' — the first time the answer is yes, that car is the earliest possible second car, and because stored indices are <i>first</i> occurrences, the partner reported is the earliest possible first car. The dict maps each tonnage to the earliest index where it stood, so the question about the past is answered without re-walking the line — that is what keeps the algorithm at one inspection per car, while comparing all pairs would need roughly half the square of the line length. The transferable move: when a rule refers to the earliest occurrence, record first occurrences as you go and never overwrite them.</p>",
+        "solution": "def pair_scan(cars, target):\n    first_at = {}                  # tonnage -> earliest index\n    for j, x in enumerate(cars):\n        need = target - x\n        if need in first_at:\n            return (first_at[need], j)\n        if x not in first_at:       # keep only the FIRST sighting\n            first_at[x] = j\n    return None\n"
+      }
+    }
+  ]
+}

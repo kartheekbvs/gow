@@ -1,0 +1,115 @@
+{
+  "id": "viz-matplotlib",
+  "title": "Matplotlib Logic",
+  "icon": "📈",
+  "level": "beginner",
+  "order": 10,
+  "conceptRef": "matplotlib.html#s1",
+  "blurb": "Run the plotting code in your head: subplot grids, the artists that calls return, and who pyplot's commands really act on.",
+  "cells": [
+    {
+      "type": "concept",
+      "title": "A figure is a container of axes",
+      "body": "<p>Every matplotlib drawing lives inside a two-level hierarchy: the <b>Figure</b> is the whole canvas — the thing you save or show — and each <b>Axes</b> is one plot area with its own x-axis, y-axis, title and artists. When you call <code>plt.subplots(nrows, ncols)</code> you get back the figure plus an <i>array</i> of axes shaped <code>(nrows, ncols)</code> — the same order you passed in.</p><p>The indexing habit to build: <code>axes[row, col]</code>, where <b>row 0 is the TOP row</b> — like a table, not like data coordinates. The figure also keeps a flat list, <code>fig.axes</code>, in creation order (row-major), so the last axes created is the bottom-right one. Knowing both views of the same objects lets you simulate indexing questions without running anything.</p>",
+      "demo": {
+        "code": "nrows, ncols = 2, 3\naxes = [['ax[%d,%d]' % (r, c) for c in range(ncols)] for r in range(nrows)]\nprint('shape:', (len(axes), len(axes[0])))\nfor row in axes:\n    print(row)\nprint('top-right subplot    -> axes[0, 2] =', axes[0][2])\nprint('bottom-left subplot  -> axes[1, 0] =', axes[1][0])"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "Plot calls return artists",
+      "body": "<p>Matplotlib calls are not fire-and-forget: every plotting method <b>returns the artists it created</b>. <code>ax.plot(x, y)</code> returns a <i>list</i> of <code>Line2D</code> objects — one per series in the call — and the axes also keeps them in <code>ax.lines</code>. That is why <code>lines = ax.plot(x, y)</code> lets you later call <code>lines[0].set_color('red')</code> to restyle one specific series.</p><p>Two habits follow. First, the return value is always a <b>list</b>, even for a single series, so you can unpack it uniformly. Second, a multi-series call like <code>ax.plot(x, y1, 'o-', x, y2, 's--')</code> creates one artist per (x, y, fmt) group — the format string <code>'s--'</code> means marker <code>'s'</code> plus linestyle <code>'--'</code>. Counting artists correctly is the first step to animating or restyling exactly the series you meant to touch.</p>",
+      "demo": {
+        "code": "class FakeAxes:\n    def __init__(self):\n        self.lines = []\n    def plot(self, *groups):\n        made = ['Line2D#%d' % (len(self.lines) + i + 1)\n                for i in range(len(groups))]\n        self.lines.extend(made)\n        return made\n\nax = FakeAxes()\nresult = ax.plot(('x', 'y1'), ('x', 'y2'))\nprint('plot() returned:', result)\nprint('same objects the axes keeps:', result[0] is ax.lines[0])\nprint('ax.lines now holds:', len(ax.lines), 'artists')"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "Two interfaces and one hidden pointer",
+      "body": "<p>Pyplot is a <b>state machine</b>: commands like <code>plt.plot(...)</code> and <code>plt.title(...)</code> do not name their target — they act on the <i>current figure</i> and, inside it, the <i>current axes</i>: the most recently created ones. The object-oriented interface (<code>ax.set_title(...)</code>, <code>fig.savefig(...)</code>) names its target explicitly, which is why it is the recommended style for scripts and functions.</p><p>The classic surprise: after <code>fig, (ax1, ax2) = plt.subplots(1, 2)</code>, the current axes is <b>ax2</b> — the last one created — so the next <code>plt.plot(...)</code> draws on the right panel, not the left. And <code>ax.twinx()</code> stacks a second axes on top of <code>ax</code> sharing its x-axis (with a new y-axis drawn on the right) — and that new twin becomes the current axes too. When you can predict where a pyplot call will land, mixing the two interfaces stops being dangerous.</p>",
+      "demo": {
+        "code": "class PyplotSim:\n    \"\"\"Tiny model of pyplot: commands hit the CURRENT (last-made) axes.\"\"\"\n    def __init__(self):\n        self.axes = []\n    def subplots(self, count):\n        self.axes = ['ax%d' % i for i in range(count)]\n        return list(self.axes)\n    def _current(self):\n        return self.axes[-1]\n    def plot(self, x, y):\n        return self._current() + '.plot(%s, %s)' % (x, y)\n    def title(self, text):\n        return self._current() + '.set_title(%r)' % text\n\nplt = PyplotSim()\nmade = plt.subplots(2)\nprint('created:', made)\nprint(\"plt.plot('x', 'y')    runs on ->\", plt.plot('x', 'y'))\nprint(\"plt.title('mine')     runs on ->\", plt.title('mine'))"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "viz-matplotlib-1",
+        "title": "Predict: the subplot grid",
+        "difficulty": "easy",
+        "tags": ["matplotlib", "subplots", "arrays"],
+        "mode": "predict",
+        "statement": "<p>No coding here — run the snippet in your head. You are building a dashboard and need to know exactly what <code>plt.subplots(2, 3)</code> hands you before writing any indexing code. Predict what this prints (the two <code>is</code> checks compare against the figure's flat list of axes, <code>fig.axes</code>).</p>",
+        "code": "import matplotlib.pyplot as plt\n\nfig, axes = plt.subplots(2, 3)\nprint(axes.shape)\nprint(axes[1, 2] is fig.axes[-1])\nprint(axes[0, 2] is fig.axes[2])",
+        "options": [
+          "A. (2, 3) / True / True",
+          "B. (3, 2) / True / True",
+          "C. (2, 3) / False / False",
+          "D. (6,) / False / False"
+        ],
+        "answer": 0,
+        "explain": "<p><code>subplots(nrows, ncols)</code> returns an axes array shaped exactly like the arguments you passed: <code>(2, 3)</code>. Axes are created row-major (all of row 0 first), and row 0 is the TOP row — so <code>axes[0, 2]</code> is the top-right subplot, created third, which makes it <code>fig.axes[2]</code>. The last axes created is the bottom-right one, <code>axes[1, 2]</code>, so <code>axes[1, 2] is fig.axes[-1]</code> is True. <code>fig.axes</code> holds the very same objects — never copies — so both identity checks pass. B swaps the shape to (cols, rows); C assumes <code>fig.axes</code> stores copies of the axes; D forgets that the array only flattens when one dimension is 1 — <code>subplots(1, 6)</code> would return a 1-D array, but <code>subplots(2, 3)</code> is genuinely 2-D.</p>"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "viz-matplotlib-2",
+        "title": "Predict: what plot() hands back",
+        "difficulty": "easy",
+        "tags": ["matplotlib", "artists", "return-values"],
+        "mode": "predict",
+        "statement": "<p>Reading library code in your head again — this time about <b>return values</b>. A colleague restyles charts by grabbing whatever <code>ax.plot</code> returns, and you are reviewing their indexing before the code runs. Predict what this prints.</p>",
+        "code": "import matplotlib.pyplot as plt\n\nfig, ax = plt.subplots()\nx = [0, 1, 2]\nout = ax.plot(x, [1, 2, 4], 'o-',\n              x, [1, 4, 9], 's--')\nprint(type(out).__name__, len(out))\nprint(out[0].get_marker(), out[1].get_marker(), out[1].get_linestyle())\nprint(len(ax.lines))",
+        "options": [
+          "A. Line2D 1 / o - - / 1",
+          "B. tuple 2 / o s -- / 2",
+          "C. list 2 / o s -- / 2",
+          "D. list 2 / o s -- / 1"
+        ],
+        "answer": 2,
+        "explain": "<p>Each (x, y, fmt) group inside one <code>plot</code> call becomes its own <code>Line2D</code> artist, and the method returns them as a <b>list</b>: two groups here, so <code>list 2</code>. The format string <code>'s--'</code> splits into marker <code>'s'</code> and linestyle <code>'--'</code>, while <code>'o-'</code> gives marker <code>'o'</code> with linestyle <code>'-'</code> — printed as <code>o s --</code>. The axes registers every line in <code>ax.lines</code>, so it holds <b>2</b> artists. A is the single-artist belief — even a one-series call returns a 1-element <i>list</i>, which is exactly why <code>out[0]</code> always works; B has the right count but the wrong container type (a list, not a tuple); D is right until the last line — <code>ax.lines</code> counts artists, not <code>plot()</code> calls.</p>"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "viz-matplotlib-3",
+        "title": "Predict: pyplot vs the object interface",
+        "difficulty": "medium",
+        "tags": ["matplotlib", "state-machine", "twinx"],
+        "mode": "predict",
+        "statement": "<p>Time to predict the <b>picture</b>, not just printed text. This snippet mixes the pyplot interface with the object-oriented one, then adds a twin axis. Without running it, decide which figure you would see if <code>plt.show()</code> ran at the end.</p>",
+        "code": "import matplotlib.pyplot as plt\n\nx = [0, 1, 2, 3]\nfig, ax = plt.subplots()\nax.plot(x, [1, 2, 4, 8], color='tab:blue')\nax.set_ylabel('sensor reading')    # OO: explicitly on ax\nplt.title('state machine')         # pyplot: on the CURRENT axes\nax.set_title('OO wins')            # OO: replaces the title on ax\n\nax2 = ax.twinx()                   # twin axes: shares x, new y on the right\nax2.plot(x, [8, 4, 2, 1], color='tab:red')",
+        "options": [
+          "A. One plot area, blue line on the left y-axis, red line on the right y-axis, shared x — and the title at the top reads 'state machine'.",
+          "B. One plot area, blue line on the left y-axis, red line on the right y-axis, shared x — and the title at the top reads 'OO wins'.",
+          "C. Two side-by-side panels: the blue line in the left panel, the red line in the right panel, each panel with its own y-axis.",
+          "D. A RuntimeError at ax.set_title: an axes can only receive its title through one of the two interfaces."
+        ],
+        "answer": 1,
+        "explain": "<p><code>plt.title('state machine')</code> routes to <code>plt.gca()</code> — the current axes. At that moment <code>ax</code> is the only (and most recently created) axes, so the title lands on <code>ax</code>. Then <code>ax.set_title('OO wins')</code> <b>replaces</b> that text: a title is a single Text artist, and the later call wins, so the figure shows 'OO wins'. <code>twinx()</code> does not split the figure (that would be <code>subplots(1, 2)</code>); it stacks a second axes at the same position, sharing the x-axis, with its own y-axis drawn on the right — so both curves appear in one plot area. D is backwards: the two interfaces are two doors to the same object — <code>plt.title</code> is literally implemented as <code>gca().set_title</code>, and calling both is perfectly legal; the last call simply overwrites. One extra trap to remember: after <code>ax.twinx()</code>, the twin becomes the current axes, so a later <code>plt.*</code> call would hit <code>ax2</code> — one more reason the explicit OO style is safer in scripts.</p>"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "viz-matplotlib-4",
+        "title": "Predict: cla, clf and close",
+        "difficulty": "hard",
+        "tags": ["matplotlib", "figures", "lifecycle"],
+        "mode": "predict",
+        "statement": "<p>The deepest prediction challenge in this notebook: figure <b>lifecycle</b>. The script saves four PNGs while clearing and closing things along the way. Predict what <code>b.png</code> and <code>c.png</code> contain, and what happens on the final <code>savefig</code> call.</p>",
+        "code": "import matplotlib.pyplot as plt\n\nfig, ax = plt.subplots()\nax.plot([1, 2, 3], [1, 4, 9])\nax.set_title('run 1')\nplt.savefig('a.png')      # chart with the line + title\n\nax.plot([1, 2, 3], [3, 2, 1])\nplt.cla()                 # clear current axes\nplt.savefig('b.png')\n\nplt.clf()                 # clear current figure\nplt.savefig('c.png')\n\nplt.close(fig)            # destroy the figure\nplt.savefig('d.png')      # ...and now?",
+        "options": [
+          "A. b.png keeps only the second line (cla clears everything plotted before it); c.png is an empty axes frame; d.png is a copy of c.png.",
+          "B. b.png is a fully blank canvas with no axes; c.png is an empty axes frame — the two clearing calls have swapped effects.",
+          "C. The final plt.savefig('d.png') raises a RuntimeError: the figure it should save was closed, so no file is written.",
+          "D. b.png is an empty axes frame (both lines and the title gone, the axes box remains); c.png is a fully blank canvas; d.png is written without error — pyplot silently creates a fresh empty figure and saves that."
+        ],
+        "answer": 3,
+        "explain": "<p>Three calls, three scopes. <code>plt.cla()</code> = <i>clear axes</i>: it removes every artist on the current axes — both lines <b>and the title</b>, because a title is just a Text artist — but the axes object stays in the figure, so <code>b.png</code> shows an empty frame. <code>plt.clf()</code> = <i>clear figure</i>: it removes every axes from the figure, which itself survives as an empty canvas, so <code>c.png</code> is pure background. <code>plt.close(fig)</code> unregisters and destroys the figure; but <code>plt.savefig</code> always works on <code>gcf()</code> ('get current figure'), and <code>gcf()</code> lazily creates a brand-new figure when none is open — so <code>d.png</code> is saved as a blank canvas with <b>no exception at all</b>, a silent surprise. A invents a 'clear-only-older-artists' rule; B swaps cla and clf; C overestimates pyplot's strictness — the annoying truth is that it fails silently.</p>"
+      }
+    }
+  ]
+}

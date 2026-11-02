@@ -1,0 +1,703 @@
+{
+  "id": "py-iterators",
+  "title": "Iterators & Generators",
+  "icon": "🔁",
+  "level": "intermediate",
+  "order": 110,
+  "conceptRef": "python-basics.html#s14",
+  "blurb": "Master the two-method protocol, generators that pause, and lazy pipelines whose work happens only when someone asks.",
+  "cells": [
+    {
+      "type": "concept",
+      "title": "The protocol: __iter__ plus __next__",
+      "body": "<p>Every <code>for</code> loop in Python is a client of a two-method protocol. <code>__iter__</code> says 'hand out the iterator' — for an iterator object it just returns <code>self</code>. <code>__next__</code> produces the next value, and signals exhaustion by raising <code>StopIteration</code>; once raised, it should keep raising. The <code>for</code> statement calls <code>iter()</code> once, then <code>next()</code> repeatedly, catching <code>StopIteration</code> internally so your code never sees it.</p><p>Writing one iterator class by hand teaches you what generators do for free — and it lets you add protocol-visible features generators cannot easily offer, like <code>reset()</code>, because the state is explicit fields on <code>self</code>. The discipline: decide exactly what 'the next value' means and when 'done' happens, and make <code>__next__</code> answer both questions identically on every call, even after exhaustion.</p>",
+      "demo": {
+        "code": "class ThreeBeeps:\n    def __init__(self):\n        self.left = 3\n\n    def __iter__(self):\n        return self            # the object is its own iterator\n\n    def __next__(self):\n        if self.left == 0:\n            raise StopIteration\n        self.left -= 1\n        return \"beep\"\n\nfor b in ThreeBeeps():\n    print(b)"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "Generators: functions that pause mid-sentence",
+      "body": "<p>A function containing <code>yield</code> is a generator function: calling it runs <i>none</i> of the body. You get back a generator object, and each <code>next()</code> runs the body forward to the next <code>yield</code>, hands out the value, and freezes — local variables, loop counters and the instruction pointer all survive the pause. When the body falls off the end, the generator raises <code>StopIteration</code> automatically.</p><p>The pause is not a curiosity; it is the execution model to reason about. Side effects (a <code>print</code>, an append to a log) inside a generator happen at <i>consumption time</i>, not at definition time, and a generator is one-shot: exhausted is exhausted. Predicting <i>when</i> each line runs is the actual skill this notebook drills — it is the same skill you need to debug lazy pipelines and streaming code later.</p>",
+      "demo": {
+        "code": "def announce(n):\n    print(\"  computing\", n)\n    return n\n\n\ndef stream():\n    for i in range(3):\n        print(\"about to yield\", i)\n        yield announce(i)\n\n\ng = stream()\nprint(\"created; nothing ran yet\")\nprint(next(g))\nprint(list(g))"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "Infinite streams, bounded consumers",
+      "body": "<p>A <code>while True</code> loop inside a generator is perfectly safe — nothing runs until something pulls, and the puller decides when to stop. That inverts the usual shape of 'generate a big list, then slice it': instead you write an endless source and pair it with a <b>bounded consumer</b>. <code>itertools.islice(gen, n)</code> takes exactly n items; a <code>for</code> with a <code>break</code> takes items until a condition; <code>sum()</code> takes everything and reduces as it goes.</p><p>The design rule: the source knows how to produce <i>the next</i> item forever; policy — how many, until when, under what condition — belongs to the consumer. Splitting those concerns is what keeps memory constant and makes 'first n items satisfying P' a three-line program instead of a guessing game about upper bounds.</p>",
+      "demo": {
+        "code": "from itertools import islice\n\n\ndef heartbeat():\n    tick = 0\n    while True:\n        tick += 1\n        yield \"tick\" + str(tick)\n\n\nprint(list(islice(heartbeat(), 5)))\nfor beat in heartbeat():\n    if beat == \"tick3\":\n        print(\"reached\", beat)\n        break"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-iterators-1",
+        "title": "Draining the Tank",
+        "difficulty": "easy",
+        "tags": [
+          "generators",
+          "sequences"
+        ],
+        "statement": "<p>A mixing tank starts holding <code>start</code> units of water. Every cycle, the outlet reports the <b>current</b> level and then 3 units drain. The pump shuts off once the level would drop below zero — so the last reported level is the final non-negative one.</p><p>Write a <b>generator</b> <code>tank_drain(start)</code> that yields the levels one at a time (10, 7, 4, 1 for a tank of 10), plus the driver <code>drain_log(start)</code> — the function the tests call — which returns the complete list of yielded levels by consuming your generator.</p>",
+        "constraints": [
+          "0 <= start <= 10,000",
+          "levels are yielded in decreasing order, all >= 0",
+          "a tank at 0 still reports one level (0) before shutting off"
+        ],
+        "examples": [
+          {
+            "call": "drain_log(10)",
+            "returns": "[10, 7, 4, 1]",
+            "why": "10 drains to 7 to 4 to 1; the next step would be -2, so the pump stops"
+          },
+          {
+            "call": "drain_log(0)",
+            "returns": "[0]",
+            "why": "an empty tank still reports its single level"
+          }
+        ],
+        "starter": "def tank_drain(start):\n    \"\"\"Yield the tank level each cycle; stop before it goes negative.\"\"\"\n    pass\n\n\ndef drain_log(start):\n    \"\"\"Return the full list of levels reported by tank_drain(start).\"\"\"\n    pass\n",
+        "func": "drain_log",
+        "tests": [
+          {
+            "label": "ten units",
+            "args": [
+              10
+            ],
+            "expected": [
+              10,
+              7,
+              4,
+              1
+            ],
+            "hidden": false
+          },
+          {
+            "label": "empty tank",
+            "args": [
+              0
+            ],
+            "expected": [
+              0
+            ],
+            "hidden": false
+          },
+          {
+            "label": "exact multiple of three",
+            "args": [
+              9
+            ],
+            "expected": [
+              9,
+              6,
+              3,
+              0
+            ],
+            "hidden": true
+          },
+          {
+            "label": "stops before negative",
+            "args": [
+              2
+            ],
+            "expected": [
+              2
+            ],
+            "hidden": true
+          },
+          {
+            "label": "one unit",
+            "args": [
+              1
+            ],
+            "expected": [
+              1
+            ],
+            "hidden": true
+          },
+          {
+            "label": "twelve units",
+            "args": [
+              12
+            ],
+            "expected": [
+              12,
+              9,
+              6,
+              3,
+              0
+            ],
+            "hidden": true
+          },
+          {
+            "label": "fifty units",
+            "args": [
+              50
+            ],
+            "expected": [
+              50,
+              47,
+              44,
+              41,
+              38,
+              35,
+              32,
+              29,
+              26,
+              23,
+              20,
+              17,
+              14,
+              11,
+              8,
+              5,
+              2
+            ],
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "Which loop shape reports the level BEFORE draining — and what condition makes it stop exactly when the next report would be negative?",
+          "Keep the level in one variable; while it is >= 0: yield it, then subtract 3. The generator body is four lines.",
+          "def tank_drain(start): level = start; while level >= 0: yield level; level -= 3 — then drain_log simply returns list(tank_drain(start))."
+        ],
+        "reasoning": "<p>The order of operations inside the loop body is the entire specification: <b>yield first, drain second</b>. Report-then-act is what makes a start level of 0 yield one value (0 is reported, then the pump would go negative) and a start of 2 yield exactly [2]. Writing the driver as <code>list(...)</code> of the generator is the idiomatic way to observe a stream — nothing is materialized until the list constructor pulls, which is exactly the consumption model generators promise. The same 'emit current state, then advance' pattern appears in every sequence-generating problem: get the order right and the boundary cases decide themselves.</p>",
+        "solution": "def tank_drain(start):\n    level = start\n    while level >= 0:      # report first, drain after\n        yield level\n        level -= 3\n\n\ndef drain_log(start):\n    return list(tank_drain(start))\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-iterators-2",
+        "title": "Checkpoint Labels Forever",
+        "difficulty": "medium",
+        "tags": [
+          "generators",
+          "infinite-streams",
+          "islice"
+        ],
+        "statement": "<p>A race course has checkpoints labeled <code>A1, B1, C1, A2, B2, C2, A3, ...</code> — the letter cycles A, B, C and the number steps up after each C. The course is open indefinitely, and the timing system needs the first <code>n</code> labels on demand.</p><p>Write an <b>infinite</b> generator <code>label_stream()</code> (no arguments, never ends, never builds a list) that yields labels in order. Then write the tested driver <code>checkpoint_labels(count)</code>: the first <code>count</code> labels, obtained by consuming the stream with a bounded consumer such as <code>itertools.islice</code> or repeated <code>next()</code> calls.</p>",
+        "constraints": [
+          "0 <= count <= 500",
+          "label_stream must yield labels one at a time, forever — no list, no upper bound",
+          "count = 0 must produce [] without pulling a label it does not need"
+        ],
+        "examples": [
+          {
+            "call": "checkpoint_labels(4)",
+            "returns": "['A1', 'B1', 'C1', 'A2']",
+            "why": "the letters cycle while the number is still 1 for the fourth label"
+          },
+          {
+            "call": "checkpoint_labels(0)",
+            "returns": "[]",
+            "why": "nothing was requested"
+          }
+        ],
+        "starter": "from itertools import islice\n\n\ndef label_stream():\n    \"\"\"Yield A1, B1, C1, A2, B2, C2, ... forever, one at a time.\"\"\"\n    pass\n\n\ndef checkpoint_labels(count):\n    \"\"\"Return the first count labels from label_stream().\"\"\"\n    pass\n",
+        "func": "checkpoint_labels",
+        "tests": [
+          {
+            "label": "first four",
+            "args": [
+              4
+            ],
+            "expected": [
+              "A1",
+              "B1",
+              "C1",
+              "A2"
+            ],
+            "hidden": false
+          },
+          {
+            "label": "none requested",
+            "args": [
+              0
+            ],
+            "expected": [],
+            "hidden": false
+          },
+          {
+            "label": "exactly one",
+            "args": [
+              1
+            ],
+            "expected": [
+              "A1"
+            ],
+            "hidden": true
+          },
+          {
+            "label": "one full lap",
+            "args": [
+              3
+            ],
+            "expected": [
+              "A1",
+              "B1",
+              "C1"
+            ],
+            "hidden": true
+          },
+          {
+            "label": "into the second lap",
+            "args": [
+              7
+            ],
+            "expected": [
+              "A1",
+              "B1",
+              "C1",
+              "A2",
+              "B2",
+              "C2",
+              "A3"
+            ],
+            "hidden": true
+          },
+          {
+            "label": "four full laps",
+            "args": [
+              12
+            ],
+            "expected": [
+              "A1",
+              "B1",
+              "C1",
+              "A2",
+              "B2",
+              "C2",
+              "A3",
+              "B3",
+              "C3",
+              "A4",
+              "B4",
+              "C4"
+            ],
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "The label needs two counters moving at different rates — when does the letter restart, and when does the number grow?",
+          "Nest two loops: an outer while True that holds the current number, and an inner for over 'ABC' that yields letter + str(number). After the inner loop finishes, the number increments.",
+          "In the driver, return list(islice(label_stream(), count)) — islice pulls exactly count values (and zero values when count is 0), so the infinite source is always safe."
+        ],
+        "reasoning": "<p>Two counters tick at different rates — the letter cycles every step, the number every three — and the generator shape makes the coupling obvious: the outer loop owns the slow counter (the number), the inner loop owns the fast one (the letters). Because the source is infinite and the <b>consumer</b> decides the bound, <code>checkpoint_labels(0)</code> and <code>checkpoint_labels(500)</code> are the same program with a different limit — no pre-sized buffer, no guessed maximum. This division of labor (endless source, bounded consumer) is the design you will reach for whenever 'how many' is a runtime question rather than a property of the data.</p>",
+        "solution": "from itertools import islice\n\n\ndef label_stream():\n    number = 1\n    while True:                 # the course never closes\n        for letter in \"ABC\":    # letters cycle within one number\n            yield letter + str(number)\n        number += 1\n\n\ndef checkpoint_labels(count):\n    return list(islice(label_stream(), count))\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-iterators-3",
+        "title": "Proof of Laziness",
+        "difficulty": "medium",
+        "tags": [
+          "generators",
+          "laziness",
+          "evaluation-order"
+        ],
+        "statement": "<p>Lazy pipelines have two properties people claim but rarely test: <b>nothing happens until consumption</b>, and for each element the <i>filter clause runs before the output expression</i>. You will build a pipeline that proves both, with an event log as the witness.</p><p>Implement <code>pipeline_trace(numbers)</code> — the tested function — exactly as follows. Create <code>events = []</code> and a helper <code>watch(value, tag)</code> that appends <code>tag + \":\" + str(value)</code> to events and returns the value. Build <code>gen</code> as a <b>generator expression</b> over <code>numbers</code> whose filter clause calls <code>watch(x, \"test\")</code> and keeps even values, and whose output expression calls <code>watch(x * x, \"map\")</code> and yields the square. Then record <code>before = len(events)</code>, consume with <code>consumed = list(gen)</code>, and return <code>[before, consumed, events]</code>.</p>",
+        "constraints": [
+          "numbers contains 0 to 50 integers (negatives allowed)",
+          "the pipeline must be a generator expression — building any intermediate list defeats the point",
+          "the filter must call watch for EVERY element; the map only for the survivors"
+        ],
+        "examples": [
+          {
+            "call": "pipeline_trace([1, 2, 3, 4])",
+            "returns": "[0, [4, 16], ['test:1', 'test:2', 'map:4', 'test:3', 'test:4', 'map:16']]",
+            "why": "no events before consumption; per element the test fires first and the map only for evens"
+          },
+          {
+            "call": "pipeline_trace([2, 4])",
+            "returns": "[0, [4, 16], ['test:2', 'map:4', 'test:4', 'map:16']]",
+            "why": "both elements pass, so every test is followed by its map"
+          }
+        ],
+        "starter": "def pipeline_trace(numbers):\n    \"\"\"Prove laziness and clause order with an event log.\n\n    events = [] and watch(value, tag) appends tag + ':' + str(value)\n    and returns value. gen is a generator expression over numbers:\n    filter clause watch(x, 'test') keeping evens, output expression\n    watch(x * x, 'map'). Return [len(events) BEFORE consuming,\n    list(gen), events AFTER].\n    \"\"\"\n    pass\n",
+        "func": "pipeline_trace",
+        "tests": [
+          {
+            "label": "mixed evens and odds",
+            "args": [
+              [
+                1,
+                2,
+                3,
+                4
+              ]
+            ],
+            "expected": [
+              0,
+              [
+                4,
+                16
+              ],
+              [
+                "test:1",
+                "test:2",
+                "map:4",
+                "test:3",
+                "test:4",
+                "map:16"
+              ]
+            ],
+            "hidden": false
+          },
+          {
+            "label": "all pass the filter",
+            "args": [
+              [
+                2,
+                4
+              ]
+            ],
+            "expected": [
+              0,
+              [
+                4,
+                16
+              ],
+              [
+                "test:2",
+                "map:4",
+                "test:4",
+                "map:16"
+              ]
+            ],
+            "hidden": false
+          },
+          {
+            "label": "empty input",
+            "args": [
+              []
+            ],
+            "expected": [
+              0,
+              [],
+              []
+            ],
+            "hidden": true
+          },
+          {
+            "label": "nothing passes",
+            "args": [
+              [
+                1,
+                3,
+                5
+              ]
+            ],
+            "expected": [
+              0,
+              [],
+              [
+                "test:1",
+                "test:3",
+                "test:5"
+              ]
+            ],
+            "hidden": true
+          },
+          {
+            "label": "negative evens square positively",
+            "args": [
+              [
+                -2,
+                3
+              ]
+            ],
+            "expected": [
+              0,
+              [
+                4
+              ],
+              [
+                "test:-2",
+                "map:4",
+                "test:3"
+              ]
+            ],
+            "hidden": true
+          },
+          {
+            "label": "zero is even",
+            "args": [
+              [
+                0
+              ]
+            ],
+            "expected": [
+              0,
+              [
+                0
+              ],
+              [
+                "test:0",
+                "map:0"
+              ]
+            ],
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "If generator expressions were eager, what would len(events) be before list(gen)? What does the actual 0 prove?",
+          "The comprehension syntax order IS the evaluation order: for each element, the if clause evaluates first; the output expression runs only for survivors. Put watch exactly where each clause needs it.",
+          "gen = (watch(x * x, \"map\") for x in numbers if watch(x, \"test\") % 2 == 0) — then before = len(events); consumed = list(gen); return [before, consumed, events]."
+        ],
+        "reasoning": "<p>The event log turns two invisible properties into data. <code>before == 0</code> proves <b>laziness</b>: defining the generator expression ran none of its clauses, because a generator is a suspended computation until the first pull. The interleaving proves <b>clause order</b>: for each element the sequence is <code>test</code> then (only if kept) <code>map</code> — which is precisely how a hand-written loop with an <code>if</code> would behave, because comprehensions are loops in disguise. Once you can predict this trace, you can predict when side effects fire in any lazy pipeline — the exact skill that debugging dataflow code demands, where work happens at the consumer's pace, not the producer's.</p>",
+        "solution": "def pipeline_trace(numbers):\n    events = []\n\n    def watch(value, tag):\n        events.append(tag + \":\" + str(value))\n        return value\n\n    gen = (watch(x * x, \"map\") for x in numbers if watch(x, \"test\") % 2 == 0)\n    before = len(events)     # 0 — nothing has run yet\n    consumed = list(gen)     # consumption drives every event\n    return [before, consumed, events]\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-iterators-4",
+        "title": "The Resettable Fib Counter",
+        "difficulty": "hard",
+        "tags": [
+          "iterators",
+          "protocol",
+          "state"
+        ],
+        "statement": "<p>A step laboratory uses a mechanical counter that produces a Fibonacci-style sequence from two seeds: starting at <code>(a, b)</code> it yields <code>a, b, a+b, b+(a+b), ...</code> — every value is the sum of the previous two. The device has a lifetime budget: it yields at most <code>limit</code> values, and after that it is spent (further nexts raise <code>StopIteration</code> forever).</p><p>Implement <code>FibCounter(a, b, limit)</code> as a full iterator class: <code>__iter__</code> returns <code>self</code>; <code>__next__</code> returns the next value or raises <code>StopIteration</code>; <code>reset(x, y)</code> restarts from new seeds and restores the full limit. Then write the tested driver <code>fib_session(a, b, limit, ops)</code>: ops are <code>[\"take\", k]</code> (record the next up-to-k values), <code>[\"skip\", k]</code> (advance up to k values, recording nothing) and <code>[\"reset\", x, y]</code>. It returns the flat list of recorded values.</p>",
+        "constraints": [
+          "0 <= a, b <= 100, 0 <= limit <= 1,000, 0 <= k <= 500",
+          "take/skip past the limit simply run dry — no exception reaches the caller",
+          "a for-loop or islice over a FibCounter must work (that is what __iter__ is for)"
+        ],
+        "examples": [
+          {
+            "call": "fib_session(0, 1, 10, [[\"take\", 6]])",
+            "returns": "[0, 1, 1, 2, 3, 5]",
+            "why": "the first six Fibonacci values"
+          },
+          {
+            "call": "fib_session(0, 1, 10, [[\"take\", 3], [\"skip\", 2], [\"take\", 2]])",
+            "returns": "[0, 1, 1, 5, 8]",
+            "why": "skip silently consumes 2 and 3, so the next take records 5 and 8"
+          }
+        ],
+        "starter": "from itertools import islice\n\n\nclass FibCounter:\n    \"\"\"Iterator over a Fibonacci-style sequence with a yield limit.\"\"\"\n\n    def __init__(self, a, b, limit):\n        pass\n\n    def __iter__(self):\n        pass\n\n    def __next__(self):\n        pass\n\n    def reset(self, x, y):\n        pass\n\n\ndef fib_session(a, b, limit, ops):\n    \"\"\"Replay take/skip/reset ops against one FibCounter.\"\"\"\n    pass\n",
+        "func": "fib_session",
+        "tests": [
+          {
+            "label": "first six",
+            "args": [
+              0,
+              1,
+              10,
+              [
+                [
+                  "take",
+                  6
+                ]
+              ]
+            ],
+            "expected": [
+              0,
+              1,
+              1,
+              2,
+              3,
+              5
+            ],
+            "hidden": false
+          },
+          {
+            "label": "skip moves the sequence",
+            "args": [
+              0,
+              1,
+              10,
+              [
+                [
+                  "take",
+                  3
+                ],
+                [
+                  "skip",
+                  2
+                ],
+                [
+                  "take",
+                  2
+                ]
+              ]
+            ],
+            "expected": [
+              0,
+              1,
+              1,
+              5,
+              8
+            ],
+            "hidden": false
+          },
+          {
+            "label": "reset restarts and refills",
+            "args": [
+              0,
+              1,
+              10,
+              [
+                [
+                  "take",
+                  2
+                ],
+                [
+                  "reset",
+                  2,
+                  3
+                ],
+                [
+                  "take",
+                  3
+                ]
+              ]
+            ],
+            "expected": [
+              0,
+              1,
+              2,
+              3,
+              5
+            ],
+            "hidden": true
+          },
+          {
+            "label": "budget runs dry",
+            "args": [
+              0,
+              1,
+              4,
+              [
+                [
+                  "take",
+                  3
+                ],
+                [
+                  "skip",
+                  1
+                ],
+                [
+                  "take",
+                  3
+                ]
+              ]
+            ],
+            "expected": [
+              0,
+              1,
+              1
+            ],
+            "hidden": true
+          },
+          {
+            "label": "no ops",
+            "args": [
+              0,
+              1,
+              8,
+              []
+            ],
+            "expected": [],
+            "hidden": true
+          },
+          {
+            "label": "take zero",
+            "args": [
+              5,
+              5,
+              6,
+              [
+                [
+                  "take",
+                  2
+                ],
+                [
+                  "take",
+                  0
+                ],
+                [
+                  "take",
+                  1
+                ]
+              ]
+            ],
+            "expected": [
+              5,
+              5,
+              10
+            ],
+            "hidden": true
+          },
+          {
+            "label": "take past the limit",
+            "args": [
+              0,
+              1,
+              3,
+              [
+                [
+                  "take",
+                  10
+                ]
+              ]
+            ],
+            "expected": [
+              0,
+              1,
+              1
+            ],
+            "hidden": true
+          },
+          {
+            "label": "reset after exhaustion",
+            "args": [
+              0,
+              1,
+              3,
+              [
+                [
+                  "take",
+                  3
+                ],
+                [
+                  "reset",
+                  1,
+                  1
+                ],
+                [
+                  "take",
+                  3
+                ]
+              ]
+            ],
+            "expected": [
+              0,
+              1,
+              1,
+              1,
+              1,
+              2
+            ],
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "Which three facts must __next__ consult before producing a value — how many have been given, what is the current pair, and what happens when the budget is spent?",
+          "Track _current, _following and _given. __next__ raises StopIteration when _given >= limit; otherwise returns _current, advances the pair, and increments _given. reset() restores the seeds AND zeroes _given.",
+          "In the driver use islice(counter, k) for both take (extend the recording) and skip (loop and discard). islice honors StopIteration, so running dry is just a short take — no exception handling needed."
+        ],
+        "reasoning": "<p>A hand-written iterator makes you own the three pieces of state that a generator would hide: the <b>current pair</b> (what the next two values are), the <b>given count</b> (how much of the budget is spent), and the <b>exhaustion rule</b> (<code>_given &gt;= limit</code> raises, and keeps raising — a spent iterator must stay spent). The reset method is the feature a generator cannot cleanly offer: because the state is explicit fields, restarting is just writing them back, including restoring the full budget. The driver leans on the protocol itself: <code>islice(counter, k)</code> pulls through <code>__next__</code> and stops at <code>StopIteration</code>, which is why 'take past the limit' needs no special case — the exhaustion rule and the bounded consumer agree on what happens at the end.</p>",
+        "solution": "from itertools import islice\n\n\nclass FibCounter:\n    \"\"\"A Fibonacci-style counter with a yield limit and a reset.\"\"\"\n\n    def __init__(self, a, b, limit):\n        self._seed = (a, b)\n        self._limit = limit\n        self.reset(a, b)\n\n    def __iter__(self):\n        return self\n\n    def __next__(self):\n        if self._given >= self._limit:\n            raise StopIteration          # exhausted stays exhausted\n        value = self._current\n        self._current, self._following = (self._following,\n                                          self._current + self._following)\n        self._given += 1\n        return value\n\n    def reset(self, x, y):\n        self._current = x\n        self._following = y\n        self._given = 0                 # full budget restored\n\n\ndef fib_session(a, b, limit, ops):\n    counter = FibCounter(a, b, limit)\n    recorded = []\n    for op in ops:\n        if op[0] == \"take\":\n            recorded.extend(islice(counter, op[1]))\n        elif op[0] == \"skip\":\n            for _ in islice(counter, op[1]):\n                pass                      # advance, record nothing\n        else:                              # [\"reset\", x, y]\n            counter.reset(op[1], op[2])\n    return recorded\n"
+      }
+    }
+  ]
+}

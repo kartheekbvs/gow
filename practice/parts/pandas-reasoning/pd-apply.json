@@ -1,0 +1,914 @@
+{
+  "id": "pd-apply",
+  "title": "Apply, map & String Accessor",
+  "icon": "🪄",
+  "level": "intermediate",
+  "order": 60,
+  "conceptRef": "pandas.html#s10",
+  "blurb": "apply, map and .str are the escape hatches from column thinking — reach for them when the logic is per value or per row.",
+  "cells": [
+    {
+      "type": "concept",
+      "title": ".str: vectorized string methods on a column",
+      "body": "<p>When a column holds strings, the <code>.str</code> accessor unlocks the whole string toolbox applied row by row — <code>.str.lower()</code>, <code>.str.split(...)</code>, <code>.str.contains(...)</code> — without writing a loop. It is the middle ground between one big column expression and a Python for-loop: still row-wise logic, but expressed <b>once, for the whole column</b>.</p><p>Two habits pay off. First, chain small steps: <code>.str.lower().str.split(\"@\").str[-1]</code> is three cheap, readable passes rather than one clever regex. Second, remember that every step maps missing values to missing values — the pipeline never crashes on a gap, it propagates it, which is exactly what you want when cleaning dirty exports.</p>",
+      "demo": {
+        "code": "import pandas as pd\n\nemails = pd.Series([\"Ana@Example.COM\", \"bo@corp.io\"])\nprint(emails.str.lower().tolist())\nprint(emails.str.split(\"@\").str[-1].tolist())"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "apply with axis=1: when a row is the unit of logic",
+      "body": "<p>Some formulas need <b>several columns of the same row</b> at once — a shipping cost from weight and distance, a verdict from two test results. <code>df.apply(fn, axis=1)</code> hands your function each row (as a small Series you index by column name) and collects the returned values into a new Series aligned to the rows.</p><p>It is the most flexible tool in the box and the slowest way to do something a column expression could do — so treat it as a deliberate choice: row-level semantics that cannot be phrased column-wise. The result carries the frame's index, which is what makes it safe to assign back as a new column and keeps it aligned with the rows it was computed from.</p>",
+      "demo": {
+        "code": "import pandas as pd\n\norders = pd.DataFrame({\n    \"weight_kg\": [1.0, 2.0],\n    \"distance_km\": [10.0, 50.0],\n})\n\ndef cost(row):\n    return 2.0 + 0.5 * row[\"weight_kg\"] + 0.1 * row[\"distance_km\"]\n\nprint(orders.apply(cost, axis=1).tolist())"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "map: translate values through a dictionary",
+      "body": "<p><code>series.map(dictionary)</code> replaces each value with its dictionary entry — codes to names, ids to categories. The decisive detail: keys missing from the dictionary become <b>NaN</b>, not an error. That silence is a feature when you follow it with <code>.fillna(\"other\")</code>: \"translate what you recognize, bucket the rest\".</p><p>This is the vocabulary to reach for when the mapping is <i>data</i> — a lookup someone maintains — rather than logic you want to write. And after translating, the natural next question is \"how many in each bucket?\", which is <code>.value_counts()</code> territory — remembering that equal counts need a stated tie-break before the summary is a well-defined answer.</p>",
+      "demo": {
+        "code": "import pandas as pd\n\ncodes = pd.Series([\"A\", \"B\", \"Z\"])\nmapping = {\"A\": \"alpha\", \"B\": \"beta\"}\ncats = codes.map(mapping).fillna(\"other\")\nprint(cats.tolist())\nprint(cats.value_counts().tolist())"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "pd-apply-1",
+        "title": "Domains from a user list",
+        "difficulty": "easy",
+        "tags": [
+          "str-accessor",
+          "strings",
+          "extraction"
+        ],
+        "statement": "<p>A site stores its users in a table where each row is one user with columns <code>user</code> (str) and <code>email</code> (str). Every email contains exactly one <code>@</code>, like <code>\"Ana@Example.COM\"</code>.</p><p>Implement <code>email_domains(users)</code> returning a Series named <code>domain</code>, aligned with the input rows (same order): for each user, the part of the email <b>after the <code>@</code></b>, <b>lowercased</b> — so <code>\"Ana@Example.COM\"</code> yields <code>\"example.com\"</code>.</p>",
+        "constraints": [
+          "Return a Series named 'domain' with one value per input row, in the input order",
+          "The domain is everything after the single '@', lowercased",
+          "Every email in the input contains exactly one '@' and is non-empty",
+          "Use the .str accessor — no Python-level loops over rows"
+        ],
+        "examples": [
+          {
+            "call": "email_domains(users)  # emails 'Ana@Example.COM' and 'bo@corp.io'",
+            "returns": "Series named 'domain': ['example.com', 'corp.io']",
+            "why": "the part after the @ in the first email is 'Example.COM', which lowercases to 'example.com'"
+          },
+          {
+            "call": "email_domains(users)  # email 'x@mail.example.co'",
+            "returns": "a value 'mail.example.co'",
+            "why": "everything after the single @ counts as the domain, including dots inside it"
+          }
+        ],
+        "starter": "import pandas as pd\n\ndef email_domains(users):\n    \"\"\"Return the lowercased email domain for each user.\n\n    Series named 'domain', aligned with the input rows.\n    \"\"\"\n    pass\n",
+        "func": "email_domains",
+        "tests": [
+          {
+            "label": "mixed case domains",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "user",
+                    "email"
+                  ],
+                  "rows": [
+                    [
+                      "ana",
+                      "Ana@Example.COM"
+                    ],
+                    [
+                      "bo",
+                      "bo@corp.io"
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": false,
+            "expected": {
+              "__ser__": {
+                "values": [
+                  "example.com",
+                  "corp.io"
+                ],
+                "name": "domain"
+              }
+            }
+          },
+          {
+            "label": "three users",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "user",
+                    "email"
+                  ],
+                  "rows": [
+                    [
+                      "cy",
+                      "cy@Mail.Org"
+                    ],
+                    [
+                      "dee",
+                      "Dee@School.EDU"
+                    ],
+                    [
+                      "eve",
+                      "eve@web.net"
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": false,
+            "expected": {
+              "__ser__": {
+                "values": [
+                  "mail.org",
+                  "school.edu",
+                  "web.net"
+                ],
+                "name": "domain"
+              }
+            }
+          },
+          {
+            "label": "single user",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "user",
+                    "email"
+                  ],
+                  "rows": [
+                    [
+                      "solo",
+                      "me@My.Site"
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__ser__": {
+                "values": [
+                  "my.site"
+                ],
+                "name": "domain"
+              }
+            }
+          },
+          {
+            "label": "multi-dot domain",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "user",
+                    "email"
+                  ],
+                  "rows": [
+                    [
+                      "x",
+                      "a@mail.example.co"
+                    ],
+                    [
+                      "y",
+                      "b@deep.sub.example.io"
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__ser__": {
+                "values": [
+                  "mail.example.co",
+                  "deep.sub.example.io"
+                ],
+                "name": "domain"
+              }
+            }
+          },
+          {
+            "label": "all same provider",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "user",
+                    "email"
+                  ],
+                  "rows": [
+                    [
+                      "u1",
+                      "One@Corp.IO"
+                    ],
+                    [
+                      "u2",
+                      "Two@corp.io"
+                    ],
+                    [
+                      "u3",
+                      "three@CORP.io"
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__ser__": {
+                "values": [
+                  "corp.io",
+                  "corp.io",
+                  "corp.io"
+                ],
+                "name": "domain"
+              }
+            }
+          },
+          {
+            "label": "five users various",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "user",
+                    "email"
+                  ],
+                  "rows": [
+                    [
+                      "u1",
+                      "a@x.io"
+                    ],
+                    [
+                      "u2",
+                      "B@Y.io"
+                    ],
+                    [
+                      "u3",
+                      "c@z.com"
+                    ],
+                    [
+                      "u4",
+                      "D@w.org"
+                    ],
+                    [
+                      "u5",
+                      "e@v.net"
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__ser__": {
+                "values": [
+                  "x.io",
+                  "y.io",
+                  "z.com",
+                  "w.org",
+                  "v.net"
+                ],
+                "name": "domain"
+              }
+            }
+          }
+        ],
+        "hints": [
+          "Which string operations do you need: something to normalize case, something to cut at a separator, and something to keep one piece of the cut?",
+          "Chain .str steps: .str.lower() normalizes the whole email; .str.split('@') cuts every row at the @; indexing the pieces with .str[-1] keeps the part after it.",
+          "return users['email'].str.lower().str.split('@').str[-1].rename('domain') — each step is one pass over the column and missing values (none here) would just stay missing."
+        ],
+        "reasoning": "<p>The <code>.str</code> accessor turns per-row string surgery into a column pipeline: lowercase normalizes case so that <code>Example.COM</code> and <code>example.com</code> stop being different domains, split cuts every value at the separator, and positional indexing (<code>.str[-1]</code>) picks the tail piece — robust even if the local part itself were empty. The order matters (lowercase <i>then</i> split, or split <i>then</i> lowercase the result — both work here because the @ itself has no case). What makes it idiomatic is that each step is stated once and applied to every row, keeping the logic data-parallel instead of loop-shaped.</p>",
+        "solution": "import pandas as pd\n\ndef email_domains(users):\n    \"\"\"Return the lowercased email domain for each user.\"\"\"\n    return users[\"email\"].str.lower().str.split(\"@\").str[-1].rename(\"domain\")\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "pd-apply-2",
+        "title": "Shipping cost, row by row",
+        "difficulty": "medium",
+        "tags": [
+          "apply",
+          "axis-1",
+          "row-wise",
+          "rounding"
+        ],
+        "statement": "<p>A courier prices each parcel with a per-row formula. Each row of <code>parcels</code> is one parcel with columns <code>weight_kg</code> (float), <code>distance_km</code> (float) and <code>express</code> (bool).</p><p>The cost of a parcel is:</p><ul><li>base <code>2.0</code> plus <code>0.5</code> per kg, plus <code>0.1</code> per km;</li><li>the whole amount is <b>doubled</b> when <code>express</code> is True.</li></ul><p>Implement <code>shipping_costs(parcels)</code> returning a Series named <code>cost</code>, aligned with the input rows (same order), every value <b>rounded to 2 decimal places</b>.</p>",
+        "constraints": [
+          "cost = (2.0 + 0.5 * weight_kg + 0.1 * distance_km), doubled when express is True",
+          "Return a Series named 'cost' with one value per input row, in the input order",
+          "Every value rounded to 2 decimal places",
+          "The formula reads several columns of the same row — this is a row-wise computation"
+        ],
+        "examples": [
+          {
+            "call": "shipping_costs(parcels)  # 3 kg over 10 km, not express",
+            "returns": "a value 4.5",
+            "why": "2.0 + 0.5*3 + 0.1*10 = 4.5, and express does not double it"
+          },
+          {
+            "call": "shipping_costs(parcels)  # 0.5 kg over 7.5 km, express",
+            "returns": "a value 6.0",
+            "why": "2.0 + 0.25 + 0.75 = 3.0 before doubling, and express doubles it to 6.0"
+          }
+        ],
+        "starter": "import pandas as pd\n\ndef shipping_costs(parcels):\n    \"\"\"Return the per-parcel shipping cost.\n\n    base 2.0 + 0.5/kg + 0.1/km, doubled for express;\n    Series named 'cost', input row order, rounded to\n    2 decimals.\n    \"\"\"\n    pass\n",
+        "func": "shipping_costs",
+        "tests": [
+          {
+            "label": "regular and express",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "weight_kg",
+                    "distance_km",
+                    "express"
+                  ],
+                  "rows": [
+                    [
+                      3.0,
+                      10.0,
+                      false
+                    ],
+                    [
+                      0.5,
+                      7.5,
+                      true
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": false,
+            "expected": {
+              "__ser__": {
+                "values": [
+                  4.5,
+                  6.0
+                ],
+                "name": "cost"
+              }
+            }
+          },
+          {
+            "label": "three parcels",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "weight_kg",
+                    "distance_km",
+                    "express"
+                  ],
+                  "rows": [
+                    [
+                      1.0,
+                      20.0,
+                      false
+                    ],
+                    [
+                      2.0,
+                      5.0,
+                      true
+                    ],
+                    [
+                      0.2,
+                      2.0,
+                      false
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": false,
+            "expected": {
+              "__ser__": {
+                "values": [
+                  4.5,
+                  7.0,
+                  2.3
+                ],
+                "name": "cost"
+              }
+            }
+          },
+          {
+            "label": "all express",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "weight_kg",
+                    "distance_km",
+                    "express"
+                  ],
+                  "rows": [
+                    [
+                      1.0,
+                      0.0,
+                      true
+                    ],
+                    [
+                      0.0,
+                      10.0,
+                      true
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__ser__": {
+                "values": [
+                  5.0,
+                  6.0
+                ],
+                "name": "cost"
+              }
+            }
+          },
+          {
+            "label": "zero weight zero distance",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "weight_kg",
+                    "distance_km",
+                    "express"
+                  ],
+                  "rows": [
+                    [
+                      0.0,
+                      0.0,
+                      false
+                    ],
+                    [
+                      0.0,
+                      0.0,
+                      true
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__ser__": {
+                "values": [
+                  2.0,
+                  4.0
+                ],
+                "name": "cost"
+              }
+            }
+          },
+          {
+            "label": "float noise rounded away",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "weight_kg",
+                    "distance_km",
+                    "express"
+                  ],
+                  "rows": [
+                    [
+                      1.1,
+                      2.2,
+                      false
+                    ],
+                    [
+                      0.3,
+                      3.3,
+                      true
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__ser__": {
+                "values": [
+                  2.77,
+                  4.96
+                ],
+                "name": "cost"
+              }
+            }
+          },
+          {
+            "label": "single parcel",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "weight_kg",
+                    "distance_km",
+                    "express"
+                  ],
+                  "rows": [
+                    [
+                      5.0,
+                      100.0,
+                      true
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__ser__": {
+                "values": [
+                  29.0
+                ],
+                "name": "cost"
+              }
+            }
+          }
+        ],
+        "hints": [
+          "The formula for one row needs weight, distance and the express flag TOGETHER. Can you write it as a function of a single row first, then get pandas to call it per row?",
+          "Define cost(row): c = 2.0 + 0.5*row['weight_kg'] + 0.1*row['distance_km']; double it when row['express']; then parcels.apply(cost, axis=1) runs it row by row.",
+          "def cost(row): c = 2.0 + 0.5 * row['weight_kg'] + 0.1 * row['distance_km']; return c * 2 if row['express'] else c — then return parcels.apply(cost, axis=1).round(2).rename('cost')."
+        ],
+        "reasoning": "<p>This is the canonical case for <code>axis=1</code>: the unit of logic is a <b>row</b>, because no single column knows the answer — weight, distance and the express flag must meet in one place. <code>apply(cost, axis=1)</code> makes that meeting explicit: your function receives one row at a time (a Series indexed by column names) and returns one number, and pandas stitches the numbers back into a Series aligned with the rows. The final <code>.round(2)</code> is applied to the whole result at once — rounding is presentation, not part of the pricing formula, and doing it last keeps every intermediate exact.</p>",
+        "solution": "import pandas as pd\n\ndef shipping_costs(parcels):\n    \"\"\"Return per-parcel shipping costs (doubled for express).\"\"\"\n\n    def cost(row):\n        c = 2.0 + 0.5 * row[\"weight_kg\"] + 0.1 * row[\"distance_km\"]\n        return c * 2 if row[\"express\"] else c\n\n    return parcels.apply(cost, axis=1).round(2).rename(\"cost\")\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "pd-apply-3",
+        "title": "Buckets and a ranked summary",
+        "difficulty": "hard",
+        "tags": [
+          "map",
+          "fillna",
+          "value-counts",
+          "tie-breaking"
+        ],
+        "statement": "<p>Product codes come from many systems. Each row of <code>products</code> is one product with columns <code>product</code> (str) and <code>code</code> (str). A maintained dictionary <code>code_to_category</code> maps <i>known</i> codes to category names — but unmapped codes exist, and they all belong to a catch-all category called <code>\"other\"</code>.</p><p>Implement <code>category_summary(products, code_to_category)</code>:</p><ul><li>translate each product's <code>code</code> to its category with <code>map</code>; codes missing from the dictionary become <code>\"other\"</code>;</li><li>return a DataFrame with exactly the columns <code>[\"category\", \"count\"]</code>: one row per category with the number of products in it, sorted by <code>count</code> <b>descending</b>; categories with equal counts are ordered by <code>category</code> ascending.</li></ul>",
+        "constraints": [
+          "Unmapped codes (not keys of code_to_category) all count as the category 'other'",
+          "Return a DataFrame with exactly the columns ['category', 'count'] in that order",
+          "count is the number of products per category",
+          "Rows sorted by count descending, ties by category ascending; the dictionary may be empty"
+        ],
+        "examples": [
+          {
+            "call": "category_summary(products, {'A': 'alpha', 'B': 'beta'})  # codes A, B, Z",
+            "returns": "DataFrame with columns ['category', 'count']: alpha 1, beta 1, other 1",
+            "why": "A and B translate through the dictionary, Z falls through to 'other', and the three-way tie at 1 sorts alphabetically"
+          },
+          {
+            "call": "category_summary(products, {})  # any products",
+            "returns": "a single row: other N (N = number of products)",
+            "why": "an empty dictionary maps nothing, so every code lands in the catch-all bucket"
+          }
+        ],
+        "starter": "import pandas as pd\n\ndef category_summary(products, code_to_category):\n    \"\"\"Return the ranked category counts.\n\n    Codes are translated with map; unmapped codes read\n    'other'. Columns ['category', 'count'], sorted by count\n    descending, ties by category ascending.\n    \"\"\"\n    pass\n",
+        "func": "category_summary",
+        "tests": [
+          {
+            "label": "one code unmapped",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "product",
+                    "code"
+                  ],
+                  "rows": [
+                    [
+                      "p1",
+                      "A"
+                    ],
+                    [
+                      "p2",
+                      "B"
+                    ],
+                    [
+                      "p3",
+                      "Z"
+                    ]
+                  ]
+                }
+              },
+              {
+                "A": "alpha",
+                "B": "beta"
+              }
+            ],
+            "hidden": false,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "category",
+                  "count"
+                ],
+                "rows": [
+                  [
+                    "alpha",
+                    1
+                  ],
+                  [
+                    "beta",
+                    1
+                  ],
+                  [
+                    "other",
+                    1
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "counts spread out",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "product",
+                    "code"
+                  ],
+                  "rows": [
+                    [
+                      "p1",
+                      "A"
+                    ],
+                    [
+                      "p2",
+                      "A"
+                    ],
+                    [
+                      "p3",
+                      "B"
+                    ],
+                    [
+                      "p4",
+                      "C"
+                    ],
+                    [
+                      "p5",
+                      "C"
+                    ]
+                  ]
+                }
+              },
+              {
+                "A": "alpha",
+                "B": "beta",
+                "C": "gamma"
+              }
+            ],
+            "hidden": false,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "category",
+                  "count"
+                ],
+                "rows": [
+                  [
+                    "alpha",
+                    2
+                  ],
+                  [
+                    "gamma",
+                    2
+                  ],
+                  [
+                    "beta",
+                    1
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "empty mapping dictionary",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "product",
+                    "code"
+                  ],
+                  "rows": [
+                    [
+                      "p1",
+                      "A"
+                    ],
+                    [
+                      "p2",
+                      "B"
+                    ],
+                    [
+                      "p3",
+                      "C"
+                    ]
+                  ]
+                }
+              },
+              {}
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "category",
+                  "count"
+                ],
+                "rows": [
+                  [
+                    "other",
+                    3
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "three-way tie alphabetical",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "product",
+                    "code"
+                  ],
+                  "rows": [
+                    [
+                      "p1",
+                      "A"
+                    ],
+                    [
+                      "p2",
+                      "B"
+                    ],
+                    [
+                      "p3",
+                      "C"
+                    ],
+                    [
+                      "p4",
+                      "A"
+                    ],
+                    [
+                      "p5",
+                      "B"
+                    ],
+                    [
+                      "p6",
+                      "C"
+                    ]
+                  ]
+                }
+              },
+              {
+                "A": "zeta",
+                "B": "alpha",
+                "C": "mid"
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "category",
+                  "count"
+                ],
+                "rows": [
+                  [
+                    "alpha",
+                    2
+                  ],
+                  [
+                    "mid",
+                    2
+                  ],
+                  [
+                    "zeta",
+                    2
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "all codes mapped",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "product",
+                    "code"
+                  ],
+                  "rows": [
+                    [
+                      "p1",
+                      "A"
+                    ],
+                    [
+                      "p2",
+                      "A"
+                    ],
+                    [
+                      "p3",
+                      "B"
+                    ]
+                  ]
+                }
+              },
+              {
+                "A": "alpha",
+                "B": "beta"
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "category",
+                  "count"
+                ],
+                "rows": [
+                  [
+                    "alpha",
+                    2
+                  ],
+                  [
+                    "beta",
+                    1
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "single product unmapped",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "product",
+                    "code"
+                  ],
+                  "rows": [
+                    [
+                      "only",
+                      "X9"
+                    ]
+                  ]
+                }
+              },
+              {
+                "A": "alpha"
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "category",
+                  "count"
+                ],
+                "rows": [
+                  [
+                    "other",
+                    1
+                  ]
+                ]
+              }
+            }
+          }
+        ],
+        "hints": [
+          "What does series.map(dictionary) leave in the places where the code is not a key? What should those places become before you count?",
+          "cats = products['code'].map(code_to_category).fillna('other') translates and buckets in one line; then a value_counts-style count gives the per-category numbers.",
+          "counts = cats.value_counts().rename_axis('category').reset_index(name='count'); return counts.sort_values(['count', 'category'], ascending=[False, True]).reset_index(drop=True) — value_counts' own tie order is not a promise, the explicit sort is."
+        ],
+        "reasoning": "<p>Two ideas compose here. <code>map</code> treats a dictionary as <b>data</b>: translation is a lookup, not logic, and its silent NaN for unknown keys is exactly the hook for the <code>\"other\"</code> policy — <code>fillna</code> converts \"unrecognized\" into a first-class bucket instead of a crash. Then the summary: <code>value_counts</code> answers \"how many per bucket\", but its ordering of <i>equal</i> counts is an implementation detail, not a contract — so a deterministic answer re-sorts on <code>[\"count\", \"category\"]</code>, the same tie-breaking discipline as any ranked report. Translate, bucket, count, then impose order: each step has one job.</p>",
+        "solution": "import pandas as pd\n\ndef category_summary(products, code_to_category):\n    \"\"\"Return ranked category counts with an 'other' bucket.\"\"\"\n    cats = products[\"code\"].map(code_to_category).fillna(\"other\")\n    counts = cats.value_counts().rename_axis(\"category\").reset_index(name=\"count\")\n    return counts.sort_values(\n        [\"count\", \"category\"], ascending=[False, True]\n    ).reset_index(drop=True)\n"
+      }
+    }
+  ]
+}

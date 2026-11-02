@@ -1,0 +1,423 @@
+{
+  "id": "std-functools",
+  "title": "functools: Memoize & Reduce",
+  "icon": "♻️",
+  "level": "intermediate",
+  "order": 30,
+  "conceptRef": "stdlib.html#s3",
+  "blurb": "Fold, pin, and remember: higher-order tools that shrink code and collapse repeated recursion into a small table.",
+  "cells": [
+    {
+      "type": "concept",
+      "title": "reduce: folding many values into one",
+      "body": "<p>Aggregation questions — a running product, a concatenated report, a merged configuration — all share one shape: start from a seed and repeatedly combine the accumulator with the next element. <code>reduce(fn, items, initial)</code> is that loop distilled to its essentials: which combination, which data, which starting point.</p><p>The starting point deserves respect. It is not a formality — it is the <b>answer for the empty input</b>. Reduce a product from 1 and an empty chain yields 1, exactly the multiplicative identity; reduce a concatenation from an empty string and an empty list of parts yields ''. Omit the initial value and reduce raises on an empty list, which is why seasoned code almost always passes it. Choosing the identity is not ceremony; it is deciding, on purpose, what the vacuous case should mean.</p>",
+      "demo": {
+        "code": "from functools import reduce\nfrom operator import add, mul\n\nprint(reduce(add, [1, 2, 3, 4], 0))\nprint(reduce(mul, [2, 3, 4], 1))\nprint(reduce(mul, [], 1))  # empty chain: the identity\nprint(reduce(lambda acc, p: acc + \"/\" + p,\n             [\"a\", \"b\", \"c\"], \"\"))"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "partial: pin arguments, ship a new function",
+      "body": "<p>Configuration usually arrives before the data does: the log format is chosen when the service starts, but the log message arrives per request. When some arguments are known early and others arrive late, <code>functools.partial(fn, ...)</code> lets you pin the early ones and hand around a ready-made function that expects only the rest.</p><p>This is more than convenience. A pinned function is <b>configuration turned into a value</b> — it can live in a list, be applied with map, be swapped for another formatter, all without threading the configuration through every call site. Compare a call like <code>decorate(msg, left, right)</code> repeated at twenty sites with a list of pinned formatters: the second version makes 'apply every style' a loop over functions instead of a loop over configuration tuples. That is the higher-order habit: <i>build the function you wish you had</i>.</p>",
+      "demo": {
+        "code": "from functools import partial\n\ndef frame(text, left, right):\n    return left + text + right\n\nshout = partial(frame, left=\"\", right=\"!\")\nbracket = partial(frame, left=\"[\", right=\"]\")\n\nprint(shout(\"done\"))\nprint(bracket(\"note\"))\nprint([bracket(w) for w in [\"alpha\", \"beta\"]])"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "lru_cache: never compute the same thing twice",
+      "body": "<p>Recursive routines with overlapping subproblems re-solve the same questions relentlessly: ask for route counts on a modest grid and the same (r, c) query is answered thousands of times. If the routine is <b>pure</b> — same arguments, same result, no side effects — then every repeated answer is wasted work, and <code>functools.lru_cache</code> will do the remembering for you: one decorator line, and each distinct argument tuple is computed once.</p><p>The proof technique below is worth stealing: put a counter inside the routine, run the workload, and <i>look at the number</i>. For fib(10) the body executes 11 times — once per distinct argument — where the uncached version would execute 177 times. Instrumenting your own code turns efficiency folklore into a measurement, and it is exactly how you justify (or reject) a cache in code review.</p>",
+      "demo": {
+        "code": "from functools import lru_cache\n\ncalls = 0\n\n@lru_cache(maxsize=None)\ndef fib(n):\n    global calls\n    calls += 1\n    if n < 2:\n        return n\n    return fib(n - 1) + fib(n - 2)\n\nprint(fib(10), \"executions:\", calls)\nprint(fib.cache_info())"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "std-functools-1",
+        "title": "Signal chain gain",
+        "difficulty": "easy",
+        "tags": [
+          "functools",
+          "reduce",
+          "aggregation"
+        ],
+        "statement": "<p>An audio rig chains gain stages. Each stage multiplies the signal by an integer factor — 2 doubles it, -1 flips its sign, 0 silences it — and the stages apply in sequence, so the rig's overall gain is the <b>product</b> of all stage factors.</p><p>Given the chain as a list of factors, return its overall gain. Be careful with the ends of the domain: a chain with <b>no stages</b> changes nothing at all, and a chain containing a zero factor is silent no matter what else it holds.</p>",
+        "constraints": [
+          "0 <= len(factors) <= 1,000",
+          "each factor is an integer with absolute value at most 50"
+        ],
+        "examples": [
+          {
+            "call": "overall_gain([2, 3, 4])",
+            "returns": "24",
+            "why": "the signal is multiplied by 2, then 3, then 4"
+          },
+          {
+            "call": "overall_gain([])",
+            "returns": "1",
+            "why": "an empty chain has no effect, and the no-effect gain is 1 — not 0"
+          }
+        ],
+        "starter": "def overall_gain(factors):\n    \"\"\"Return the product of all stage factors.\n\n    An empty chain multiplies the signal by 1.\n    \"\"\"\n    pass\n",
+        "func": "overall_gain",
+        "tests": [
+          {
+            "label": "three stages",
+            "args": [
+              [
+                2,
+                3,
+                4
+              ]
+            ],
+            "expected": 24,
+            "hidden": false
+          },
+          {
+            "label": "empty chain",
+            "args": [
+              []
+            ],
+            "expected": 1,
+            "hidden": false
+          },
+          {
+            "label": "single stage",
+            "args": [
+              [
+                7
+              ]
+            ],
+            "expected": 7,
+            "hidden": true
+          },
+          {
+            "label": "silenced chain",
+            "args": [
+              [
+                3,
+                0,
+                9
+              ]
+            ],
+            "expected": 0,
+            "hidden": true
+          },
+          {
+            "label": "two sign flips",
+            "args": [
+              [
+                -2,
+                5,
+                -1
+              ]
+            ],
+            "expected": 10,
+            "hidden": true
+          },
+          {
+            "label": "long doubling chain",
+            "args": [
+              {
+                "__repeat__": {
+                  "item": [
+                    2
+                  ],
+                  "times": 60
+                }
+              }
+            ],
+            "expected": 1152921504606846976,
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "Multiplying a whole list needs a running accumulator and a starting value. What must the starting value be for multiplication, and what does it mean for the empty chain?",
+          "functools.reduce(mul, factors, 1) folds the product left to right; the third argument is exactly the answer reduce returns when the list is empty.",
+          "from operator import mul — then return reduce(mul, factors, 1). The 1 is the multiplicative identity: unchanged for [], and the single-factor chain returns that factor."
+        ],
+        "reasoning": "<p>A fold has three decisions: the combining function, the data, and the seed. Here they are multiplication, the factors, and <b>1</b> — and the seed is the whole exercise. It is not a default somebody picked: it is the <i>multiplicative identity</i>, the one value that leaves a product unchanged, which is precisely why 'a chain with no stages changes nothing' translates to a gain of 1. The same reasoning hands you the seed for every fold you will write: 0 for sums, the empty string for concatenation, an empty list for flattening. Note also what reduce does without a seed — it raises on empty input — so passing the identity explicitly is how you keep the vacuous case defined instead of crashing.</p>",
+        "solution": "from functools import reduce\nfrom operator import mul\n\n\ndef overall_gain(factors):\n    \"\"\"Return the product of all stage factors.\n\n    An empty chain multiplies the signal by 1.\n    \"\"\"\n    # 1 is the multiplicative identity: the gain of\n    # an empty chain, and the seed of the fold.\n    return reduce(mul, factors, 1)\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "std-functools-2",
+        "title": "Fleet status banners",
+        "difficulty": "medium",
+        "tags": [
+          "functools",
+          "partial",
+          "higher-order"
+        ],
+        "statement": "<p>An operations dashboard renders status lines. A message like <code>\"deploy\"</code> dressed in a style <code>[left, right]</code> becomes <code>left + message + right</code>. Given the messages and the list of styles, produce every combination: for each message in order, apply every style in order — so the output lines are grouped message by message, and within a message, style by style.</p><p>The team's build convention is deliberate: write one tiny helper <code>_decorate(text, left, right)</code>, then build a <b>reusable formatter per style</b> by pinning that helper's decorations with <code>functools.partial</code>, and let the driver apply the formatters. The output contract is what gets graded; the convention is what keeps the dashboard code sane.</p>",
+        "constraints": [
+          "0 <= len(messages) <= 1,000",
+          "0 <= len(styles) <= 100",
+          "messages and decoration strings are short and contain no spaces"
+        ],
+        "examples": [
+          {
+            "call": "banner_lines([\"deploy\", \"rollback\"], [[\"[\", \"]\"], [\"!\", \"!\"]])",
+            "returns": "['[deploy]', '!deploy!', '[rollback]', '!rollback!']",
+            "why": "each message is rendered once per style, styles in order; messages form the outer group"
+          },
+          {
+            "call": "banner_lines([\"ok\"], [[\"{{\", \"}}\"]])",
+            "returns": "['{{ok}}']",
+            "why": "one message, one style, one line"
+          }
+        ],
+        "starter": "def banner_lines(messages, styles):\n    \"\"\"Render every (message, style) combination.\n\n    Lines are message-major: for each message in\n    order, every style in order.\n    \"\"\"\n    pass\n",
+        "func": "banner_lines",
+        "tests": [
+          {
+            "label": "two messages, two styles",
+            "args": [
+              [
+                "deploy",
+                "rollback"
+              ],
+              [
+                [
+                  "[",
+                  "]"
+                ],
+                [
+                  "!",
+                  "!"
+                ]
+              ]
+            ],
+            "expected": [
+              "[deploy]",
+              "!deploy!",
+              "[rollback]",
+              "!rollback!"
+            ],
+            "hidden": false
+          },
+          {
+            "label": "single message, single style",
+            "args": [
+              [
+                "ok"
+              ],
+              [
+                [
+                  "{{",
+                  "}}"
+                ]
+              ]
+            ],
+            "expected": [
+              "{{ok}}"
+            ],
+            "hidden": false
+          },
+          {
+            "label": "no messages",
+            "args": [
+              [],
+              [
+                [
+                  "[",
+                  "]"
+                ]
+              ]
+            ],
+            "expected": [],
+            "hidden": true
+          },
+          {
+            "label": "no styles",
+            "args": [
+              [
+                "ready"
+              ],
+              []
+            ],
+            "expected": [],
+            "hidden": true
+          },
+          {
+            "label": "no messages and no styles",
+            "args": [
+              [],
+              []
+            ],
+            "expected": [],
+            "hidden": true
+          },
+          {
+            "label": "two messages, three styles",
+            "args": [
+              [
+                "a",
+                "b"
+              ],
+              [
+                [
+                  "[",
+                  "]"
+                ],
+                [
+                  "(",
+                  ")"
+                ],
+                [
+                  "~",
+                  "~"
+                ]
+              ]
+            ],
+            "expected": [
+              "[a]",
+              "(a)",
+              "~a~",
+              "[b]",
+              "(b)",
+              "~b~"
+            ],
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "For any one style, two of _decorate's three inputs never change between calls. What does it mean to fix those two once and keep only the text as the open input?",
+          "functools.partial(_decorate, left=l, right=r) returns a callable that still needs only the text. Build one formatter per style first, then apply every formatter to every message.",
+          "formatters = [partial(_decorate, left=l, right=r) for l, r in styles]; return [fmt(m) for m in messages for fmt in formatters] — the comprehension's clause order gives the message-major grouping."
+        ],
+        "reasoning": "<p>The insight is that <b>configuration can be compiled into functions</b>. A style is configuration; a formatter that already knows its style is that configuration made callable. Once each style exists as a value in a list, the driver degenerates into one honest sentence — 'apply every formatter to every message' — with no per-call argument threading and no risk of passing the wrong decoration to the wrong call. This is the higher-order habit: instead of writing a function and repeatedly feeding it the same setup, <i>manufacture the specialized function once</i> and pass that around. The same shape shows up in production code constantly — pinned request builders, callback handlers with bound state, pre-configured loggers — anywhere setup and data arrive at different times.</p>",
+        "solution": "from functools import partial\n\n\ndef _decorate(text, left, right):\n    return left + text + right\n\n\ndef banner_lines(messages, styles):\n    \"\"\"Render every (message, style) combination.\n\n    Lines are message-major: for each message in\n    order, every style in order.\n    \"\"\"\n    # pin each style into a reusable formatter...\n    formatters = [partial(_decorate, left=l, right=r)\n                  for l, r in styles]\n    # ...then simply apply them all\n    return [fmt(m) for m in messages for fmt in formatters]\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "std-functools-3",
+        "title": "Route probe",
+        "difficulty": "hard",
+        "tags": [
+          "functools",
+          "lru_cache",
+          "recursion"
+        ],
+        "statement": "<p>A cleaning robot's firmware counts how many distinct grid routes lead from corner (0, 0) to the point (rows, cols), moving only right or up along grid lines. The counting routine obeys: routes(r, 0) = 1 and routes(0, c) = 1 — a straight edge has exactly one path — and everywhere else routes(r, c) = routes(r-1, c) + routes(r, c-1).</p><p>The routine carries a <b>probe</b>: a counter that increments every time the routine's body actually executes. Run uncached, the recursion re-solves identical subproblems and the probe count explodes — 369,511 executions for a mere (10, 10) query. Arrange your routine so <b>each distinct (r, c) subproblem executes at most once</b> during one query, and return the tuple <code>(routes, executions)</code> for the query (rows, cols).</p>",
+        "constraints": [
+          "0 <= rows, cols <= 12 (recursion depth stays trivially safe)",
+          "the probe counts executions of the routine's body; answers served from a cache are free",
+          "executions must equal the number of distinct (r, c) subproblems your query needs"
+        ],
+        "examples": [
+          {
+            "call": "path_stats(2, 2)",
+            "returns": "(6, 8)",
+            "why": "six routes reach (2, 2); the routine executed once for each of the eight subproblems the query needs — every (r, c) pair up to (2, 2) except (0, 0), which no call ever asks"
+          },
+          {
+            "call": "path_stats(1, 1)",
+            "returns": "(2, 3)",
+            "why": "two routes; three executed subproblems — (1,1), (0,1) and (1,0)"
+          }
+        ],
+        "starter": "def path_stats(rows, cols):\n    \"\"\"Return (routes to (rows, cols), body executions).\n\n    Each distinct (r, c) subproblem must execute at\n    most once per query; the probe counts executions.\n    \"\"\"\n    pass\n",
+        "func": "path_stats",
+        "tests": [
+          {
+            "label": "2x2 grid",
+            "args": [
+              2,
+              2
+            ],
+            "expected": {
+              "__tuple__": [
+                6,
+                8
+              ]
+            },
+            "hidden": false
+          },
+          {
+            "label": "1x1 grid",
+            "args": [
+              1,
+              1
+            ],
+            "expected": {
+              "__tuple__": [
+                2,
+                3
+              ]
+            },
+            "hidden": false
+          },
+          {
+            "label": "already at the corner",
+            "args": [
+              0,
+              0
+            ],
+            "expected": {
+              "__tuple__": [
+                1,
+                1
+              ]
+            },
+            "hidden": true
+          },
+          {
+            "label": "5x5 grid",
+            "args": [
+              5,
+              5
+            ],
+            "expected": {
+              "__tuple__": [
+                252,
+                35
+              ]
+            },
+            "hidden": true
+          },
+          {
+            "label": "10x10 grid",
+            "args": [
+              10,
+              10
+            ],
+            "expected": {
+              "__tuple__": [
+                184756,
+                120
+              ]
+            },
+            "hidden": true
+          },
+          {
+            "label": "rectangular 3x7 grid",
+            "args": [
+              3,
+              7
+            ],
+            "expected": {
+              "__tuple__": [
+                120,
+                31
+              ]
+            },
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "Draw the recursion for (3, 3) by hand: which (r, c) pairs get asked more than once, and what does that repetition do to the probe count?",
+          "Decorate the recursive routine with functools.lru_cache and increment the probe inside its body. The cache guarantees each distinct (r, c) is computed once; the probe proves it.",
+          "executions = 0; @lru_cache(maxsize=None) def routes(r, c): nonlocal executions; executions += 1; handle the r==0 or c==0 base case; recurse both ways. Return (routes(rows, cols), executions)."
+        ],
+        "reasoning": "<p>The probe turns an abstraction into an observation. Uncached, this recursion executes <code>2 x routes - 1</code> times — the call tree roughly mirrors the answer itself, so asking a bigger question costs exponentially more. With each distinct subproblem solved once, the count collapses to <code>(rows + 1) x (cols + 1) - 1</code>: every pair in the rectangle is needed except the origin, which no call ever asks for, and none is needed twice. That collapse is the entire value of remembering results — not a speed rumor but a change in how the work scales. The technique to steal is the measurement itself: put a counter in the routine, run the workload, and read the number. It converts 'I think this is faster' into evidence, works on any recursion, and is exactly the argument that makes a reviewer believe a cache belongs there.</p>",
+        "solution": "from functools import lru_cache\n\n\ndef path_stats(rows, cols):\n    \"\"\"Return (routes to (rows, cols), body executions).\n\n    Each distinct (r, c) subproblem must execute at\n    most once per query; the probe counts executions.\n    \"\"\"\n    executions = 0\n\n    @lru_cache(maxsize=None)\n    def routes(r, c):\n        nonlocal executions\n        executions += 1  # the probe\n        if r == 0 or c == 0:\n            return 1\n        return routes(r - 1, c) + routes(r, c - 1)\n\n    return (routes(rows, cols), executions)\n"
+      }
+    }
+  ]
+}

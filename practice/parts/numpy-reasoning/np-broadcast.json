@@ -1,0 +1,1078 @@
+{
+  "id": "np-broadcast",
+  "title": "Broadcasting Logic",
+  "icon": "📡",
+  "level": "intermediate",
+  "order": 30,
+  "conceptRef": "numpy.html#s19",
+  "blurb": "Make shapes agree from the right edge; length-1 dimensions are the universal adapter.",
+  "cells": [
+    {
+      "type": "concept",
+      "title": "Right-align the shapes, then stretch the 1s",
+      "body": "<p>Broadcasting is two rules applied to shapes <b>aligned from the right</b>: two dimensions are compatible if they are equal, or if one of them is 1 (or missing). Compatible pairs produce the larger length; anything else is rejected — a (3,) against a (4,) raises, no guessing.</p><p>The reasoning habit is to write the shapes padded at the left with imaginary 1s and read them column by column. A (3, 1) column against a (1, 4) row becomes a (3, 4) grid: each axis takes the max of the two lengths. No 3×4 array is materialized at broadcast time — the element pair for each output cell is computed on the fly, which is why broadcasting is both cheap and easy to get wrong.</p>",
+      "demo": {
+        "code": "import numpy as np\n\ncol = np.arange(3).reshape(3, 1)\nrow = np.arange(4).reshape(1, 4)\nprint((col + row).shape)\nprint(col + row)\nprint((np.ones((2, 3)) + np.zeros(3)).shape)   # (3,) aligns as (1, 3)"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "The length-1 axis is the universal adapter",
+      "body": "<p>Most broadcasting bugs are not about the rules — they are about <b>which axis is length 1</b>. <code>x[:, None]</code> turns a shape (n,) vector into an (n, 1) column; <code>x[None, :]</code> turns it into a (1, n) row. Combine one of each and every output cell gets a different mix: <code>x[:, None] - x[None, :]</code> is the (n, n) table of <i>x[i] - x[j]</i>.</p><p>This 'pair every element against every element' construction is the workhorse of difference tables and outer products, and it composes: subtract a (C,) mean vector from an (R, C) matrix to shift every column at once. It replaces the double loop people write in their first numpy week — and it is the foundation for the row-wise normalization later in this notebook.</p>",
+      "demo": {
+        "code": "import numpy as np\n\nx = np.array([1.0, 2.0, 4.0])\nprint(x[:, None] * x[None, :])     # (3,1) * (1,3) -> outer product table\ngrid = np.arange(6, dtype=float).reshape(2, 3)\nprint(grid - grid.mean(axis=0))    # (2,3) - (3,) shifts each column"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "np-broadcast-1",
+        "title": "Center the Columns",
+        "difficulty": "easy",
+        "tags": [
+          "numpy",
+          "broadcasting",
+          "statistics"
+        ],
+        "statement": "<p>Each column of a lab readings matrix comes from a different instrument, and every instrument has its own bias. Before comparing columns, remove each column's mean so every column is centered on zero.</p><p>Implement <code>center_columns(a)</code>: return a <code>float64</code> array of the same shape where column <code>j</code> equals <code>a[:, j] - mean(a[:, j])</code>, computed with <b>one broadcast subtraction</b> — <code>a - a.mean(axis=0)</code> style — and rounded to <b>4 decimal places</b>. No loops.</p>",
+        "constraints": [
+          "a is 2-D float64 with shape (R, C), R >= 1, C >= 1",
+          "the result has the same shape, dtype float64, values rounded to 4 decimal places",
+          "column j of the result is column j of a minus the mean of column j"
+        ],
+        "examples": [
+          {
+            "call": "center_columns(np.array([[1.0, 2.0, 4.0], [3.0, 6.0, 8.0], [5.0, 10.0, 12.0]]))",
+            "returns": "array([[-2., -4., -4.],\n       [ 0.,  0.,  0.],\n       [ 2.,  4.,  4.]])",
+            "why": "column means are 3, 6, 8; each column is shifted by its own mean"
+          },
+          {
+            "call": "center_columns(np.array([[7.5]]))",
+            "returns": "array([[0.]])",
+            "why": "a 1x1 matrix: the single column's mean is the value itself, so the result is 0.0"
+          }
+        ],
+        "starter": "import numpy as np\n\ndef center_columns(a):\n    \"\"\"Subtract each column's mean from that column.\n\n    a is 2-D float64; result is the same shape, rounded to 4 decimals.\n    \"\"\"\n    pass\n",
+        "func": "center_columns",
+        "tests": [
+          {
+            "label": "3x3 distinct",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      1.0,
+                      2.0,
+                      4.0
+                    ],
+                    [
+                      3.0,
+                      6.0,
+                      8.0
+                    ],
+                    [
+                      5.0,
+                      10.0,
+                      12.0
+                    ]
+                  ],
+                  "dtype": "float64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  [
+                    -2.0,
+                    -4.0,
+                    -4.0
+                  ],
+                  [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  [
+                    2.0,
+                    4.0,
+                    4.0
+                  ]
+                ],
+                "dtype": "float64"
+              }
+            },
+            "hidden": false
+          },
+          {
+            "label": "2x4 symmetric",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      2.5,
+                      5.0,
+                      7.5,
+                      10.0
+                    ],
+                    [
+                      7.5,
+                      5.0,
+                      2.5,
+                      0.0
+                    ]
+                  ],
+                  "dtype": "float64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  [
+                    -2.5,
+                    0.0,
+                    2.5,
+                    5.0
+                  ],
+                  [
+                    2.5,
+                    0.0,
+                    -2.5,
+                    -5.0
+                  ]
+                ],
+                "dtype": "float64"
+              }
+            },
+            "hidden": false
+          },
+          {
+            "label": "single row",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      1.0,
+                      2.0,
+                      3.0,
+                      4.0
+                    ]
+                  ],
+                  "dtype": "float64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  [
+                    0.0,
+                    0.0,
+                    0.0,
+                    0.0
+                  ]
+                ],
+                "dtype": "float64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "1x1 matrix",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      7.5
+                    ]
+                  ],
+                  "dtype": "float64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  [
+                    0.0
+                  ]
+                ],
+                "dtype": "float64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "4x2 quarters",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      0.25,
+                      1.0
+                    ],
+                    [
+                      0.5,
+                      2.0
+                    ],
+                    [
+                      0.75,
+                      3.0
+                    ],
+                    [
+                      1.0,
+                      4.0
+                    ]
+                  ],
+                  "dtype": "float64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  [
+                    -0.375,
+                    -1.5
+                  ],
+                  [
+                    -0.125,
+                    -0.5
+                  ],
+                  [
+                    0.125,
+                    0.5
+                  ],
+                  [
+                    0.375,
+                    1.5
+                  ]
+                ],
+                "dtype": "float64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "3x2 negatives",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      -1.0,
+                      -2.0
+                    ],
+                    [
+                      -3.0,
+                      -4.0
+                    ],
+                    [
+                      -5.0,
+                      -6.0
+                    ]
+                  ],
+                  "dtype": "float64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  [
+                    2.0,
+                    2.0
+                  ],
+                  [
+                    0.0,
+                    0.0
+                  ],
+                  [
+                    -2.0,
+                    -2.0
+                  ]
+                ],
+                "dtype": "float64"
+              }
+            },
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "a.mean(axis=0) returns one value per column. What shape does that have, and why can it be subtracted from the (R, C) matrix without any loop?",
+          "m = a.mean(axis=0) has shape (C,), which right-aligns against (R, C) as (1, C) and stretches down every row. Wrap the subtraction in np.round(..., 4) at the end.",
+          "return np.round(a - a.mean(axis=0), 4). Keep it as one broadcast expression — that is the entire lesson."
+        ],
+        "reasoning": "<p><code>a.mean(axis=0)</code> collapses the row axis and leaves one value per column — shape (C,), which is exactly what column-wise work needs: right-aligned against (R, C), it behaves like (1, C) and is stretched across every row. The subtraction therefore happens once per <i>column recipe</i> instead of once per loop iteration. The same one-liner generalizes: any per-column statistic (std, max, first row) can be applied with one broadcast, and swapping <code>axis=0</code> for <code>axis=1</code> turns the same idea on rows. The final <code>np.round(..., 4)</code> is what makes float outputs stable across machines — the mean introduces division, so pin the printed contract to four decimals.</p>",
+        "solution": "import numpy as np\n\ndef center_columns(a):\n    \"\"\"Subtract each column's mean from that column; round to 4 decimals.\"\"\"\n    return np.round(a - a.mean(axis=0), 4)\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "np-broadcast-2",
+        "title": "Rate x Weight Table",
+        "difficulty": "medium",
+        "tags": [
+          "numpy",
+          "broadcasting",
+          "outer-product"
+        ],
+        "statement": "<p>Shipping costs form a table: row <code>i</code> is a delivery zone's rate (credits per kg) and column <code>j</code> is a package weight class. Cell <code>(i, j)</code> is the cost of shipping weight class <code>j</code> through zone <code>i</code>: <code>rates[i] * weights[j]</code>.</p><p>Implement <code>times_table(rates, weights)</code>: given the two 1-D int lists, return the full <code>(len(rates), len(weights))</code> <code>int64</code> table built with <b>broadcasting</b> — turn one list into a column and the other into a row, then multiply once. No loops, and avoid <code>np.outer</code>: it hides exactly the axis reasoning this exercise trains.</p>",
+        "constraints": [
+          "rates and weights are non-empty 1-D int lists; values may be negative or zero",
+          "the result has shape (len(rates), len(weights)) and dtype int64",
+          "cell (i, j) is rates[i] * weights[j]"
+        ],
+        "examples": [
+          {
+            "call": "times_table([2, 3], [10, 20, 30])",
+            "returns": "array([[20, 40, 60],\n       [30, 60, 90]])",
+            "why": "two zones against three weight classes: a 2x3 cost table"
+          },
+          {
+            "call": "times_table([5], [1, 2, 3, 4])",
+            "returns": "array([[ 5, 10, 15, 20]])",
+            "why": "a single zone broadcast against four weights still yields a full 1x4 row"
+          }
+        ],
+        "starter": "import numpy as np\n\ndef times_table(rates, weights):\n    \"\"\"Return the (R, C) table rates[i] * weights[j] via broadcasting.\n\n    rates and weights are 1-D int lists; the result is int64.\n    \"\"\"\n    pass\n",
+        "func": "times_table",
+        "tests": [
+          {
+            "label": "two zones",
+            "args": [
+              [
+                2,
+                3
+              ],
+              [
+                10,
+                20,
+                30
+              ]
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  [
+                    20,
+                    40,
+                    60
+                  ],
+                  [
+                    30,
+                    60,
+                    90
+                  ]
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": false
+          },
+          {
+            "label": "one zone, four weights",
+            "args": [
+              [
+                5
+              ],
+              [
+                1,
+                2,
+                3,
+                4
+              ]
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  [
+                    5,
+                    10,
+                    15,
+                    20
+                  ]
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": false
+          },
+          {
+            "label": "negative rates",
+            "args": [
+              [
+                -2,
+                4
+              ],
+              [
+                3,
+                -1
+              ]
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  [
+                    -6,
+                    2
+                  ],
+                  [
+                    12,
+                    -4
+                  ]
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "three zones, one weight",
+            "args": [
+              [
+                1,
+                2,
+                3
+              ],
+              [
+                7
+              ]
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  [
+                    7
+                  ],
+                  [
+                    14
+                  ],
+                  [
+                    21
+                  ]
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "zero rate",
+            "args": [
+              [
+                0,
+                2
+              ],
+              [
+                5,
+                6
+              ]
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  [
+                    0,
+                    0
+                  ],
+                  [
+                    10,
+                    12
+                  ]
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "4x3 table",
+            "args": [
+              [
+                1,
+                2,
+                3,
+                4
+              ],
+              [
+                5,
+                6,
+                7
+              ]
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  [
+                    5,
+                    6,
+                    7
+                  ],
+                  [
+                    10,
+                    12,
+                    14
+                  ],
+                  [
+                    15,
+                    18,
+                    21
+                  ],
+                  [
+                    20,
+                    24,
+                    28
+                  ]
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "You need every rate to meet every weight. If rates becomes a column (R, 1) and weights a row (1, C), what shape does their product get — and which axis came from which list?",
+          "np.asarray(rates)[:, None] gives (R, 1) so rates vary along rows; np.asarray(weights)[None, :] gives (1, C) so weights vary along columns. Their product broadcasts both to (R, C).",
+          "r = np.asarray(rates, dtype=np.int64)[:, None]; w = np.asarray(weights, dtype=np.int64)[None, :]; return r * w."
+        ],
+        "reasoning": "<p>Inserting a length-1 axis with <code>None</code> is how you choose <i>which vector owns which output axis</i>: <code>rates[:, None]</code> is (R, 1), so rates vary along axis 0; <code>weights[None, :]</code> is (1, C), so weights vary along axis 1. Broadcasting then stretches both to (R, C), and every cell is the product of its row label and its column label — an outer product computed without any intermediate loop. This layout decision is the transferable core: distance tables, coordinate grids and heatmaps are all 'pick which 1-D quantity is the row, which is the column, insert the axes, let the ufunc fill the grid'. <code>np.outer</code> does the same arithmetic but teaches nothing about axes — which is why it is discouraged here.</p>",
+        "solution": "import numpy as np\n\ndef times_table(rates, weights):\n    \"\"\"Return the (R, C) table rates[i] * weights[j] via broadcasting.\"\"\"\n    r = np.asarray(rates, dtype=np.int64)[:, None]\n    w = np.asarray(weights, dtype=np.int64)[None, :]\n    return r * w\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "np-broadcast-3",
+        "title": "Pairwise Difference Matrix",
+        "difficulty": "medium",
+        "tags": [
+          "numpy",
+          "broadcasting",
+          "pairwise"
+        ],
+        "statement": "<p>You have one reading per sensor and want to compare every sensor against every other: entry <code>(i, j)</code> of the report is <i>sensor i's reading minus sensor j's reading</i>.</p><p>Implement <code>pairwise_deltas(x)</code>: <code>x</code> is 1-D <code>float64</code> of length n. Return the <code>(n, n)</code> <code>float64</code> matrix <code>d</code> with <code>d[i, j] = x[i] - x[j]</code>, <b>rounded to 4 decimal places</b>, built from one broadcast subtraction of a column against a row — no loops.</p>",
+        "constraints": [
+          "x is 1-D float64, n >= 1",
+          "the result has shape (n, n), dtype float64, rounded to 4 decimal places",
+          "rows are the minuend: d[i, j] = x[i] - x[j], so d[0, 1] = x[0] - x[1]"
+        ],
+        "examples": [
+          {
+            "call": "pairwise_deltas(np.array([2.0, 0.5, 1.25]))",
+            "returns": "array([[ 0.  ,  1.5 ,  0.75],\n       [-1.5 ,  0.  , -0.75],\n       [-0.75,  0.75,  0.  ]])",
+            "why": "row 0 is x[0] minus everyone: 0.0, 1.5, 0.75"
+          },
+          {
+            "call": "pairwise_deltas(np.array([4.0, 4.0]))",
+            "returns": "array([[0., 0.],\n       [0., 0.]])",
+            "why": "two equal sensors: every pairwise difference is 0.0"
+          }
+        ],
+        "starter": "import numpy as np\n\ndef pairwise_deltas(x):\n    \"\"\"Return the (n, n) matrix d[i, j] = x[i] - x[j], rounded to 4 dp.\n\n    x is 1-D float64; the result is float64 of the same rounding rule.\n    \"\"\"\n    pass\n",
+        "func": "pairwise_deltas",
+        "tests": [
+          {
+            "label": "three sensors",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    2.0,
+                    0.5,
+                    1.25
+                  ],
+                  "dtype": "float64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  [
+                    0.0,
+                    1.5,
+                    0.75
+                  ],
+                  [
+                    -1.5,
+                    0.0,
+                    -0.75
+                  ],
+                  [
+                    -0.75,
+                    0.75,
+                    0.0
+                  ]
+                ],
+                "dtype": "float64"
+              }
+            },
+            "hidden": false
+          },
+          {
+            "label": "duplicate pair",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    4.0,
+                    4.0
+                  ],
+                  "dtype": "float64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  [
+                    0.0,
+                    0.0
+                  ],
+                  [
+                    0.0,
+                    0.0
+                  ]
+                ],
+                "dtype": "float64"
+              }
+            },
+            "hidden": false
+          },
+          {
+            "label": "single sensor",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    3.5
+                  ],
+                  "dtype": "float64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  [
+                    0.0
+                  ]
+                ],
+                "dtype": "float64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "negatives",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    -1.0,
+                    -2.5,
+                    0.25
+                  ],
+                  "dtype": "float64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  [
+                    0.0,
+                    1.5,
+                    -1.25
+                  ],
+                  [
+                    -1.5,
+                    0.0,
+                    -2.75
+                  ],
+                  [
+                    1.25,
+                    2.75,
+                    0.0
+                  ]
+                ],
+                "dtype": "float64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "five sensors",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    0.25,
+                    1.5,
+                    2.0,
+                    0.75,
+                    1.25
+                  ],
+                  "dtype": "float64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  [
+                    0.0,
+                    -1.25,
+                    -1.75,
+                    -0.5,
+                    -1.0
+                  ],
+                  [
+                    1.25,
+                    0.0,
+                    -0.5,
+                    0.75,
+                    0.25
+                  ],
+                  [
+                    1.75,
+                    0.5,
+                    0.0,
+                    1.25,
+                    0.75
+                  ],
+                  [
+                    0.5,
+                    -0.75,
+                    -1.25,
+                    0.0,
+                    -0.5
+                  ],
+                  [
+                    1.0,
+                    -0.25,
+                    -0.75,
+                    0.5,
+                    0.0
+                  ]
+                ],
+                "dtype": "float64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "duplicate triple",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    4.0,
+                    4.0,
+                    1.0
+                  ],
+                  "dtype": "float64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  [
+                    0.0,
+                    0.0,
+                    3.0
+                  ],
+                  [
+                    0.0,
+                    0.0,
+                    3.0
+                  ],
+                  [
+                    -3.0,
+                    -3.0,
+                    0.0
+                  ]
+                ],
+                "dtype": "float64"
+              }
+            },
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "You want x[i] to depend only on the row and x[j] only on the column. How do you turn one 1-D vector into a pure column and a pure row?",
+          "x[:, None] is an (n, 1) column and x[None, :] a (1, n) row; their difference broadcasts to (n, n), with the row lane supplying x[i] and the column lane supplying x[j].",
+          "x = np.asarray(x, dtype=np.float64); return np.round(x[:, None] - x[None, :], 4). The diagonal is zero by construction — a free sanity check."
+        ],
+        "reasoning": "<p>The orientation is the whole exercise: <code>x[:, None]</code> places <i>x[i]</i> along rows (it repeats across columns), <code>x[None, :]</code> places <i>x[j]</i> along columns, so the broadcast difference pairs each row value with each column value exactly once per cell. Every 'compare all against all' computation — differences, ratios, equality masks, distances — is this same two-adapter pattern; once the axes are assigned, the ufunc does n² pieces of work in one call. Two free invariants come with the construction: the diagonal is exactly zero, and the matrix is antisymmetric (<code>d[j, i] = -d[i, j]</code>). Invariants like these are cheap assertions that catch axis-assignment mistakes in any code that builds such tables.</p>",
+        "solution": "import numpy as np\n\ndef pairwise_deltas(x):\n    \"\"\"Return the (n, n) matrix d[i, j] = x[i] - x[j], rounded to 4 dp.\"\"\"\n    x = np.asarray(x, dtype=np.float64)\n    return np.round(x[:, None] - x[None, :], 4)\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "np-broadcast-4",
+        "title": "Peak-Normalized Rows, Zero-Safe",
+        "difficulty": "hard",
+        "tags": [
+          "numpy",
+          "broadcasting",
+          "np.where",
+          "edge-safety"
+        ],
+        "statement": "<p>Each row of a monitoring matrix is one sensor's trace. To compare <i>shapes</i> across sensors, normalize every row by <b>its own maximum</b>: row <code>i</code> becomes <code>a[i] / max(a[i])</code>.</p><p>Dead channels break the naive formula: a row whose maximum is <b>0 or negative</b> has no positive peak, and dividing by it produces <code>inf</code>/<code>nan</code> garbage. House rule: such rows are reported as <b>all zeros</b>.</p><p>Implement <code>normalize_rows(a)</code>: return a <code>float64</code> array of the same shape where row <code>i</code> is <code>a[i] / m[i]</code> with <code>m[i] = max(a[i])</code> if <code>m[i] &gt; 0</code>, else all zeros. Round to <b>4 decimal places</b>. Keep the row maxima in a <b>trailing length-1 axis</b> so one <code>np.where</code> decides per row — no loops.</p>",
+        "constraints": [
+          "a is 2-D float64, R >= 1, C >= 1; values may be negative or zero",
+          "a row is dead iff its max is <= 0; dead rows come back as all zeros",
+          "result: same shape, float64, rounded to 4 decimal places"
+        ],
+        "examples": [
+          {
+            "call": "normalize_rows(np.array([[4.0, 8.0, 12.0], [0.0, 0.0, 0.0], [-3.0, -6.0, -9.0]]))",
+            "returns": "array([[0.3333, 0.6667, 1.    ],\n       [0.    , 0.    , 0.    ],\n       [0.    , 0.    , 0.    ]])",
+            "why": "row 0 divides by its peak 12; the all-zero row and the all-negative row are dead and come back as zeros"
+          },
+          {
+            "call": "normalize_rows(np.array([[2.0, 10.0], [5.0, 5.0]]))",
+            "returns": "array([[0.2, 1. ],\n       [1. , 1. ]])",
+            "why": "two live rows: each divided by its own max, not by a global one"
+          }
+        ],
+        "starter": "import numpy as np\n\ndef normalize_rows(a):\n    \"\"\"Divide each row by its max; rows with max <= 0 become zeros.\n\n    a is 2-D float64; result is the same shape, rounded to 4 decimals.\n    \"\"\"\n    pass\n",
+        "func": "normalize_rows",
+        "tests": [
+          {
+            "label": "one live, two dead",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      4.0,
+                      8.0,
+                      12.0
+                    ],
+                    [
+                      0.0,
+                      0.0,
+                      0.0
+                    ],
+                    [
+                      -3.0,
+                      -6.0,
+                      -9.0
+                    ]
+                  ],
+                  "dtype": "float64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  [
+                    0.3333,
+                    0.6667,
+                    1.0
+                  ],
+                  [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  [
+                    0.0,
+                    0.0,
+                    0.0
+                  ]
+                ],
+                "dtype": "float64"
+              }
+            },
+            "hidden": false
+          },
+          {
+            "label": "two live rows",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      2.0,
+                      10.0
+                    ],
+                    [
+                      5.0,
+                      5.0
+                    ]
+                  ],
+                  "dtype": "float64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  [
+                    0.2,
+                    1.0
+                  ],
+                  [
+                    1.0,
+                    1.0
+                  ]
+                ],
+                "dtype": "float64"
+              }
+            },
+            "hidden": false
+          },
+          {
+            "label": "single live row",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      7.0,
+                      3.5,
+                      0.0
+                    ]
+                  ],
+                  "dtype": "float64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  [
+                    1.0,
+                    0.5,
+                    0.0
+                  ]
+                ],
+                "dtype": "float64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "mixed-sign live row",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      -1.0,
+                      2.0,
+                      -4.0
+                    ]
+                  ],
+                  "dtype": "float64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  [
+                    -0.5,
+                    1.0,
+                    -2.0
+                  ]
+                ],
+                "dtype": "float64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "all dead",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      -1.0,
+                      -2.0
+                    ],
+                    [
+                      -3.0,
+                      -6.0
+                    ]
+                  ],
+                  "dtype": "float64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  [
+                    0.0,
+                    0.0
+                  ],
+                  [
+                    0.0,
+                    0.0
+                  ]
+                ],
+                "dtype": "float64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "column vector",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      8.0
+                    ],
+                    [
+                      -4.0
+                    ]
+                  ],
+                  "dtype": "float64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  [
+                    1.0
+                  ],
+                  [
+                    0.0
+                  ]
+                ],
+                "dtype": "float64"
+              }
+            },
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "Compute the per-row maxima first. What shape must they have so that a single np.where can make one decision per row and apply it across the whole row?",
+          "m = a.max(axis=1, keepdims=True) gives (R, 1). Build a safe divisor np.where(m > 0, m, 1.0) so the division is always finite, then np.where(m > 0, a / safe, 0.0) replaces the dead rows.",
+          "m = a.max(axis=1, keepdims=True); safe = np.where(m > 0, m, 1.0); out = np.where(m > 0, a / safe, 0.0); return np.round(out, 4)."
+        ],
+        "reasoning": "<p>The bug this exercise guards against is structural: <code>a.max(axis=1)</code> with shape (R,) will <i>not</i> broadcast against (R, C) the way you intend — it right-aligns to the last axis and divides columns by row-maxima sideways. <code>keepdims=True</code> leaves (R, 1), which aligns correctly and lets a single <code>np.where</code> apply one decision per <b>row</b> across all its columns. The two-step divisor — replace non-positive maxima with 1.0 <i>before</i> dividing — keeps the arithmetic finite: no inf or nan is ever produced, and the outer <code>np.where</code> discards those lanes anyway. 'Compute a safe value, then choose with where' is the general recipe for every divide-by-something-that-can-vanish problem: normalizations, rates, percentages.</p>",
+        "solution": "import numpy as np\n\ndef normalize_rows(a):\n    \"\"\"Divide each row by its max; rows with max <= 0 become zeros.\"\"\"\n    m = a.max(axis=1, keepdims=True)\n    safe = np.where(m > 0, m, 1.0)      # keep the division finite\n    out = np.where(m > 0, a / safe, 0.0)\n    return np.round(out, 4)\n"
+      }
+    }
+  ]
+}

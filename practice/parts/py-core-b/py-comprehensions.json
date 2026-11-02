@@ -1,0 +1,716 @@
+{
+  "id": "py-comprehensions",
+  "title": "Comprehensions",
+  "icon": "🧾",
+  "level": "beginner",
+  "order": 80,
+  "conceptRef": "python-basics.html#s11",
+  "blurb": "Filter, transform and build collections declaratively — and know exactly when the work happens.",
+  "cells": [
+    {
+      "type": "concept",
+      "title": "One line, three clauses, one fixed order",
+      "body": "<p>A list comprehension is a loop written inside-out: <code>[expression for item in source if condition]</code>. The evaluation order per element is exactly the loop's order — <b>condition first, then expression</b> — and multiple <code>for</code> clauses nest left to right, the leftmost being the outer loop. If you can read that order, you can predict any comprehension without running it, which is the whole point of the syntax.</p><p>Use comprehensions when each output element depends only on its own input element (a 'map with a filter'). The moment an output element depends on earlier elements (running totals, previous-item comparisons), the declarative shape fights you — fall back to an explicit loop. Choosing the right tool for the dependency structure is the actual skill; the syntax is just notation.</p>",
+      "demo": {
+        "code": "words = [\"go\", \"STOP\", \"wait\", \"HALT\"]\nloud_short = [w.upper() for w in words if len(w) <= 4]\nprint(loud_short)\n\n# the identical loop, for comparison\nout = []\nfor w in words:\n    if len(w) <= 4:\n        out.append(w.upper())\nprint(out == loud_short)"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "Dict comprehensions build lookup tables",
+      "body": "<p>Swap the brackets for braces and a comprehension builds a <b>dict</b>: <code>{key_expr: value_expr for item in source}</code>. This is how you turn a list of records into a lookup table in one honest line — and the value expression may itself be a conditional expression (<code>\"LOW\" if qty &lt; 5 else \"OK\"</code>), which keeps branching out of your loop body entirely.</p><p>One semantic detail does real work for you: if the same key is produced twice, the <b>later</b> production wins — the comprehension processes the source in order and each assignment overwrites the previous one. That gives you 'last record wins' merging for free, but it also means duplicate keys in a source are silently collapsing. Knowing that, you can reach for a dict comprehension precisely when collapsing is what you want.</p>",
+      "demo": {
+        "code": "racers = [(\"ada\", 41), (\"bob\", 55), (\"cy\", 33)]\nqualified = {name: laps for name, laps in racers if laps > 40}\nprint(qualified)\n\nlater = {k: n for n, k in enumerate([\"x\", \"y\", \"x\"])}\nprint(later)  # duplicate key 'x': the later write wins"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "Generator expressions: pipelines that wait",
+      "body": "<p>Replace the square brackets with parentheses and nothing is computed yet: <code>(x * x for x in stream)</code> is a <i>recipe</i>, not a result. Work happens only when something consumes the generator — a <code>for</code> loop, <code>list()</code>, <code>sum()</code>, or <code>next()</code>. Memory stays constant no matter how long the stream is, because elements are produced and forgotten one at a time.</p><p>Two consequences matter for reasoning. First, side effects inside a generator expression (calls that log, print, or bump counters) happen <b>late</b> — at consumption time, not at definition time. Second, a generator is single-use: once exhausted it yields nothing forever. Infinite sources become safe and useful the moment you combine a lazy filter with a bounded consumer such as <code>itertools.islice</code>.</p>",
+      "demo": {
+        "code": "from itertools import count, islice\n\nsquares = (n * n for n in count(1))   # infinite recipe, idle for now\nprint(next(squares))\nprint(next(squares))\nprint(list(islice(squares, 3)))       # take exactly three more"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-comprehensions-1",
+        "title": "Qualifying Margins",
+        "difficulty": "easy",
+        "tags": [
+          "comprehensions",
+          "filtering"
+        ],
+        "statement": "<p>A marathon's timing system records every finisher's time in minutes. Qualifiers are runners at or under the cutoff, and the announcer wants to know <b>by how much</b> each qualifier beat the mark.</p><p>Implement <code>qualify_margin(times, cutoff)</code>: for every time <code>t &lt;= cutoff</code>, in original order, report <code>cutoff - t</code>. Runners over the cutoff are not mentioned at all. Write it as a single list comprehension — the filter and the transform have a fixed order you should be able to state out loud.</p>",
+        "constraints": [
+          "0 <= len(times) <= 100,000",
+          "times are integers between 0 and 1,000 minutes",
+          "cutoff is an integer between 0 and 1,000",
+          "a finisher exactly at the cutoff qualifies with margin 0"
+        ],
+        "examples": [
+          {
+            "call": "qualify_margin([305, 299, 300], 300)",
+            "returns": "[1, 0]",
+            "why": "299 beats the cutoff by 1, 300 by 0; 305 is not reported"
+          },
+          {
+            "call": "qualify_margin([310, 320], 300)",
+            "returns": "[]",
+            "why": "nobody qualified, so the report is empty"
+          }
+        ],
+        "starter": "def qualify_margin(times, cutoff):\n    \"\"\"Return cutoff - t for every t <= cutoff, in original order.\"\"\"\n    pass\n",
+        "func": "qualify_margin",
+        "tests": [
+          {
+            "label": "one over, two under",
+            "args": [
+              [
+                305,
+                299,
+                300
+              ],
+              300
+            ],
+            "expected": [
+              1,
+              0
+            ],
+            "hidden": false
+          },
+          {
+            "label": "nobody qualifies",
+            "args": [
+              [
+                310,
+                320
+              ],
+              300
+            ],
+            "expected": [],
+            "hidden": false
+          },
+          {
+            "label": "empty field",
+            "args": [
+              [],
+              300
+            ],
+            "expected": [],
+            "hidden": true
+          },
+          {
+            "label": "exactly at the cutoff",
+            "args": [
+              [
+                300
+              ],
+              300
+            ],
+            "expected": [
+              0
+            ],
+            "hidden": true
+          },
+          {
+            "label": "order preserved",
+            "args": [
+              [
+                0,
+                1,
+                2
+              ],
+              2
+            ],
+            "expected": [
+              2,
+              1,
+              0
+            ],
+            "hidden": true
+          },
+          {
+            "label": "big field via repeated data",
+            "args": [
+              {
+                "__repeat__": {
+                  "item": [
+                    400
+                  ],
+                  "times": 1000
+                }
+              },
+              500
+            ],
+            "expected": {
+              "__repeat__": {
+                "item": [
+                  100
+                ],
+                "times": 1000
+              }
+            },
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "For one runner, which happens first in your head: deciding whether they qualified, or computing their margin? The comprehension must do it in that same order.",
+          "The filter clause (if ...) keeps the qualifying times; the output expression computes cutoff - t. Both live in one line.",
+          "return [cutoff - t for t in times if t <= cutoff]. Edge cases (empty list, everyone over) fall out of the comprehension for free."
+        ],
+        "reasoning": "<p>A comprehension names the two decisions every loop makes — <b>keep this element?</b> and <b>what do I emit for it?</b> — and forces them into a fixed order: the <code>if</code> clause runs before the output expression, so the margin is only ever computed for real qualifiers. That is why no branch is needed: filtering is the comprehension's job. The empty result cases (no runners, nobody under the cutoff) need no special handling because an empty or fully-filtered source simply yields nothing — a property that transfers to every declarative transform you will write.</p>",
+        "solution": "def qualify_margin(times, cutoff):\n    return [cutoff - t for t in times if t <= cutoff]\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-comprehensions-2",
+        "title": "Shelf Status Board",
+        "difficulty": "medium",
+        "tags": [
+          "dicts",
+          "comprehensions",
+          "conditionals"
+        ],
+        "statement": "<p>A warehouse scan produces rows <code>[sku, quantity]</code>. The floor dashboard needs a dict mapping each sku to a status: <code>\"LOW\"</code> if the quantity is below <code>low</code>, <code>\"FULL\"</code> if it is above <code>high</code>, otherwise <code>\"OK\"</code>.</p><p>Two rules complicate the scan: rows with quantity <code>&lt;= 0</code> are corrupt reads and must be ignored completely; and when the same sku appears again in a <i>valid</i> row, the later scan wins. Implement <code>stock_status(rows, low, high)</code> as a single dict comprehension.</p>",
+        "constraints": [
+          "1 <= len(rows) <= 1,000",
+          "skus are non-empty strings; quantities are integers between -100 and 100",
+          "0 <= low <= high <= 100",
+          "a quantity exactly at low is NOT low; exactly at high is NOT full"
+        ],
+        "examples": [
+          {
+            "call": "stock_status([[\"A1\", 5], [\"B2\", 50]], 10, 40)",
+            "returns": "{'A1': 'LOW', 'B2': 'FULL'}",
+            "why": "5 is below 10; 50 is above 40"
+          },
+          {
+            "call": "stock_status([[\"A1\", 25]], 10, 40)",
+            "returns": "{'A1': 'OK'}",
+            "why": "25 sits between the thresholds"
+          }
+        ],
+        "starter": "def stock_status(rows, low, high):\n    \"\"\"Build {sku: status} from [sku, qty] rows, skipping corrupt reads.\n\n    status is \"LOW\" if qty < low, \"FULL\" if qty > high, else \"OK\".\n    A qty <= 0 marks a corrupt row. Later valid rows win per sku.\n    \"\"\"\n    pass\n",
+        "func": "stock_status",
+        "tests": [
+          {
+            "label": "low and full shelves",
+            "args": [
+              [
+                [
+                  "A1",
+                  5
+                ],
+                [
+                  "B2",
+                  50
+                ]
+              ],
+              10,
+              40
+            ],
+            "expected": {
+              "A1": "LOW",
+              "B2": "FULL"
+            },
+            "hidden": false
+          },
+          {
+            "label": "comfortably in range",
+            "args": [
+              [
+                [
+                  "A1",
+                  25
+                ]
+              ],
+              10,
+              40
+            ],
+            "expected": {
+              "A1": "OK"
+            },
+            "hidden": false
+          },
+          {
+            "label": "later scan wins",
+            "args": [
+              [
+                [
+                  "X",
+                  5
+                ],
+                [
+                  "X",
+                  30
+                ]
+              ],
+              10,
+              40
+            ],
+            "expected": {
+              "X": "OK"
+            },
+            "hidden": true
+          },
+          {
+            "label": "corrupt rows skipped",
+            "args": [
+              [
+                [
+                  "A",
+                  0
+                ],
+                [
+                  "B",
+                  -3
+                ],
+                [
+                  "C",
+                  11
+                ]
+              ],
+              10,
+              40
+            ],
+            "expected": {
+              "C": "OK"
+            },
+            "hidden": true
+          },
+          {
+            "label": "no rows at all",
+            "args": [
+              [],
+              10,
+              40
+            ],
+            "expected": {},
+            "hidden": true
+          },
+          {
+            "label": "boundaries are inclusive-OK",
+            "args": [
+              [
+                [
+                  "P",
+                  10
+                ],
+                [
+                  "Q",
+                  40
+                ]
+              ],
+              10,
+              40
+            ],
+            "expected": {
+              "P": "OK",
+              "Q": "OK"
+            },
+            "hidden": true
+          },
+          {
+            "label": "corrupt row does not overwrite",
+            "args": [
+              [
+                [
+                  "X",
+                  5
+                ],
+                [
+                  "X",
+                  0
+                ]
+              ],
+              10,
+              40
+            ],
+            "expected": {
+              "X": "LOW"
+            },
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "Where can the three-way choice between LOW, FULL and OK live so it is still part of one comprehension?",
+          "Use a conditional expression as the value: \"LOW\" if qty < low else \"FULL\" if qty > high else \"OK\", and put the corrupt-read guard (qty > 0) in the if clause. The last-wins rule is free: dict keys produced later overwrite earlier ones.",
+          "return {sku: (\"LOW\" if qty < low else \"FULL\" if qty > high else \"OK\") for sku, qty in rows if qty > 0} — unpack each row directly in the for clause."
+        ],
+        "reasoning": "<p>Two Python features carry the whole problem. The <b>conditional expression</b> lets a three-way classification live inside the value slot, so the branching is data, not control flow — and its chains evaluate top to bottom, so 'below low' is tested before 'above high' exactly as written. The <b>duplicate-key overwrite</b> rule of dict comprehensions implements 'later scan wins' for free, because the source is walked in order and each repeated sku is simply re-assigned. The one subtle interaction: the corrupt-read filter runs <i>before</i> the assignment, so a corrupt later row never gets the chance to clobber a good earlier one — filter placement changes semantics, not just performance.</p>",
+        "solution": "def stock_status(rows, low, high):\n    return {\n        sku: (\"LOW\" if qty < low else \"FULL\" if qty > high else \"OK\")\n        for sku, qty in rows\n        if qty > 0  # corrupt reads never reach the table\n    }\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-comprehensions-3",
+        "title": "Rotating the Seat Map",
+        "difficulty": "medium",
+        "tags": [
+          "comprehensions",
+          "matrices",
+          "nesting"
+        ],
+        "statement": "<p>A theater's booking system stores the seat map as a list of rows, each row a list of seat ids. The entrance display, however, is physically rotated: it shows <b>columns</b> top to bottom — every seat of column 0 (front to back), then column 1, and so on.</p><p>Implement <code>transpose(grid)</code> returning that column view: element <code>j</code> of the result collects <code>grid[0][j], grid[1][j], ...</code>. The grid is rectangular; an empty grid, or a grid whose rows are empty, must return <code>[]</code>. Writing it as a nested comprehension forces you to decide which <code>for</code> clause is the outer one — get it wrong and rows and columns swap.</p>",
+        "constraints": [
+          "grid is rectangular: every row has the same length",
+          "0 <= rows, cols <= 100",
+          "seat ids are integers"
+        ],
+        "examples": [
+          {
+            "call": "transpose([[1, 2, 3], [4, 5, 6]])",
+            "returns": "[[1, 4], [2, 5], [3, 6]]",
+            "why": "the 2x3 map becomes three columns of two seats"
+          },
+          {
+            "call": "transpose([[7]])",
+            "returns": "[[7]]",
+            "why": "a single seat is its own column"
+          }
+        ],
+        "starter": "def transpose(grid):\n    \"\"\"Return the grid re-cut into columns (element j lists row by row).\"\"\"\n    pass\n",
+        "func": "transpose",
+        "tests": [
+          {
+            "label": "2x3 map",
+            "args": [
+              [
+                [
+                  1,
+                  2,
+                  3
+                ],
+                [
+                  4,
+                  5,
+                  6
+                ]
+              ]
+            ],
+            "expected": [
+              [
+                1,
+                4
+              ],
+              [
+                2,
+                5
+              ],
+              [
+                3,
+                6
+              ]
+            ],
+            "hidden": false
+          },
+          {
+            "label": "single seat",
+            "args": [
+              [
+                [
+                  7
+                ]
+              ]
+            ],
+            "expected": [
+              [
+                7
+              ]
+            ],
+            "hidden": false
+          },
+          {
+            "label": "one row becomes columns",
+            "args": [
+              [
+                [
+                  7,
+                  8,
+                  9
+                ]
+              ]
+            ],
+            "expected": [
+              [
+                7
+              ],
+              [
+                8
+              ],
+              [
+                9
+              ]
+            ],
+            "hidden": true
+          },
+          {
+            "label": "one column becomes a row",
+            "args": [
+              [
+                [
+                  1
+                ],
+                [
+                  2
+                ]
+              ]
+            ],
+            "expected": [
+              [
+                1,
+                2
+              ]
+            ],
+            "hidden": true
+          },
+          {
+            "label": "empty map",
+            "args": [
+              []
+            ],
+            "expected": [],
+            "hidden": true
+          },
+          {
+            "label": "rows with no seats",
+            "args": [
+              [
+                [],
+                []
+              ]
+            ],
+            "expected": [],
+            "hidden": true
+          },
+          {
+            "label": "3x2 map",
+            "args": [
+              [
+                [
+                  1,
+                  2
+                ],
+                [
+                  3,
+                  4
+                ],
+                [
+                  5,
+                  6
+                ]
+              ]
+            ],
+            "expected": [
+              [
+                1,
+                3,
+                5
+              ],
+              [
+                2,
+                4,
+                6
+              ]
+            ],
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "The answer has one element per column of the input. Which loop — over columns or over rows — must therefore be the OUTER for clause?",
+          "Outer clause walks column indices c in range(len(grid[0])); inner clause walks the rows and picks row[c]. Guard the degenerate shapes before building anything.",
+          "if not grid or not grid[0]: return [] — then return [[row[c] for row in grid] for c in range(len(grid[0]))]. Read it out loud: for each column, the seats down that column."
+        ],
+        "reasoning": "<p>The exercise is really about reading <b>for-clause order</b> as loop nesting: in <code>[[row[c] for row in grid] for c in range(...)]</code> the rightmost <code>for</code> is the inner loop, so the comprehension walks every row once per column — which is exactly what a column view is. Swap the clauses and you get the original grid back, a one-character bug that only boundary tests catch. The empty-input guard exists because <code>grid[0]</code> is meaningless when there are no rows or no seats: degenerate shapes are decided <i>before</i> the clever part runs. The same nesting rule governs every multi-for comprehension you will ever read.</p>",
+        "solution": "def transpose(grid):\n    if not grid or not grid[0]:\n        return []\n    return [[row[c] for row in grid] for c in range(len(grid[0]))]\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-comprehensions-4",
+        "title": "Prime Channels",
+        "difficulty": "hard",
+        "tags": [
+          "generators",
+          "laziness",
+          "arithmetic"
+        ],
+        "statement": "<p>A deep-space relay is licensed to transmit only on <b>prime-numbered</b> channels, and mission control needs the first <code>n</code> of them, in order. You cannot know in advance how far you must search to collect <code>n</code> primes — so the honest design is an <b>infinite lazy stream</b>, not a guessed upper bound.</p><p>Implement <code>first_primes(n)</code> built exactly this way: a generator expression over <code>itertools.count(2)</code> filtered by a primality helper, consumed with <code>itertools.islice</code>. The helper must test divisibility only up to the <b>square root</b> of the candidate — checking every smaller number works but multiplies the work for large channels.</p>",
+        "constraints": [
+          "0 <= n <= 200 (the 200th channel is 1229, so keep the helper lean)",
+          "the stream must be lazy: no precomputed list of candidates, no guessed upper bound like n * 20",
+          "the primality helper stops probing once d * d exceeds the candidate",
+          "n = 0 must return [] without pulling a single value from the stream"
+        ],
+        "examples": [
+          {
+            "call": "first_primes(5)",
+            "returns": "[2, 3, 5, 7, 11]",
+            "why": "the first five prime channels"
+          },
+          {
+            "call": "first_primes(1)",
+            "returns": "[2]",
+            "why": "the smallest prime"
+          }
+        ],
+        "starter": "from itertools import count, islice\n\n\ndef first_primes(n):\n    \"\"\"Return the first n primes as a list, generated lazily.\n\n    Build a generator expression over count(2), filter with a helper\n    that only probes divisors up to the square root, and consume it\n    with islice.\n    \"\"\"\n    pass\n",
+        "func": "first_primes",
+        "tests": [
+          {
+            "label": "first five",
+            "args": [
+              5
+            ],
+            "expected": [
+              2,
+              3,
+              5,
+              7,
+              11
+            ],
+            "hidden": false
+          },
+          {
+            "label": "first ten",
+            "args": [
+              10
+            ],
+            "expected": [
+              2,
+              3,
+              5,
+              7,
+              11,
+              13,
+              17,
+              19,
+              23,
+              29
+            ],
+            "hidden": false
+          },
+          {
+            "label": "none requested",
+            "args": [
+              0
+            ],
+            "expected": [],
+            "hidden": true
+          },
+          {
+            "label": "just two",
+            "args": [
+              2
+            ],
+            "expected": [
+              2,
+              3
+            ],
+            "hidden": true
+          },
+          {
+            "label": "first twenty",
+            "args": [
+              20
+            ],
+            "expected": [
+              2,
+              3,
+              5,
+              7,
+              11,
+              13,
+              17,
+              19,
+              23,
+              29,
+              31,
+              37,
+              41,
+              43,
+              47,
+              53,
+              59,
+              61,
+              67,
+              71
+            ],
+            "hidden": true
+          },
+          {
+            "label": "first fifty",
+            "args": [
+              50
+            ],
+            "expected": [
+              2,
+              3,
+              5,
+              7,
+              11,
+              13,
+              17,
+              19,
+              23,
+              29,
+              31,
+              37,
+              41,
+              43,
+              47,
+              53,
+              59,
+              61,
+              67,
+              71,
+              73,
+              79,
+              83,
+              89,
+              97,
+              101,
+              103,
+              107,
+              109,
+              113,
+              127,
+              131,
+              137,
+              139,
+              149,
+              151,
+              157,
+              163,
+              167,
+              173,
+              179,
+              181,
+              191,
+              193,
+              197,
+              199,
+              211,
+              223,
+              227,
+              229
+            ],
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "Why is it enough to test divisors only up to the square root of a candidate m — if m = a * b, what is the largest the smaller factor can be?",
+          "Write is_prime(m): reject m < 2, then probe d = 2, 3, 5, ... while d * d <= m. The lazy part is one line: (p for p in count(2) if is_prime(p)), consumed via islice.",
+          "from itertools import count, islice — stream = (p for p in count(2) if is_prime(p)); return list(islice(stream, n)). islice(stream, 0) pulls nothing, so n = 0 is free."
+        ],
+        "reasoning": "<p>Two ideas stack here. The arithmetic one: if <code>m = a * b</code> with <code>a &lt;= b</code>, then <code>a * a &lt;= m</code> — so any composite has a factor at or below its square root, and probing past the root can never reveal anything new. That single inequality shrinks the work per candidate from <code>m</code> to roughly <code>sqrt(m)</code>. The structural one: <code>count(2)</code> plus a lazy filter gives you an infinite stream of candidates that costs nothing until consumed, and <code>islice(stream, n)</code> is the bounded consumer that makes infinity safe. The pattern — infinite generator expression, filter, islice — is the standard shape for 'the first n things satisfying P' whenever no formula tells you where the nth one lives.</p>",
+        "solution": "from itertools import count, islice\n\n\ndef first_primes(n):\n    \"\"\"Return the first n prime channel numbers, lazily.\"\"\"\n    def is_prime(m):\n        if m < 2:\n            return False\n        if m % 2 == 0:\n            return m == 2\n        d = 3\n        while d * d <= m:      # only probe up to the square root\n            if m % d == 0:\n                return False\n            d += 2\n        return True\n\n    stream = (p for p in count(2) if is_prime(p))  # infinite, lazy\n    return list(islice(stream, n))\n"
+      }
+    }
+  ]
+}

@@ -1,0 +1,1079 @@
+{
+  "id": "py-lists",
+  "title": "List Reasoning",
+  "icon": "📋",
+  "level": "beginner",
+  "order": 30,
+  "conceptRef": "python-basics.html#s3",
+  "blurb": "One pass, two accumulators, a carried record — order-preserving list logic under budget.",
+  "cells": [
+    {
+      "type": "concept",
+      "title": "Order is data",
+      "body": "<p>A list is an ordered, mutable sequence — and that ordering carries <i>meaning</i>: the index of an entry is often its arrival rank, its priority, or its position in a queue. Because positions are part of the data, solutions that rebuild lists (slices, comprehensions, accumulators) preserve meaning for free, while solutions that sort or re-group must consciously put the order back.</p><p>Two habits follow. First: when the answer is a transformed sequence, build a <b>new</b> list and return it — the caller gets a checkable value and the input is never mutated behind anyone's back. Second: when you need 'which positions qualify', enumerate — values alone lose the very information the question asks about.</p>",
+      "demo": {
+        "code": "orders = ['brew', 'brew', 'press']\nprint(orders)\norders[1] = 'steep'          # lists are mutable\nprint(orders)\nprint(orders[1:], orders[:-1])"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "Membership has a price",
+      "body": "<p>Testing <code>x in some_list</code> walks the list from the front, so a loop that re-tests membership against a growing list does 1 + 2 + … + n comparisons — quadratic in the worst case. A <code>set</code> answers the same question in one near-constant step, which is why the idiom 'a set for what I have seen, a list for what I keep' shows up in nearly every deduplication and uniqueness problem.</p><p>The rule of thumb: membership questions about a <i>working state</i> ('have I visited this?', 'did I already output that?') belong to a set. The ordered result you return to the caller belongs to a list. Keeping the two responsibilities in two containers is what keeps the whole pass linear.</p>",
+      "demo": {
+        "code": "tags = ['red', 'blue', 'red', 'green']\nseen = set()\nfresh = []\nfor t in tags:\n    if t not in seen:\n        seen.add(t)\n        fresh.append(t)\nprint(fresh)"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "Carry the answer with you",
+      "body": "<p>Many list questions ask for a value at every position that depends on everything before it — the running total, the best so far, the net level. Recomputing that history for each position rescans the prefix every time; carrying one variable forward turns the whole table into a single linear pass, because each new element extends the previous answer in constant work.</p><p>The invariant to state to yourself: 'after step i, my carry holds the summary of items 0..i'. Once that sentence is true, the loop body is usually one line — and edge cases like an empty input or an all-negative log fall out of the design instead of needing special cases.</p>",
+      "demo": {
+        "code": "legs = [3, -1, 4, -2, 5]\ntotal = 0\ntotals = []\nfor x in legs:\n    total += x\n    totals.append(total)\nprint(totals)\nprint([max(totals[:i + 1]) for i in range(len(totals))])"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-lists-1",
+        "title": "Import without double tags",
+        "difficulty": "easy",
+        "tags": [
+          "lists",
+          "uniqueness"
+        ],
+        "statement": "<p>A photo importer scans memory cards in order. The camera sometimes writes the same tag twice for one photo, but the catalog must list each tag <b>once</b>, in the order tags were <b>first</b> seen — later duplicates are dropped.</p><p>Implement <code>first_seen(tags)</code>: return a new list with the first occurrence of each tag, in first-seen order. Do not mutate <code>tags</code>.</p>",
+        "constraints": [
+          "0 <= len(tags) <= 100,000",
+          "tags are non-empty lowercase words"
+        ],
+        "examples": [
+          {
+            "call": "first_seen(['sun', 'fog', 'sun', 'rain', 'fog'])",
+            "why": "'sun' and 'fog' keep their first occurrence; the later repeats are dropped",
+            "returns": "['sun', 'fog', 'rain']"
+          },
+          {
+            "call": "first_seen(['a', 'b', 'c'])",
+            "why": "nothing repeats, so the list passes through unchanged",
+            "returns": "['a', 'b', 'c']"
+          }
+        ],
+        "starter": "def first_seen(tags):\n    \"\"\"Return each tag once, keeping first-seen order.\"\"\"\n    pass\n",
+        "func": "first_seen",
+        "tests": [
+          {
+            "label": "drops later duplicates",
+            "args": [
+              [
+                "sun",
+                "fog",
+                "sun",
+                "rain",
+                "fog"
+              ]
+            ],
+            "expected": [
+              "sun",
+              "fog",
+              "rain"
+            ],
+            "hidden": false
+          },
+          {
+            "label": "no duplicates",
+            "args": [
+              [
+                "a",
+                "b",
+                "c"
+              ]
+            ],
+            "expected": [
+              "a",
+              "b",
+              "c"
+            ],
+            "hidden": false
+          },
+          {
+            "label": "empty card",
+            "args": [
+              []
+            ],
+            "expected": [],
+            "hidden": true
+          },
+          {
+            "label": "single tag",
+            "args": [
+              [
+                "x"
+              ]
+            ],
+            "expected": [
+              "x"
+            ],
+            "hidden": true
+          },
+          {
+            "label": "all the same",
+            "args": [
+              [
+                "echo",
+                "echo",
+                "echo"
+              ]
+            ],
+            "expected": [
+              "echo"
+            ],
+            "hidden": true
+          },
+          {
+            "label": "duplicates far apart",
+            "args": [
+              [
+                "p",
+                "q",
+                "r",
+                "p",
+                "s",
+                "q"
+              ]
+            ],
+            "expected": [
+              "p",
+              "q",
+              "r",
+              "s"
+            ],
+            "hidden": true
+          },
+          {
+            "label": "long alternating input",
+            "args": [
+              {
+                "__repeat__": {
+                  "item": [
+                    "k",
+                    "m"
+                  ],
+                  "times": 5000
+                }
+              }
+            ],
+            "expected": [
+              "k",
+              "m"
+            ],
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "You need to remember which tags you have already output. Which container answers 'have I seen this before?' without scanning your output list?",
+          "Keep a set of already-seen tags next to the result list; walk tags once, appending a tag only when it is not yet in the set.",
+          "seen = set(); out = []; for t in tags: if t not in seen: seen.add(t); out.append(t); return out. The set makes each check independent of how many tags you have already kept."
+        ],
+        "reasoning": "<p>The naive version — <code>if t not in out</code> — tests membership against the output list, and that test walks the list, so a run of n distinct tags costs 1 + 2 + … + n comparisons. Keeping a <code>set</code> of seen tags beside the result list makes 'already kept?' a near-constant lookup, so the whole pass is linear: the result list preserves order, the set handles deduplication. This pairing — an ordered list for the answer, a set for the 'have I seen it?' question — is one of the most reusable structures in data cleaning.</p>",
+        "solution": "def first_seen(tags):\n    seen = set()\n    out = []\n    for t in tags:\n        if t not in seen:      # set lookup, not a scan of out\n            seen.add(t)\n            out.append(t)\n    return out\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-lists-2",
+        "title": "Clubhouse record board",
+        "difficulty": "easy",
+        "tags": [
+          "lists",
+          "aggregates"
+        ],
+        "statement": "<p>A gliding club logs one number per flight: the flight's net score (penalties can make it negative). The clubhouse board shows, after each flight, the <b>best score so far</b> — the record the current pilots have to beat.</p><p>Implement <code>best_so_far(scores)</code>: return a list of the same length where position <code>i</code> holds the maximum of <code>scores[0..i]</code>.</p>",
+        "constraints": [
+          "0 <= len(scores) <= 100,000",
+          "-1,000 <= each score <= 1,000"
+        ],
+        "examples": [
+          {
+            "call": "best_so_far([12, 7, 15, 3, 15])",
+            "why": "the record starts at 12, survives a 7, jumps to 15 on the third flight, and never drops",
+            "returns": "[12, 12, 15, 15, 15]"
+          },
+          {
+            "call": "best_so_far([-5, -2, -9])",
+            "why": "with all-negative scores the record still rises: -5, then -2, then -2 again",
+            "returns": "[-5, -2, -2]"
+          }
+        ],
+        "starter": "def best_so_far(scores):\n    \"\"\"Return the running maximum after each entry.\"\"\"\n    pass\n",
+        "func": "best_so_far",
+        "tests": [
+          {
+            "label": "records only rise",
+            "args": [
+              [
+                12,
+                7,
+                15,
+                3,
+                15
+              ]
+            ],
+            "expected": [
+              12,
+              12,
+              15,
+              15,
+              15
+            ],
+            "hidden": false
+          },
+          {
+            "label": "all negative",
+            "args": [
+              [
+                -5,
+                -2,
+                -9
+              ]
+            ],
+            "expected": [
+              -5,
+              -2,
+              -2
+            ],
+            "hidden": false
+          },
+          {
+            "label": "empty log",
+            "args": [
+              []
+            ],
+            "expected": [],
+            "hidden": true
+          },
+          {
+            "label": "single flight",
+            "args": [
+              [
+                4
+              ]
+            ],
+            "expected": [
+              4
+            ],
+            "hidden": true
+          },
+          {
+            "label": "strictly improving",
+            "args": [
+              [
+                1,
+                2,
+                3,
+                4
+              ]
+            ],
+            "expected": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "hidden": true
+          },
+          {
+            "label": "strictly worsening",
+            "args": [
+              [
+                9,
+                7,
+                5
+              ]
+            ],
+            "expected": [
+              9,
+              9,
+              9
+            ],
+            "hidden": true
+          },
+          {
+            "label": "flat",
+            "args": [
+              [
+                0,
+                0,
+                0
+              ]
+            ],
+            "expected": [
+              0,
+              0,
+              0
+            ],
+            "hidden": true
+          },
+          {
+            "label": "first is the worst",
+            "args": [
+              [
+                -3,
+                0,
+                -1,
+                5
+              ]
+            ],
+            "expected": [
+              -3,
+              0,
+              0,
+              5
+            ],
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "Do you need to recompute the maximum of the whole prefix for every position, or can you carry one number forward?",
+          "Carry the running record: after each score, if it beats the record, replace the record; then append the current record to the board.",
+          "record = None; out = []; for s in scores: if record is None or s > record: record = s; out.append(record); return out. Starting from the first element (not from 0) is what keeps all-negative logs correct."
+        ],
+        "reasoning": "<p>Recomputing <code>max(scores[:i+1])</code> per position rescans the prefix every time — quadratic overall. The record can only change when a flight beats it, so carrying one variable turns the whole board into a single linear pass; the invariant is 'after step i, record holds the maximum of scores[0..i]'. Initializing from the first element (or a None sentinel) matters: starting at 0 would corrupt an all-negative log. The transferable pattern — carry the aggregate, extend the answer — reappears in running totals, running minimums, and any prefix summary.</p>",
+        "solution": "def best_so_far(scores):\n    out = []\n    record = None\n    for s in scores:\n        if record is None or s > record:\n            record = s\n        out.append(record)\n    return out\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-lists-3",
+        "title": "Two lanes, arrival order kept",
+        "difficulty": "medium",
+        "tags": [
+          "lists",
+          "ordering"
+        ],
+        "statement": "<p>A parcel center splits packages onto two conveyor lanes by weight: the <b>light</b> lane takes packages under the weight limit, the <b>heavy</b> lane takes packages at or above it. Within each lane, packages must keep arrival order — the packers downstream work first-in-first-out.</p><p>Implement <code>split_shipment(weights, limit)</code>: return a tuple <code>(light_lane, heavy_lane)</code>. A package weighing exactly <code>limit</code> belongs to the heavy lane.</p>",
+        "constraints": [
+          "0 <= len(weights) <= 100,000",
+          "-1,000 <= each weight <= 10,000",
+          "weights may repeat"
+        ],
+        "examples": [
+          {
+            "call": "split_shipment([4, 9, 2, 7, 5], 5)",
+            "why": "4 and 2 are under 5; 9, 7 and the boundary package 5 (exactly the limit) are heavy — each lane preserves arrival order",
+            "returns": "([4, 2], [9, 7, 5])"
+          },
+          {
+            "call": "split_shipment([10], 5)",
+            "why": "one heavy package, empty light lane",
+            "returns": "([], [10])"
+          }
+        ],
+        "starter": "def split_shipment(weights, limit):\n    \"\"\"Return (light, heavy) preserving arrival order in both.\"\"\"\n    pass\n",
+        "func": "split_shipment",
+        "tests": [
+          {
+            "label": "mixed with boundary",
+            "args": [
+              [
+                4,
+                9,
+                2,
+                7,
+                5
+              ],
+              5
+            ],
+            "expected": {
+              "__tuple__": [
+                [
+                  4,
+                  2
+                ],
+                [
+                  9,
+                  7,
+                  5
+                ]
+              ]
+            },
+            "hidden": false
+          },
+          {
+            "label": "all heavy",
+            "args": [
+              [
+                6,
+                7
+              ],
+              5
+            ],
+            "expected": {
+              "__tuple__": [
+                [],
+                [
+                  6,
+                  7
+                ]
+              ]
+            },
+            "hidden": false
+          },
+          {
+            "label": "all light",
+            "args": [
+              [
+                1,
+                2
+              ],
+              5
+            ],
+            "expected": {
+              "__tuple__": [
+                [
+                  1,
+                  2
+                ],
+                []
+              ]
+            },
+            "hidden": true
+          },
+          {
+            "label": "empty shipment",
+            "args": [
+              [],
+              3
+            ],
+            "expected": {
+              "__tuple__": [
+                [],
+                []
+              ]
+            },
+            "hidden": true
+          },
+          {
+            "label": "everything at the limit",
+            "args": [
+              [
+                5,
+                5
+              ],
+              5
+            ],
+            "expected": {
+              "__tuple__": [
+                [],
+                [
+                  5,
+                  5
+                ]
+              ]
+            },
+            "hidden": true
+          },
+          {
+            "label": "order kept in both lanes",
+            "args": [
+              [
+                1,
+                9,
+                2,
+                8,
+                3
+              ],
+              5
+            ],
+            "expected": {
+              "__tuple__": [
+                [
+                  1,
+                  2,
+                  3
+                ],
+                [
+                  9,
+                  8
+                ]
+              ]
+            },
+            "hidden": true
+          },
+          {
+            "label": "negative weights are light",
+            "args": [
+              [
+                -2,
+                0,
+                3
+              ],
+              1
+            ],
+            "expected": {
+              "__tuple__": [
+                [
+                  -2,
+                  0
+                ],
+                [
+                  3
+                ]
+              ]
+            },
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "Two output groups, one pass. What single comparison decides the lane — and where does the boundary package (weight == limit) go?",
+          "Walk weights once; append to the light list when w < limit, otherwise (including == limit) to the heavy list; return both lists as a tuple.",
+          "light, heavy = [], []; for w in weights: if w < limit: light.append(w) else: heavy.append(w); return (light, heavy). No sorting anywhere — sorting would destroy the arrival order you were asked to keep."
+        ],
+        "reasoning": "<p>One comparison per package decides everything, and appending to one of two lists preserves arrival order for free — lists append at the back, so relative order inside each lane is exactly arrival order. The boundary belongs to heavy by specification (<code>w &lt; limit</code> sends only strictly-light packages left); deciding that once, up front, keeps the code free of later patches. Returning a tuple gives the caller a fixed shape to unpack. The transferable point: 'split by a predicate, keep original order' is one loop and two accumulators — never sort and re-separate, which destroys the order you were asked to keep.</p>",
+        "solution": "def split_shipment(weights, limit):\n    light, heavy = [], []\n    for w in weights:\n        if w < limit:            # strictly light goes left\n            light.append(w)\n        else:                    # boundary and above go right\n            heavy.append(w)\n    return (light, heavy)\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-lists-4",
+        "title": "Net altitude at each waypoint",
+        "difficulty": "medium",
+        "tags": [
+          "lists",
+          "totals"
+        ],
+        "statement": "<p>A hiking app records the elevation <b>change</b> of each trail segment: up is positive, down is negative. The review chart plots the walker's net altitude (relative to the trailhead, which counts as 0) at the end of every segment.</p><p>Implement <code>net_altitudes(gains)</code>: return a list of the same length where entry <code>i</code> is the sum of <code>gains[0..i]</code>.</p>",
+        "constraints": [
+          "0 <= len(gains) <= 100,000",
+          "-5,000 <= each gain <= 5,000"
+        ],
+        "examples": [
+          {
+            "call": "net_altitudes([40, -15, 60])",
+            "why": "40, then 40-15 = 25, then 25+60 = 85",
+            "returns": "[40, 25, 85]"
+          },
+          {
+            "call": "net_altitudes([-10, -5])",
+            "why": "descending only: -10, then -15",
+            "returns": "[-10, -15]"
+          }
+        ],
+        "starter": "def net_altitudes(gains):\n    \"\"\"Return the running totals after each segment.\"\"\"\n    pass\n",
+        "func": "net_altitudes",
+        "tests": [
+          {
+            "label": "up and down",
+            "args": [
+              [
+                40,
+                -15,
+                60
+              ]
+            ],
+            "expected": [
+              40,
+              25,
+              85
+            ],
+            "hidden": false
+          },
+          {
+            "label": "descending only",
+            "args": [
+              [
+                -10,
+                -5
+              ]
+            ],
+            "expected": [
+              -10,
+              -15
+            ],
+            "hidden": false
+          },
+          {
+            "label": "empty trail",
+            "args": [
+              []
+            ],
+            "expected": [],
+            "hidden": true
+          },
+          {
+            "label": "one segment",
+            "args": [
+              [
+                7
+              ]
+            ],
+            "expected": [
+              7
+            ],
+            "hidden": true
+          },
+          {
+            "label": "flat",
+            "args": [
+              [
+                0,
+                0,
+                0
+              ]
+            ],
+            "expected": [
+              0,
+              0,
+              0
+            ],
+            "hidden": true
+          },
+          {
+            "label": "below the trailhead",
+            "args": [
+              [
+                5,
+                -8,
+                2
+              ]
+            ],
+            "expected": [
+              5,
+              -3,
+              -1
+            ],
+            "hidden": true
+          },
+          {
+            "label": "mixed week",
+            "args": [
+              [
+                10,
+                -10,
+                10,
+                -10,
+                10,
+                -10
+              ]
+            ],
+            "expected": [
+              10,
+              0,
+              10,
+              0,
+              10,
+              0
+            ],
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "Entry i is a sum you already almost computed for entry i-1. What can you carry between steps instead of re-adding from scratch?",
+          "Carry a running total: add each gain to it, then append the total after each step.",
+          "total = 0; out = []; for g in gains: total += g; out.append(total); return out. The empty trail never enters the loop, so it naturally returns []."
+        ],
+        "reasoning": "<p>Each entry extends the previous one by a single addition — that is the definition of a running total, and it is why the whole chart is one linear pass: the invariant is 'after step i, total equals the sum of gains[0..i]', and each step costs one <code>+=</code>. Recomputing <code>sum(gains[:i+1])</code> per position would re-walk the prefix every time and turn the chart quadratic. The same carry-aggregate idea powers running maxima, net battery levels, and cumulative counters in logs — whenever position i asks about 'everything up to here', carry the answer instead of recomputing it.</p>",
+        "solution": "def net_altitudes(gains):\n    total = 0\n    out = []\n    for g in gains:\n        total += g\n        out.append(total)\n    return out\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-lists-5",
+        "title": "Merged outbound log, with a budget",
+        "difficulty": "medium",
+        "tags": [
+          "lists",
+          "merging",
+          "efficiency"
+        ],
+        "statement": "<p>Two warehouses each keep their outbound log as a list of departure minutes, already sorted. The regional dashboard needs one merged log — still sorted — and it must be produced without re-sorting: the merge walks both logs once. When both logs have an entry with the same minute, the entry from the <b>first</b> log goes first.</p><p>Implement <code>merge_sorted(a, b)</code>. Both inputs arrive as <code>OpCountList</code>s: every element inspection (from either list) costs 1, and your algorithm may inspect at most <b>4 × (len(a) + len(b))</b> elements in total. Repeatedly re-reading either list to hunt for the next smallest entry is what the budget forbids.</p>",
+        "constraints": [
+          "0 <= len(a), len(b) <= 100,000",
+          "a and b are sorted ascending (given, not checked)",
+          "inspection budget: at most 4 × (len(a) + len(b)) element inspections across both lists (len() is free)"
+        ],
+        "examples": [
+          {
+            "call": "merge_sorted([1, 3, 5], [2, 4])",
+            "why": "the two sorted logs interleave into one sorted log",
+            "returns": "[1, 2, 3, 4, 5]"
+          },
+          {
+            "call": "merge_sorted([], [7])",
+            "why": "an empty log contributes nothing",
+            "returns": "[7]"
+          }
+        ],
+        "starter": "def merge_sorted(a, b):\n    \"\"\"Merge two sorted lists into one sorted list.\"\"\"\n    pass\n",
+        "func": "merge_sorted",
+        "tests": [
+          {
+            "label": "interleaved",
+            "args": [
+              {
+                "__opcount__": {
+                  "data": [
+                    1,
+                    3,
+                    5
+                  ]
+                }
+              },
+              {
+                "__opcount__": {
+                  "data": [
+                    2,
+                    4
+                  ]
+                }
+              }
+            ],
+            "expected": [
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "hidden": false
+          },
+          {
+            "label": "one empty",
+            "args": [
+              {
+                "__opcount__": {
+                  "data": []
+                }
+              },
+              {
+                "__opcount__": {
+                  "data": [
+                    7
+                  ]
+                }
+              }
+            ],
+            "expected": [
+              7
+            ],
+            "hidden": false
+          },
+          {
+            "label": "both empty",
+            "args": [
+              {
+                "__opcount__": {
+                  "data": []
+                }
+              },
+              {
+                "__opcount__": {
+                  "data": []
+                }
+              }
+            ],
+            "expected": [],
+            "hidden": true
+          },
+          {
+            "label": "first all smaller",
+            "args": [
+              {
+                "__opcount__": {
+                  "data": [
+                    1,
+                    2
+                  ]
+                }
+              },
+              {
+                "__opcount__": {
+                  "data": [
+                    8,
+                    9
+                  ]
+                }
+              }
+            ],
+            "expected": [
+              1,
+              2,
+              8,
+              9
+            ],
+            "hidden": true
+          },
+          {
+            "label": "duplicates across logs",
+            "args": [
+              {
+                "__opcount__": {
+                  "data": [
+                    2,
+                    2,
+                    4
+                  ]
+                }
+              },
+              {
+                "__opcount__": {
+                  "data": [
+                    2,
+                    3
+                  ]
+                }
+              }
+            ],
+            "expected": [
+              2,
+              2,
+              2,
+              3,
+              4
+            ],
+            "hidden": true
+          },
+          {
+            "label": "identical single values",
+            "args": [
+              {
+                "__opcount__": {
+                  "data": [
+                    5
+                  ]
+                }
+              },
+              {
+                "__opcount__": {
+                  "data": [
+                    5
+                  ]
+                }
+              }
+            ],
+            "expected": [
+              5,
+              5
+            ],
+            "hidden": true
+          },
+          {
+            "label": "budget: 12k steady stream",
+            "hidden": true,
+            "args": [
+              {
+                "__opcount__": {
+                  "data": {
+                    "__repeat__": {
+                      "item": [
+                        7
+                      ],
+                      "times": 6000
+                    }
+                  }
+                }
+              },
+              {
+                "__opcount__": {
+                  "data": {
+                    "__repeat__": {
+                      "item": [
+                        7
+                      ],
+                      "times": 6000
+                    }
+                  }
+                }
+              }
+            ],
+            "expected": {
+              "__repeat__": {
+                "item": [
+                  7
+                ],
+                "times": 12000
+              }
+            },
+            "max_ops": 48000
+          }
+        ],
+        "hints": [
+          "Both lists are already sorted. Where must the next output entry come from — and what one comparison tells you which of the two heads to take?",
+          "Compare the current heads: take the smaller (first list on ties), advance that list's pointer, and append; when one list runs out, append the remainder of the other.",
+          "i = j = 0; while i < len(a) and j < len(b): read each head once into locals, compare, append the winner, advance its pointer. Then two tail loops copy the rest. Each element is inspected only a couple of times — well inside the budget."
+        ],
+        "reasoning": "<p>Because both inputs are sorted, the next output entry is always one of the two current heads, so a single comparison per output element decides everything — the merge is linear in the total length. Fetch each head once into a local variable so a comparison plus an append inspects each element once, not twice: careless double indexing (testing <code>a[i]</code> and then appending <code>a[i]</code> again) is the usual way solutions silently double their inspection count. The tail loops copy the leftovers without comparisons. This 'two heads, take the smaller' walk is the same shape used whenever two sorted sequences must become one — the budget simply refuses to let you pretend the inputs are unsorted.</p>",
+        "solution": "def merge_sorted(a, b):\n    out = []\n    i = j = 0\n    la, lb = len(a), len(b)\n    while i < la and j < lb:\n        x = a[i]                 # read each head once\n        y = b[j]\n        if x <= y:               # ties keep the first list first\n            out.append(x)\n            i += 1\n        else:\n            out.append(y)\n            j += 1\n    while i < la:                # copy the leftovers\n        out.append(a[i])\n        i += 1\n    while j < lb:\n        out.append(b[j])\n        j += 1\n    return out\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-lists-6",
+        "title": "Best run ending at each minute",
+        "difficulty": "hard",
+        "tags": [
+          "lists",
+          "invariants"
+        ],
+        "statement": "<p>A battery logger records the per-minute net charge delta: positive while charging, negative under load. An analyst asks, for <b>every minute i</b>: what is the best total net charge a <b>contiguous run ending exactly at minute i</b> could have? (A run is one or more consecutive minutes and must include minute i itself.)</p><p>Implement <code>best_run_ending_at(deltas)</code>: return a list where <code>out[i]</code> is the maximum sum over all contiguous runs that end at index <code>i</code>.</p>",
+        "constraints": [
+          "0 <= len(deltas) <= 100,000",
+          "-1,000 <= each delta <= 1,000"
+        ],
+        "examples": [
+          {
+            "call": "best_run_ending_at([3, -1, 4])",
+            "why": "ending at 0: just [3]; ending at 1: max(-1, 3-1) = 2; ending at 2: max(4, 2+4) = 6",
+            "returns": "[3, 2, 6]"
+          },
+          {
+            "call": "best_run_ending_at([-2, -3])",
+            "why": "with everything negative, the best run ending at i is the single minute i itself",
+            "returns": "[-2, -3]"
+          }
+        ],
+        "starter": "def best_run_ending_at(deltas):\n    \"\"\"Return the best contiguous sum ending at each index.\"\"\"\n    pass\n",
+        "func": "best_run_ending_at",
+        "tests": [
+          {
+            "label": "mixed deltas",
+            "args": [
+              [
+                3,
+                -1,
+                4
+              ]
+            ],
+            "expected": [
+              3,
+              2,
+              6
+            ],
+            "hidden": false
+          },
+          {
+            "label": "all negative",
+            "args": [
+              [
+                -2,
+                -3
+              ]
+            ],
+            "expected": [
+              -2,
+              -3
+            ],
+            "hidden": false
+          },
+          {
+            "label": "empty log",
+            "args": [
+              []
+            ],
+            "expected": [],
+            "hidden": true
+          },
+          {
+            "label": "single minute",
+            "args": [
+              [
+                5
+              ]
+            ],
+            "expected": [
+              5
+            ],
+            "hidden": true
+          },
+          {
+            "label": "zeros",
+            "args": [
+              [
+                0,
+                0
+              ]
+            ],
+            "expected": [
+              0,
+              0
+            ],
+            "hidden": true
+          },
+          {
+            "label": "restart after a valley",
+            "args": [
+              [
+                4,
+                -10,
+                5,
+                2
+              ]
+            ],
+            "expected": [
+              4,
+              -6,
+              5,
+              7
+            ],
+            "hidden": true
+          },
+          {
+            "label": "climb, dip, climb",
+            "args": [
+              [
+                1,
+                2,
+                3,
+                -1,
+                2
+              ]
+            ],
+            "expected": [
+              1,
+              3,
+              6,
+              5,
+              7
+            ],
+            "hidden": true
+          },
+          {
+            "label": "six thousand minutes",
+            "args": [
+              {
+                "__repeat__": {
+                  "item": [
+                    3,
+                    -3
+                  ],
+                  "times": 3000
+                }
+              }
+            ],
+            "expected": {
+              "__repeat__": {
+                "item": [
+                  3,
+                  0
+                ],
+                "times": 3000
+              }
+            },
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "Every run ending at i either extends the best run ending at i-1, or starts fresh at i. Which choice wins, and how do you decide with one comparison?",
+          "Keep prev = the best run ending at the previous index. For each d: prev = max(d, prev + d); append prev. The all-negative case shows why 'starts fresh' must be allowed.",
+          "prev = None; out = []; for d in deltas: prev = d if prev is None else max(d, prev + d); out.append(prev); return out. On [4,-10,5,2] this gives 4, -6, 5, 7 — the valley forces a fresh start at index 2."
+        ],
+        "reasoning": "<p>The invariant: the best run ending at <code>i</code> is either <code>deltas[i]</code> alone, or the best run ending at <code>i-1</code> extended by <code>deltas[i]</code> — because any longer run ending at i must pass through i-1, and its best prefix is exactly the previous answer. That gives <code>max(d, prev + d)</code>: one comparison, carried forward. When the running best goes negative (a deep valley), extending it only hurts, so the answer restarts — that is why an all-negative log returns each single element. The transferable insight: define the answer for position i in terms of the answer for i-1, and the whole table becomes one linear pass.</p>",
+        "solution": "def best_run_ending_at(deltas):\n    out = []\n    prev = None\n    for d in deltas:\n        # best run ending here: extend the previous best, or restart\n        prev = d if prev is None else max(d, prev + d)\n        out.append(prev)\n    return out\n"
+      }
+    }
+  ]
+}

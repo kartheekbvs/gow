@@ -1,0 +1,1301 @@
+{
+  "id": "np-create-index",
+  "title": "Creation, Indexing & Views",
+  "icon": "🧱",
+  "level": "beginner",
+  "order": 10,
+  "conceptRef": "numpy.html#s1",
+  "blurb": "Read grids as coordinates: strided slices, views, and fancy gathers replace every nested loop.",
+  "cells": [
+    {
+      "type": "concept",
+      "title": "A slice is a window, not a copy",
+      "body": "<p>When you write <code>g[1:, 1:]</code>, numpy does <b>not</b> build a new array. It returns a <b>view</b>: the same memory, described by different strides. That is why slicing a million-row grid costs almost nothing — you are creating a small header object, not copying data.</p><p>The consequence cuts both ways. Cheap sub-selection is the foundation of idiomatic numpy, but it also means <i>edits travel</i>: writing into a view silently rewrites the base array. When you hand a slice to unrelated code and want the boundary to be real, reach for <code>.copy()</code>. Keep this in mind throughout this notebook: 'extract a block' exercises are single expressions precisely because views are free.</p>",
+      "demo": {
+        "code": "import numpy as np\n\ng = np.arange(12).reshape(3, 4)\ninner = g[1:, 1:]          # a view: same memory, different strides\ninner[0, 0] = 99           # writes through to the base grid\nprint(g)\nprint(inner.base is not None)  # proof: inner is a view of g"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "Negative and strided slices read like arithmetic",
+      "body": "<p>Every slice is three numbers — start, stop, step — and numpy walks them like a <code>range</code>. Negative indices count from the end (<code>-1</code> is the last row), a negative step walks backwards, and a step of 2 takes every second element along that axis.</p><p>The reasoning habit: translate a phrase like 'drop the border' or 'every other row' into one slice <i>per axis</i>. The interior is <code>g[1:-1, 1:-1]</code>; every other row and column is <code>g[::2, ::2]</code>; a left-right mirror is <code>g[:, ::-1]</code>. Composing these lets you express a whole family of rectangular selections with no loops at all — and each slice stays correct when the grid is not square, because nothing is hard-coded.</p>",
+      "demo": {
+        "code": "import numpy as np\n\ng = np.arange(20).reshape(4, 5)\nprint(g[1:-1, 1:-1])   # interior: drop first/last row and column\nprint(g[:, ::-1])      # mirror: every row, columns reversed\nprint(g[::2, ::2])     # every other row and column\nprint(g[::2, ::2].shape)"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "Fancy indexing gathers (and copies)",
+      "body": "<p>A list of indices inside the brackets switches numpy into a different mode: <b>gather</b>. <code>g[[2, 0, 2]]</code> stacks rows 2, 0 and 2 — in that order, repeats allowed — into a new array. With two index lists, <code>g[[0, 2], [1, 3]]</code> pairs them coordinate-wise: elements (0,1) and (2,3).</p><p>Unlike slicing, fancy indexing always <b>copies</b>, because the selected elements no longer sit at a constant stride in the source. Gather is the bridge from 'positions I computed' to 'values I want' — you will use it after every argmax, argsort or searchsorted in the later notebooks, so it is worth locking in now.</p>",
+      "demo": {
+        "code": "import numpy as np\n\ng = np.arange(12).reshape(3, 4)\nprint(g[[2, 0, 2]])        # whole rows, in this order, repeats allowed\nprint(g[[0, 2], [1, 3]])   # coordinate pairs: elements (0,1) and (2,3)\nout = g[[0, 2]]            # fancy indexing copies ...\nout[0, 0] = -1\nprint(g[0, 0])             # ... so the base grid is untouched"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "np-create-index-1",
+        "title": "Interior Readings",
+        "difficulty": "easy",
+        "tags": [
+          "numpy",
+          "slicing",
+          "grids"
+        ],
+        "statement": "<p>A wall of thermal sensors is wired as a grid. The sensors mounted on the <b>frame</b> — the outermost rows and columns — are calibration units and must be excluded from every analysis.</p><p>Implement <code>inner_grid(g)</code> so it returns the interior block: all rows except the first and last, and all columns except the first and last. The result must be a 2-D <code>int64</code> array of shape <code>(R-2, C-2)</code>, extracted with a <b>single slice expression</b> — no loops, no <code>np.delete</code>.</p>",
+        "constraints": [
+          "g is a 2-D int64 array with shape (R, C), R >= 3, C >= 3",
+          "the result has shape exactly (R-2, C-2) and dtype int64"
+        ],
+        "examples": [
+          {
+            "call": "inner_grid(np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]]))",
+            "returns": "array([[5]])",
+            "why": "a 3x3 grid has a 1x1 interior: only the center survives"
+          },
+          {
+            "call": "inner_grid(np.array([[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11]]))",
+            "returns": "array([[5, 6]])",
+            "why": "a 3x4 grid keeps rows 1 and columns 1..2, so the interior is 1x2"
+          }
+        ],
+        "starter": "import numpy as np\n\ndef inner_grid(g):\n    \"\"\"Return the interior block of grid g (no border rows or columns).\n\n    g is a 2-D int64 array; the result has shape (R-2, C-2).\n    \"\"\"\n    pass\n",
+        "func": "inner_grid",
+        "tests": [
+          {
+            "label": "3x3 example",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      1,
+                      2,
+                      3
+                    ],
+                    [
+                      4,
+                      5,
+                      6
+                    ],
+                    [
+                      7,
+                      8,
+                      9
+                    ]
+                  ],
+                  "dtype": "int64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  [
+                    5
+                  ]
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": false
+          },
+          {
+            "label": "4x3 grid",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      10,
+                      20,
+                      30
+                    ],
+                    [
+                      40,
+                      50,
+                      60
+                    ],
+                    [
+                      70,
+                      80,
+                      90
+                    ],
+                    [
+                      91,
+                      92,
+                      93
+                    ]
+                  ],
+                  "dtype": "int64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  [
+                    50
+                  ],
+                  [
+                    80
+                  ]
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": false
+          },
+          {
+            "label": "5x4 tall grid",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      1,
+                      2,
+                      3,
+                      4
+                    ],
+                    [
+                      5,
+                      6,
+                      7,
+                      8
+                    ],
+                    [
+                      9,
+                      10,
+                      11,
+                      12
+                    ],
+                    [
+                      13,
+                      14,
+                      15,
+                      16
+                    ],
+                    [
+                      17,
+                      18,
+                      19,
+                      20
+                    ]
+                  ],
+                  "dtype": "int64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  [
+                    6,
+                    7
+                  ],
+                  [
+                    10,
+                    11
+                  ],
+                  [
+                    14,
+                    15
+                  ]
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "all equal 3x4",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      7,
+                      7,
+                      7,
+                      7
+                    ],
+                    [
+                      7,
+                      7,
+                      7,
+                      7
+                    ],
+                    [
+                      7,
+                      7,
+                      7,
+                      7
+                    ]
+                  ],
+                  "dtype": "int64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  [
+                    7,
+                    7
+                  ]
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "negatives 3x3",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      -3,
+                      -2,
+                      -1
+                    ],
+                    [
+                      -6,
+                      -5,
+                      -4
+                    ],
+                    [
+                      -9,
+                      -8,
+                      -7
+                    ]
+                  ],
+                  "dtype": "int64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  [
+                    -5
+                  ]
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "4x4 mixed signs",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      3,
+                      -3,
+                      3,
+                      -3
+                    ],
+                    [
+                      -6,
+                      6,
+                      -6,
+                      6
+                    ],
+                    [
+                      9,
+                      -9,
+                      9,
+                      -9
+                    ],
+                    [
+                      1,
+                      -1,
+                      1,
+                      -1
+                    ]
+                  ],
+                  "dtype": "int64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  [
+                    6,
+                    -6
+                  ],
+                  [
+                    -9,
+                    9
+                  ]
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "The border is exactly one row and one column thick on each side. Which indices does that remove, and how do you say 'everything except index 0 and the last one' in one slice?",
+          "Use one slice per axis: rows 1 through R-2 and columns 1 through C-2. In numpy that is g[1:-1, 1:-1] — the negative stop means 'up to but excluding the last'.",
+          "Return g[1:-1, 1:-1]. The slice is a view, which is fine here: shape, dtype and values are what get compared, and for R=3, C=3 it correctly yields the single center cell."
+        ],
+        "reasoning": "<p>A one-thick border removes index 0 and the last index along <i>each</i> axis. The slice <code>1:-1</code> says exactly that: start at 1, stop before <code>-1</code> (which numpy rewrites as the last index), so only rows 1..R-2 survive. Applying it on both axes in one expression keeps the two decisions independent — the row slice never needs to know the column count. That independence is the transferable part: any 'strip the edge' problem (crop an image, drop header and footer rows, remove a margin) becomes one slice per axis, and it stays correct on non-square inputs because nothing is hard-coded. The result being a view also means it is free — no copy of the data is made.</p>",
+        "solution": "import numpy as np\n\ndef inner_grid(g):\n    \"\"\"Return the interior block of grid g (no border rows or columns).\"\"\"\n    return g[1:-1, 1:-1]\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "np-create-index-2",
+        "title": "Clockwise Perimeter Report",
+        "difficulty": "medium",
+        "tags": [
+          "numpy",
+          "slicing",
+          "grids"
+        ],
+        "statement": "<p>The same sensor wall now needs its <b>perimeter</b> reported: a service drone reads the frame sensors while circling the wall clockwise, starting at the top-left corner.</p><p>Implement <code>border_ring(g)</code>: return a 1-D <code>int64</code> array of length <code>2*R + 2*C - 4</code> holding the border values in clockwise order — top row left to right, right column downward, bottom row right to left, left column upward. Build it from <b>four slices and one concatenate</b>; no loops, no flattening the whole grid.</p>",
+        "constraints": [
+          "g is 2-D int64 with shape (R, C), R >= 2, C >= 2",
+          "the output length is exactly 2*R + 2*C - 4 and every border cell appears exactly once",
+          "walking order: top row left-to-right, right column top-to-bottom, bottom row right-to-left, left column bottom-to-top"
+        ],
+        "examples": [
+          {
+            "call": "border_ring(np.arange(12).reshape(3, 4))",
+            "returns": "array([ 0,  1,  2,  3,  7, 11, 10,  9,  8,  4])",
+            "why": "top row 0..3, then right column 7, 11, then bottom row backwards 10, 9, 8, then up the left side 4"
+          },
+          {
+            "call": "border_ring(np.array([[1, 2], [3, 4]]))",
+            "returns": "array([1, 2, 4, 3])",
+            "why": "on a 2x2 the ring is just the four corners in clockwise order"
+          }
+        ],
+        "starter": "import numpy as np\n\ndef border_ring(g):\n    \"\"\"Return the border of grid g in clockwise order, starting top-left.\n\n    g is 2-D int64 with shape (R, C), R >= 2, C >= 2. The result is a\n    1-D array of length 2*R + 2*C - 4.\n    \"\"\"\n    pass\n",
+        "func": "border_ring",
+        "tests": [
+          {
+            "label": "3x4 grid",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      0,
+                      1,
+                      2,
+                      3
+                    ],
+                    [
+                      4,
+                      5,
+                      6,
+                      7
+                    ],
+                    [
+                      8,
+                      9,
+                      10,
+                      11
+                    ]
+                  ],
+                  "dtype": "int64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  7,
+                  11,
+                  10,
+                  9,
+                  8,
+                  4
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": false
+          },
+          {
+            "label": "2x2 minimum",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      1,
+                      2
+                    ],
+                    [
+                      3,
+                      4
+                    ]
+                  ],
+                  "dtype": "int64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  1,
+                  2,
+                  4,
+                  3
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": false
+          },
+          {
+            "label": "4x3 tall grid",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      1,
+                      2,
+                      3
+                    ],
+                    [
+                      4,
+                      5,
+                      6
+                    ],
+                    [
+                      7,
+                      8,
+                      9
+                    ],
+                    [
+                      10,
+                      11,
+                      12
+                    ]
+                  ],
+                  "dtype": "int64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  1,
+                  2,
+                  3,
+                  6,
+                  9,
+                  12,
+                  11,
+                  10,
+                  7,
+                  4
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "5x5 negatives",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      -25,
+                      -24,
+                      -23,
+                      -22,
+                      -21
+                    ],
+                    [
+                      -20,
+                      -19,
+                      -18,
+                      -17,
+                      -16
+                    ],
+                    [
+                      -15,
+                      -14,
+                      -13,
+                      -12,
+                      -11
+                    ],
+                    [
+                      -10,
+                      -9,
+                      -8,
+                      -7,
+                      -6
+                    ],
+                    [
+                      -5,
+                      -4,
+                      -3,
+                      -2,
+                      -1
+                    ]
+                  ],
+                  "dtype": "int64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  -25,
+                  -24,
+                  -23,
+                  -22,
+                  -21,
+                  -16,
+                  -11,
+                  -6,
+                  -1,
+                  -2,
+                  -3,
+                  -4,
+                  -5,
+                  -10,
+                  -15,
+                  -20
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "3x3 all equal",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      9,
+                      9,
+                      9
+                    ],
+                    [
+                      9,
+                      9,
+                      9
+                    ],
+                    [
+                      9,
+                      9,
+                      9
+                    ]
+                  ],
+                  "dtype": "int64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  9,
+                  9,
+                  9,
+                  9,
+                  9,
+                  9,
+                  9,
+                  9
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "2x6 wide grid",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      1,
+                      2,
+                      3,
+                      4,
+                      5,
+                      6
+                    ],
+                    [
+                      7,
+                      8,
+                      9,
+                      10,
+                      11,
+                      12
+                    ]
+                  ],
+                  "dtype": "int64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  12,
+                  11,
+                  10,
+                  9,
+                  8,
+                  7
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "Walk the border by hand on a 3x4 grid and write down the four segments. Which segment must exclude a corner so that no cell is reported twice?",
+          "Four slices: the full top row g[0, :]; the right column without its top corner g[1:, -1]; the bottom row without its right corner, reversed g[-1, :-1][::-1]; and the left column without both corners, read upward g[-2:0:-1, 0].",
+          "Return np.concatenate([top, right, bottom, left]). Check the piece lengths: C + (R-1) + (C-1) + (R-2) = 2R + 2C - 4, and each corner appears in exactly one segment."
+        ],
+        "reasoning": "<p>The whole exercise is deciding, for each of the four edges, <i>which corners belong to it</i>. Assign the top-left corner to the top row, the top-right to the right column, the bottom-right to the bottom row, and the bottom-left to the left column — then each edge slice excludes one or both end cells, which is exactly what <code>g[1:, -1]</code>, <code>g[-1, :-1][::-1]</code> and <code>g[-2:0:-1, 0]</code> encode. The reversed reads matter because clockwise means the bottom row is consumed right-to-left and the left column bottom-to-top; a negative step flips direction without touching data. Once the four segments are in walking order, one concatenate folds them into the ring, and the length formula <code>2R + 2C - 4</code> is a free self-check you can apply to any rectangle.</p>",
+        "solution": "import numpy as np\n\ndef border_ring(g):\n    \"\"\"Return the border of grid g in clockwise order, starting top-left.\"\"\"\n    top = g[0, :]                 # full top row, left to right\n    right = g[1:, -1]              # right column, without the top corner\n    bottom = g[-1, :-1][::-1]      # bottom row, without the last corner, reversed\n    left = g[-2:0:-1, 0]           # left column, without both corners, upward\n    return np.concatenate([top, right, bottom, left])\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "np-create-index-3",
+        "title": "Readings at Coordinates",
+        "difficulty": "medium",
+        "tags": [
+          "numpy",
+          "fancy-indexing",
+          "gather"
+        ],
+        "statement": "<p>A rover on the sensor wall reports a list of <b>(row, column)</b> coordinates it visited — sometimes revisiting the same spot. Given the grid, produce the sequence of readings the rover measured, in visit order.</p><p>Implement <code>gather_readings(g, rs, cs)</code>: <code>rs</code> and <code>cs</code> are equal-length lists of ints (valid coordinates, repeats allowed). Return a 1-D <code>int64</code> array whose k-th element is <code>g[rs[k], cs[k]]</code>, using <b>one fancy-indexing expression</b> — no loops.</p>",
+        "constraints": [
+          "g is 2-D int64; rs, cs are lists of valid indices with len(rs) == len(cs) >= 1",
+          "coordinates may repeat: each occurrence yields its value again",
+          "the result is 1-D int64 with length len(rs)"
+        ],
+        "examples": [
+          {
+            "call": "gather_readings(np.arange(12).reshape(3, 4), [0, 2, 1], [1, 3, 0])",
+            "returns": "array([ 1, 11,  4])",
+            "why": "visits (0,1), (2,3) and (1,0) gather readings 1, 11 and 4"
+          },
+          {
+            "call": "gather_readings(np.array([[5, 7], [9, 11]]), [1, 1, 0], [0, 0, 1])",
+            "returns": "array([9, 9, 7])",
+            "why": "the rover stops at (1,0) twice, then (0,1): readings 9, 9, 7"
+          }
+        ],
+        "starter": "import numpy as np\n\ndef gather_readings(g, rs, cs):\n    \"\"\"Return the readings at the visited coordinates, in visit order.\n\n    rs[k], cs[k] is the k-th visited cell; coordinates may repeat.\n    \"\"\"\n    pass\n",
+        "func": "gather_readings",
+        "tests": [
+          {
+            "label": "3x4 visits",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      0,
+                      1,
+                      2,
+                      3
+                    ],
+                    [
+                      4,
+                      5,
+                      6,
+                      7
+                    ],
+                    [
+                      8,
+                      9,
+                      10,
+                      11
+                    ]
+                  ],
+                  "dtype": "int64"
+                }
+              },
+              [
+                0,
+                2,
+                1
+              ],
+              [
+                1,
+                3,
+                0
+              ]
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  1,
+                  11,
+                  4
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": false
+          },
+          {
+            "label": "revisited spot",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      5,
+                      7
+                    ],
+                    [
+                      9,
+                      11
+                    ]
+                  ],
+                  "dtype": "int64"
+                }
+              },
+              [
+                1,
+                1,
+                0
+              ],
+              [
+                0,
+                0,
+                1
+              ]
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  9,
+                  9,
+                  7
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": false
+          },
+          {
+            "label": "same point thrice",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      10,
+                      20,
+                      30
+                    ],
+                    [
+                      40,
+                      50,
+                      60
+                    ],
+                    [
+                      70,
+                      80,
+                      90
+                    ]
+                  ],
+                  "dtype": "int64"
+                }
+              },
+              [
+                0,
+                0,
+                0
+              ],
+              [
+                2,
+                2,
+                2
+              ]
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  30,
+                  30,
+                  30
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "corners of 4x4",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      0,
+                      1,
+                      2,
+                      3
+                    ],
+                    [
+                      4,
+                      5,
+                      6,
+                      7
+                    ],
+                    [
+                      8,
+                      9,
+                      10,
+                      11
+                    ],
+                    [
+                      12,
+                      13,
+                      14,
+                      15
+                    ]
+                  ],
+                  "dtype": "int64"
+                }
+              },
+              [
+                0,
+                0,
+                3,
+                3
+              ],
+              [
+                0,
+                3,
+                0,
+                3
+              ]
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  0,
+                  3,
+                  12,
+                  15
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "full diagonal",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      0,
+                      1,
+                      2,
+                      3
+                    ],
+                    [
+                      4,
+                      5,
+                      6,
+                      7
+                    ],
+                    [
+                      8,
+                      9,
+                      10,
+                      11
+                    ],
+                    [
+                      12,
+                      13,
+                      14,
+                      15
+                    ]
+                  ],
+                  "dtype": "int64"
+                }
+              },
+              [
+                0,
+                1,
+                2,
+                3
+              ],
+              [
+                0,
+                1,
+                2,
+                3
+              ]
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  0,
+                  5,
+                  10,
+                  15
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "row-major sweep",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      1,
+                      2,
+                      3
+                    ],
+                    [
+                      4,
+                      5,
+                      6
+                    ]
+                  ],
+                  "dtype": "int64"
+                }
+              },
+              [
+                0,
+                0,
+                0,
+                1,
+                1,
+                1
+              ],
+              [
+                0,
+                1,
+                2,
+                0,
+                1,
+                2
+              ]
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "One index list per axis selects whole rows or whole columns. What does numpy do instead when you put two equal-length index lists in the same brackets?",
+          "g[rs, cs] with two lists pairs them elementwise: the k-th output element comes from cell (rs[k], cs[k]). Convert the lists with np.asarray first so numpy definitely sees index arrays.",
+          "rs = np.asarray(rs); cs = np.asarray(cs); return g[rs, cs]. Fancy indexing copies, so repeated coordinates simply repeat the value in the output."
+        ],
+        "reasoning": "<p>Two index arrays in one bracket mean <b>coordinate pairs</b>, not a cross product: numpy zips them, so <code>g[[0, 2], [1, 3]]</code> picks elements (0,1) and (2,3) — exactly the rover's visits, in visit order. This zip semantics is the piece people get wrong: one list gives you rows; two equal-length lists give you one element per pair. Repeats are free, because index arrays describe <i>positions</i>, and the same position may appear many times, each occurrence producing the same value. And since the gathered cells no longer lie at a fixed stride, numpy must copy — which is fine here: the rover wants a reading log, not a view of the wall.</p>",
+        "solution": "import numpy as np\n\ndef gather_readings(g, rs, cs):\n    \"\"\"Return the readings at the visited coordinates, in visit order.\"\"\"\n    return g[np.asarray(rs), np.asarray(cs)]\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "np-create-index-4",
+        "title": "Calibration Checkerboard",
+        "difficulty": "hard",
+        "tags": [
+          "numpy",
+          "slicing",
+          "patterns"
+        ],
+        "statement": "<p>A camera calibration target is an n×n board where cell <code>(i, j)</code> is painted black (<code>1</code>) when <code>i + j</code> is even and white (<code>0</code>) otherwise.</p><p>Implement <code>checkerboard(n)</code>: return the n×n <code>int64</code> board, built <b>without any Python loop and without arithmetic on an index grid</b> — start from <code>np.zeros</code> and paint all black cells with exactly two strided slice assignments.</p>",
+        "constraints": [
+          "1 <= n <= 64",
+          "cell (i, j) is 1 iff i+j is even; output shape is (n, n), dtype int64",
+          "no Python loops: two slice assignments into a zeros array"
+        ],
+        "examples": [
+          {
+            "call": "checkerboard(4)",
+            "returns": "array([[1, 0, 1, 0],\n       [0, 1, 0, 1],\n       [1, 0, 1, 0],\n       [0, 1, 0, 1]])",
+            "why": "4x4 board: even rows start with 1, odd rows start with 0"
+          },
+          {
+            "call": "checkerboard(3)",
+            "returns": "array([[1, 0, 1],\n       [0, 1, 0],\n       [1, 0, 1]])",
+            "why": "3x3 board: every row is 1, 0, 1 shifted by one"
+          }
+        ],
+        "starter": "import numpy as np\n\ndef checkerboard(n):\n    \"\"\"Return the n x n checkerboard with 1 where i+j is even.\n\n    Build it from np.zeros with strided slice assignments; no loops.\n    \"\"\"\n    pass\n",
+        "func": "checkerboard",
+        "tests": [
+          {
+            "label": "n=4",
+            "args": [
+              4
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  [
+                    1,
+                    0,
+                    1,
+                    0
+                  ],
+                  [
+                    0,
+                    1,
+                    0,
+                    1
+                  ],
+                  [
+                    1,
+                    0,
+                    1,
+                    0
+                  ],
+                  [
+                    0,
+                    1,
+                    0,
+                    1
+                  ]
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": false
+          },
+          {
+            "label": "n=3",
+            "args": [
+              3
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  [
+                    1,
+                    0,
+                    1
+                  ],
+                  [
+                    0,
+                    1,
+                    0
+                  ],
+                  [
+                    1,
+                    0,
+                    1
+                  ]
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": false
+          },
+          {
+            "label": "n=1",
+            "args": [
+              1
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  [
+                    1
+                  ]
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "n=2",
+            "args": [
+              2
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  [
+                    1,
+                    0
+                  ],
+                  [
+                    0,
+                    1
+                  ]
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "n=5",
+            "args": [
+              5
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  [
+                    1,
+                    0,
+                    1,
+                    0,
+                    1
+                  ],
+                  [
+                    0,
+                    1,
+                    0,
+                    1,
+                    0
+                  ],
+                  [
+                    1,
+                    0,
+                    1,
+                    0,
+                    1
+                  ],
+                  [
+                    0,
+                    1,
+                    0,
+                    1,
+                    0
+                  ],
+                  [
+                    1,
+                    0,
+                    1,
+                    0,
+                    1
+                  ]
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "n=6",
+            "args": [
+              6
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  [
+                    1,
+                    0,
+                    1,
+                    0,
+                    1,
+                    0
+                  ],
+                  [
+                    0,
+                    1,
+                    0,
+                    1,
+                    0,
+                    1
+                  ],
+                  [
+                    1,
+                    0,
+                    1,
+                    0,
+                    1,
+                    0
+                  ],
+                  [
+                    0,
+                    1,
+                    0,
+                    1,
+                    0,
+                    1
+                  ],
+                  [
+                    1,
+                    0,
+                    1,
+                    0,
+                    1,
+                    0
+                  ],
+                  [
+                    0,
+                    1,
+                    0,
+                    1,
+                    0,
+                    1
+                  ]
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "Split the black cells by the parity of the row index: when i is even, what must j be? Which single slice selects exactly those cells in one shot?",
+          "i+j is even in exactly two cases: both even or both odd. So paint cells where row and column share a parity: board[::2, ::2] = 1 (even rows, even columns) and board[1::2, 1::2] = 1 (odd rows, odd columns).",
+          "board = np.zeros((n, n), dtype=np.int64); board[::2, ::2] = 1; board[1::2, 1::2] = 1; return board. For n=1 the second slice addresses nothing, so the board is [[1]] with no special case."
+        ],
+        "reasoning": "<p>The parity condition '<code>i + j</code> even' splits into two lattices: (even i, even j) and (odd i, odd j). Each lattice is exactly what a strided slice selects — <code>::2</code> walks every second index starting at 0, <code>1::2</code> every second index starting at 1 — so the entire family of black cells is addressed by two slice objects, and numpy paints them at C speed. This is the deepest idea in this notebook: a slice is a <i>pattern</i>, not just a range. Whenever a target set can be described as a lattice — every k-th row, every k-th column, offset starts — a strided assignment builds it in one shot. Edge cases fall out for free: for n=1, <code>board[1::2, 1::2]</code> addresses nothing and the single cell is even-parity, so the result is [[1]] without any special-case code.</p>",
+        "solution": "import numpy as np\n\ndef checkerboard(n):\n    \"\"\"Return the n x n checkerboard with 1 where i+j is even.\"\"\"\n    board = np.zeros((n, n), dtype=np.int64)\n    board[::2, ::2] = 1     # even rows, even columns\n    board[1::2, 1::2] = 1   # odd rows, odd columns\n    return board\n"
+      }
+    }
+  ]
+}

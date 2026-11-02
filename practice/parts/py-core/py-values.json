@@ -1,0 +1,576 @@
+{
+  "id": "py-values",
+  "title": "Values, Types & Truthiness",
+  "icon": "🔣",
+  "level": "beginner",
+  "order": 10,
+  "conceptRef": "python-basics.html#s1",
+  "blurb": "Predict what Python counts as empty, in range, or whole — before the interpreter tells you.",
+  "cells": [
+    {
+      "type": "concept",
+      "title": "Truthiness: the container decides",
+      "body": "<p>Every Python object knows whether it counts as <b>something</b> or <b>nothing</b> in a boolean context. The falsy club is small: <code>None</code>, <code>False</code>, the numeric zeros (<code>0</code>, <code>0.0</code>), and <b>empty</b> containers (<code>''</code>, <code>[]</code>, <code>{}</code>). Everything else is truthy — and that is the part people get wrong, because emptiness is a property of the <i>container</i>, not of its contents: <code>[0]</code> is truthy (a list with one item) and <code>'0'</code> is truthy (a string with one character), even though both <i>look</i> like zero.</p><p>Being able to call <code>bool(x)</code> in your head is a genuine reading skill: gate conditions, <code>if v:</code> filters, and <code>or</code>/<code>and</code> defaults all lean on it, and the exercises below are won or lost on the look-alike cases.</p>",
+      "demo": {
+        "code": "slots = [0, 41, '', '0', [], [0], None, False]\nprint([bool(v) for v in slots])\nprint([v for v in slots if v])"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "Three different ways to make a number whole",
+      "body": "<p>Converting a fractional number to an integer is a policy decision, not one operation. <code>int(x)</code> <b>truncates toward zero</b>, so <code>int(-3.7)</code> is <code>-3</code>, not <code>-4</code>. <code>round(x)</code> goes to the nearest whole value, and exact .5 ties round to the <b>even</b> neighbor: <code>round(2.5)</code> is <code>2</code> while <code>round(3.5)</code> is <code>4</code>. Floor division <code>//</code> rounds <i>down</i> regardless of sign, so <code>-7 // 2</code> is <code>-4</code>.</p><p>Those are three different answers to 'make this a whole number'. When a spec says 'drop the fraction' or 'round it', you must know which rule the caller means — and be able to verify the rule at one positive, one negative and one tie value before writing the loop.</p>",
+      "demo": {
+        "code": "print(int(-3.7), int(3.7))\nprint(round(2.5), round(3.5), round(-0.5))\nprint(-7 // 2, -7 % 2)"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-values-1",
+        "title": "Silent sensors",
+        "difficulty": "easy",
+        "tags": [
+          "truthiness",
+          "containers"
+        ],
+        "statement": "<p>A remote weather station keeps one slot per instrument, and each slot holds whatever that instrument last wrote: sometimes a number, sometimes an empty placeholder, sometimes nothing at all. A slot counts as <b>reporting</b> when its value is truthy; slots holding zero-ish placeholders are <b>silent</b>.</p><p>Implement <code>reporting_slots(slots)</code> to return the list of <b>indices</b> of reporting slots, in increasing order. Return a new list; do not mutate <code>slots</code>.</p>",
+        "constraints": [
+          "0 <= len(slots) <= 10,000",
+          "a slot may hold an int, float, string, list, None, or bool",
+          "strings and lists may be empty or non-empty"
+        ],
+        "examples": [
+          {
+            "call": "reporting_slots([0, 41, '', '0'])",
+            "why": "0 is falsy and '' is falsy; 41 is truthy; '0' is a non-empty string, so truthy",
+            "returns": "[1, 3]"
+          },
+          {
+            "call": "reporting_slots([[], [0], 7])",
+            "why": "the empty list is silent; [0] is a non-empty list and 7 is nonzero, so both report",
+            "returns": "[1, 2]"
+          }
+        ],
+        "starter": "def reporting_slots(slots):\n    \"\"\"Return the indices of slots whose values are truthy.\"\"\"\n    pass\n",
+        "func": "reporting_slots",
+        "tests": [
+          {
+            "label": "mixed placeholders",
+            "args": [
+              [
+                0,
+                41,
+                "",
+                "0"
+              ]
+            ],
+            "expected": [
+              1,
+              3
+            ],
+            "hidden": false
+          },
+          {
+            "label": "containers decide",
+            "args": [
+              [
+                [],
+                [
+                  0
+                ],
+                7
+              ]
+            ],
+            "expected": [
+              1,
+              2
+            ],
+            "hidden": false
+          },
+          {
+            "label": "empty station",
+            "args": [
+              []
+            ],
+            "expected": [],
+            "hidden": true
+          },
+          {
+            "label": "all silent",
+            "args": [
+              [
+                0,
+                0.0,
+                "",
+                [],
+                null,
+                false
+              ]
+            ],
+            "expected": [],
+            "hidden": true
+          },
+          {
+            "label": "all reporting",
+            "args": [
+              [
+                42,
+                "ok",
+                [
+                  1
+                ],
+                true
+              ]
+            ],
+            "expected": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "hidden": true
+          },
+          {
+            "label": "zero look-alikes",
+            "args": [
+              [
+                "0",
+                0,
+                "0.0",
+                [],
+                " "
+              ]
+            ],
+            "expected": [
+              0,
+              2,
+              4
+            ],
+            "hidden": true
+          },
+          {
+            "label": "single slot",
+            "args": [
+              [
+                7
+              ]
+            ],
+            "expected": [
+              0
+            ],
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "For each slot you need one boolean: does this value count as something? What does Python's truthiness rule say about an empty container versus a container holding a zero?",
+          "A single pass with enumerate(slots) is enough: test each value directly with 'if v' — no need to compare against every falsy literal by hand.",
+          "Build the answer with a list comprehension over enumerate(slots), keeping i when the value is truthy. Remember '0' (the string), [0] (the list) and ' ' (a space) are truthy; 0, '', [], None, False are not."
+        ],
+        "reasoning": "<p>The exercise is one rule applied n times: a value is truthy unless it is <code>None</code>, <code>False</code>, a numeric zero, or an <i>empty</i> container. The traps are the look-alikes: <code>'0'</code> and <code>' '</code> are non-empty strings, and <code>[0]</code> is a non-empty list, so all three are truthy even though their contents resemble nothing. Writing <code>if v != 0 and v != '' and ...</code> not only duplicates a language feature, it usually forgets a case; asking <code>if v</code> lets Python apply the rule directly. The transferable habit: when a spec says 'skip the empty ones', reach for truthiness — and use <code>enumerate</code> when the answer needs positions rather than values.</p>",
+        "solution": "def reporting_slots(slots):\n    # truthiness test straight on the value; indices via enumerate\n    return [i for i, v in enumerate(slots) if v]\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-values-2",
+        "title": "Sterilizer status",
+        "difficulty": "easy",
+        "tags": [
+          "comparisons",
+          "boundaries"
+        ],
+        "statement": "<p>A clinic sterilizes instruments in an autoclave. The machine may run only when the temperature (°C) and the pressure (kPa) are both inside their windows: <b>100 to 125 °C</b> inclusive and <b>110 to 150 kPa</b> inclusive.</p><p>The controller reports one status word, decided in this order:</p><ul><li><code>'abort'</code> — temperature above 125 <i>or</i> pressure above 150 (safety first, even when the other reading is fine);</li><li><code>'heat'</code> — temperature below 100;</li><li><code>'pressurize'</code> — pressure below 110;</li><li><code>'run'</code> — both windows satisfied.</li></ul><p>Implement <code>sterilizer_status(temp, pressure)</code>. All readings are integers, so every boundary is exact.</p>",
+        "constraints": [
+          "-50 <= temp <= 200",
+          "0 <= pressure <= 300",
+          "temp and pressure are integers"
+        ],
+        "examples": [
+          {
+            "call": "sterilizer_status(115, 130)",
+            "why": "115 is inside 100..125 and 130 inside 110..150, so both windows hold",
+            "returns": "'run'"
+          },
+          {
+            "call": "sterilizer_status(99, 130)",
+            "why": "pressure is fine but 99 is below the 100 floor; 'heat' outranks 'pressurize'",
+            "returns": "'heat'"
+          }
+        ],
+        "starter": "def sterilizer_status(temp, pressure):\n    \"\"\"Return one of abort/heat/pressurize/run by the priority spec.\"\"\"\n    pass\n",
+        "func": "sterilizer_status",
+        "tests": [
+          {
+            "label": "nominal run",
+            "args": [
+              115,
+              130
+            ],
+            "expected": "run",
+            "hidden": false
+          },
+          {
+            "label": "too cold",
+            "args": [
+              99,
+              130
+            ],
+            "expected": "heat",
+            "hidden": false
+          },
+          {
+            "label": "abort beats everything",
+            "args": [
+              130,
+              90
+            ],
+            "expected": "abort",
+            "hidden": true
+          },
+          {
+            "label": "upper boundaries run",
+            "args": [
+              125,
+              150
+            ],
+            "expected": "run",
+            "hidden": true
+          },
+          {
+            "label": "one degree over temp",
+            "args": [
+              126,
+              130
+            ],
+            "expected": "abort",
+            "hidden": true
+          },
+          {
+            "label": "one unit over pressure",
+            "args": [
+              120,
+              151
+            ],
+            "expected": "abort",
+            "hidden": true
+          },
+          {
+            "label": "pressure floor boundary",
+            "args": [
+              120,
+              110
+            ],
+            "expected": "run",
+            "hidden": true
+          },
+          {
+            "label": "needs pressurize",
+            "args": [
+              120,
+              109
+            ],
+            "expected": "pressurize",
+            "hidden": true
+          },
+          {
+            "label": "both low, heat wins",
+            "args": [
+              95,
+              90
+            ],
+            "expected": "heat",
+            "hidden": true
+          },
+          {
+            "label": "exactly 100 degrees",
+            "args": [
+              100,
+              130
+            ],
+            "expected": "run",
+            "hidden": true
+          },
+          {
+            "label": "extreme readings",
+            "args": [
+              -50,
+              300
+            ],
+            "expected": "abort",
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "There are only two windows that produce 'run'. Can you write each window as a single chained comparison, like 100 <= temp <= 125, instead of two separate and-ed comparisons?",
+          "Decide in a fixed order: first ask 'is this the safe run window?' using the two chained comparisons and-ed together; if that fails, ask abort, then heat; whatever is left is pressurize.",
+          "Return 'run' when 100 <= temp <= 125 and 110 <= pressure <= 150. Then 'abort' when temp > 125 or pressure > 150. Then 'heat' when temp < 100. Everything else is 'pressurize'. The boundary values 125, 150, 100 and 110 all belong to 'run'."
+        ],
+        "reasoning": "<p>The status word partitions the (temp, pressure) plane into four regions, and the order of the checks encodes which region wins when several look violated at once. Checking the run window first makes the safe region explicit as two chained comparisons — <code>100 &lt;= temp &lt;= 125</code> — which Python evaluates without re-reading <code>temp</code> and without ever comparing a middle value twice. Because the four regions are disjoint, any faithful ordering of the four tests yields the same answer; stating the priority in the spec, and checking in that order, is what keeps the code honest when the regions are later redefined. The transferable habit: turn a range spec into a chained comparison instead of <code>low &lt;= x and x &lt;= high</code>, and put the safety check where a reader looks for it.</p>",
+        "solution": "def sterilizer_status(temp, pressure):\n    # safe window first, as two chained comparisons\n    if 100 <= temp <= 125 and 110 <= pressure <= 150:\n        return \"run\"\n    if temp > 125 or pressure > 150:\n        return \"abort\"\n    if temp < 100:\n        return \"heat\"\n    return \"pressurize\"\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-values-3",
+        "title": "Firmware channel vs wall display",
+        "difficulty": "medium",
+        "tags": [
+          "numbers",
+          "rounding"
+        ],
+        "statement": "<p>A climate logger records each temperature <b>change</b> as a multiple of 0.25 °C — positive or negative. Two downstream systems digest every change differently:</p><ul><li>the <b>firmware channel</b> accepts integers only and <i>truncates toward zero</i> — <code>int(x)</code>: <code>int(-1.75)</code> is <code>-1</code>, and <code>int(-0.5)</code> is <code>0</code>, never <code>-1</code>;</li><li>the <b>wall display</b> rounds to the nearest whole degree — <code>round(x)</code> — and on an exact .5 tie it rounds to the <b>even</b> neighbor: <code>round(2.5)</code> is <code>2</code>, <code>round(3.5)</code> is <code>4</code>.</li></ul><p>Implement <code>dual_report(changes)</code>: return a list with one <code>(firmware, display)</code> pair per change, in order.</p>",
+        "constraints": [
+          "0 <= len(changes) <= 10,000",
+          "every change is a multiple of 0.25 (exactly representable in binary — no floating-point noise)",
+          "changes may be negative"
+        ],
+        "examples": [
+          {
+            "call": "dual_report([2.5, 3.5])",
+            "why": "int(2.5)=2 and round(2.5)=2 (tie to even); int(3.5)=3 and round(3.5)=4",
+            "returns": "[(2, 2), (3, 4)]"
+          },
+          {
+            "call": "dual_report([-1.75, -0.5])",
+            "why": "int(-1.75) truncates toward -1 while round(-1.75) lands on the nearer -2; int(-0.5) truncates to 0 (not -1) and round(-0.5) ties to even 0",
+            "returns": "[(-1, -2), (0, 0)]"
+          }
+        ],
+        "starter": "def dual_report(changes):\n    \"\"\"Return [(int(x), round(x)) ...] for each change x.\"\"\"\n    pass\n",
+        "func": "dual_report",
+        "tests": [
+          {
+            "label": "classic ties",
+            "args": [
+              [
+                2.5,
+                3.5
+              ]
+            ],
+            "expected": [
+              {
+                "__tuple__": [
+                  2,
+                  2
+                ]
+              },
+              {
+                "__tuple__": [
+                  3,
+                  4
+                ]
+              }
+            ],
+            "hidden": false
+          },
+          {
+            "label": "negative truncation",
+            "args": [
+              [
+                -1.75,
+                -0.5
+              ]
+            ],
+            "expected": [
+              {
+                "__tuple__": [
+                  -1,
+                  -2
+                ]
+              },
+              {
+                "__tuple__": [
+                  0,
+                  0
+                ]
+              }
+            ],
+            "hidden": false
+          },
+          {
+            "label": "empty log",
+            "args": [
+              []
+            ],
+            "expected": [],
+            "hidden": true
+          },
+          {
+            "label": "quarter steps",
+            "args": [
+              [
+                0.25,
+                0.75,
+                1.25,
+                1.75
+              ]
+            ],
+            "expected": [
+              {
+                "__tuple__": [
+                  0,
+                  0
+                ]
+              },
+              {
+                "__tuple__": [
+                  0,
+                  1
+                ]
+              },
+              {
+                "__tuple__": [
+                  1,
+                  1
+                ]
+              },
+              {
+                "__tuple__": [
+                  1,
+                  2
+                ]
+              }
+            ],
+            "hidden": true
+          },
+          {
+            "label": "negative ties to even",
+            "args": [
+              [
+                -2.5,
+                -3.5
+              ]
+            ],
+            "expected": [
+              {
+                "__tuple__": [
+                  -2,
+                  -2
+                ]
+              },
+              {
+                "__tuple__": [
+                  -3,
+                  -4
+                ]
+              }
+            ],
+            "hidden": true
+          },
+          {
+            "label": "whole values unchanged",
+            "args": [
+              [
+                4.0,
+                -7.0
+              ]
+            ],
+            "expected": [
+              {
+                "__tuple__": [
+                  4,
+                  4
+                ]
+              },
+              {
+                "__tuple__": [
+                  -7,
+                  -7
+                ]
+              }
+            ],
+            "hidden": true
+          },
+          {
+            "label": "zero change",
+            "args": [
+              [
+                0.0
+              ]
+            ],
+            "expected": [
+              {
+                "__tuple__": [
+                  0,
+                  0
+                ]
+              }
+            ],
+            "hidden": true
+          },
+          {
+            "label": "mixed day",
+            "args": [
+              [
+                1.5,
+                -2.25,
+                2.75,
+                -0.25
+              ]
+            ],
+            "expected": [
+              {
+                "__tuple__": [
+                  1,
+                  2
+                ]
+              },
+              {
+                "__tuple__": [
+                  -2,
+                  -2
+                ]
+              },
+              {
+                "__tuple__": [
+                  2,
+                  3
+                ]
+              },
+              {
+                "__tuple__": [
+                  0,
+                  0
+                ]
+              }
+            ],
+            "hidden": true
+          },
+          {
+            "label": "tie both ways",
+            "args": [
+              [
+                0.5,
+                -0.5
+              ]
+            ],
+            "expected": [
+              {
+                "__tuple__": [
+                  0,
+                  0
+                ]
+              },
+              {
+                "__tuple__": [
+                  0,
+                  0
+                ]
+              }
+            ],
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "For each change you need exactly two integers: the toward-zero chop and the nearest-even rounding. Which two built-ins give you each?",
+          "One pass over changes; for each value x append the pair (int(x), round(x)). int() truncates toward zero; round() goes to nearest with .5 going to the even neighbor.",
+          "out = []; for x in changes: out.append((int(x), round(x))); return out. Check the negatives by hand first: int(-0.5) is 0, round(-0.5) is 0, round(-2.5) is -2."
+        ],
+        "reasoning": "<p>Two conversion rules, two built-ins, and the whole exercise is knowing exactly what each does at the edges. <code>int()</code> throws the fraction away <i>toward zero</i>, which differs from flooring whenever the value is negative — that is why <code>int(-1.75)</code> is <code>-1</code> while <code>-1.75 // 1</code> would be <code>-2</code>. <code>round()</code> with one argument returns an <code>int</code> and breaks exact .5 ties toward the even neighbor, so <code>round(2.5)</code> and <code>round(3.5)</code> land on opposite sides of .5. Because every input is a multiple of 0.25, all values are exact in binary and both conversions are deterministic — no float noise can leak into the pairs. The transferable habit: when a spec says 'truncate' or 'round', pin down <i>which</i> rule, then verify it at one positive, one negative and one tie value before writing the loop.</p>",
+        "solution": "def dual_report(changes):\n    # firmware: int() truncates toward zero; display: round() to even\n    return [(int(x), round(x)) for x in changes]\n"
+      }
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "id": "numpy-reasoning",
+  "title": "NumPy Reasoning",
+  "icon": "🔢",
+  "tagline": "Broadcasting, axis logic, vectorized thinking — learn to reason about whole arrays instead of loop iterations.",
+  "accent": "orange",
+  "engine": "python",
+  "packages": ["numpy"]
+}

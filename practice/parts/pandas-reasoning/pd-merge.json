@@ -1,0 +1,1990 @@
+{
+  "id": "pd-merge",
+  "title": "Merging & Joining",
+  "icon": "🔗",
+  "level": "intermediate",
+  "order": 40,
+  "conceptRef": "pandas.html#s8",
+  "blurb": "Merges match rows by key values: the how and the keys' multiplicities decide exactly which rows survive — and multiply.",
+  "cells": [
+    {
+      "type": "concept",
+      "title": "Keys decide which rows meet",
+      "body": "<p>A merge lines up two tables on shared key values — mentally, \"for each left row, find the right rows with the same key\". Multiplicity is the rule to internalize: if a key value appears m times on the left and n times on the right, an inner merge produces <b>m × n rows</b> for that key. Every pairing is a row, which is why joins can make tables grow — and why \"one order row became three\" is almost always a duplicate key, not a bug in pandas.</p><p>Column names matter too: <code>on=\"customer_id\"</code> requires the key spelled the same on both sides, and any <i>other</i> overlapping column names come back suffixed <code>_x</code> and <code>_y</code>. The merge result also carries no inherent row order — which is why serious specs add an explicit sort.</p>",
+      "demo": {
+        "code": "import pandas as pd\n\norders = pd.DataFrame({\n    \"customer_id\": [\"c1\", \"c2\", \"c1\"],\n    \"order_id\": [1, 2, 3],\n})\ntiers = pd.DataFrame({\n    \"customer_id\": [\"c1\", \"c3\"],\n    \"tier\": [\"gold\", \"silver\"],\n})\nprint(orders.merge(tiers, on=\"customer_id\"))"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "how= decides who survives a missing match",
+      "body": "<p><code>how=\"inner\"</code> keeps only keys present on <b>both</b> sides — unmatched rows vanish silently. <code>how=\"left\"</code> keeps every left row; where the right side has nothing to say, the right's columns fill with NaN. (Right and outer merges extend the same idea.) Left merge is the tool for \"keep my ledger complete, annotate what you can\".</p><p>Because NaN in a report column means \"no match happened\", the follow-up is usually a <code>fillna</code> with a sentinel like <code>\"Unknown\"</code> — turning absence back into a value you can group and count by. Left-merge-then-fill is one of the most common production patterns, and it makes missing matches <b>visible</b> instead of dropped.</p>",
+      "demo": {
+        "code": "import pandas as pd\n\nemployees = pd.DataFrame({\n    \"employee\": [\"ana\", \"bo\"],\n    \"dept_id\": [\"d1\", \"d9\"],\n})\ndepts = pd.DataFrame({\n    \"dept_id\": [\"d1\"],\n    \"dept_name\": [\"Engineering\"],\n})\nmerged = employees.merge(depts, on=\"dept_id\", how=\"left\")\nprint(merged)\nprint(merged[\"dept_name\"].fillna(\"Unknown\").tolist())"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "concat stacks, merge joins",
+      "body": "<p><code>pd.concat</code> glues frames <b>along an axis</b> — stacking rows by default. When the frames' column sets differ, concat aligns columns: a column that exists in only one frame becomes NaN in the other frame's rows. <code>ignore_index=True</code> discards the old row labels and hands out fresh 0..n-1 positions — the right call whenever the old indexes carry no meaning.</p><p>Choose the verb by asking what a result row <b>means</b>: if it comes from exactly one input (\"another day of logs\"), concat; if it combines facts from two inputs (\"an order <i>and</i> its customer\"), merge. And after concat, decide what the alignment-NaN cells should say — often a fill value like \"unknown\".</p>",
+      "demo": {
+        "code": "import pandas as pd\n\njan = pd.DataFrame({\"ts\": [1, 2], \"level\": [\"i\", \"w\"]})\nfeb = pd.DataFrame({\"ts\": [3], \"level\": [\"e\"], \"host\": [\"n2\"]})\nboth = pd.concat([jan, feb], ignore_index=True)\nprint(both)\nprint(both[\"host\"].tolist())"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "pd-merge-1",
+        "title": "Orders with their city",
+        "difficulty": "easy",
+        "tags": [
+          "merge",
+          "inner-join",
+          "sorting"
+        ],
+        "statement": "<p>A shop has two tables. <code>orders</code>: each row is one order with columns <code>order_id</code> (int, unique) and <code>customer_id</code> (str). <code>customers</code>: each row is one customer with columns <code>customer_id</code> (str, unique) and <code>city</code> (str).</p><p>Implement <code>orders_with_city(orders, customers)</code> returning a DataFrame with exactly the columns <code>[\"order_id\", \"customer_id\", \"city\"]</code>: the <b>inner merge</b> of orders with customers on <code>customer_id</code> — orders whose customer does not appear in <code>customers</code> are dropped — with rows sorted by <code>order_id</code> ascending.</p>",
+        "constraints": [
+          "Join on customer_id with inner semantics: only orders with a matching customer survive",
+          "Return a DataFrame with exactly the columns ['order_id', 'customer_id', 'city'] in that order",
+          "Rows sorted by order_id ascending (order_id is unique, so the order is total)",
+          "A customer with several orders appears once per order"
+        ],
+        "examples": [
+          {
+            "call": "orders_with_city(orders, customers)  # orders 101(c1), 102(c2), 103(c9); customers c1 Berlin, c2 Austin, c3 Denver",
+            "returns": "DataFrame with columns ['order_id', 'customer_id', 'city']: 101 c1 Berlin, 102 c2 Austin",
+            "why": "c9 is not in customers so order 103 is dropped by the inner merge; the rest is sorted by order_id"
+          },
+          {
+            "call": "orders_with_city(orders, customers)  # customers c2 Austin and c1 Berlin; orders 3(c1), 1(c1), 2(c2)",
+            "returns": "rows: 1 c1 Berlin, 2 c2 Austin, 3 c1 Berlin",
+            "why": "c1 has two orders, so it appears twice — and the output is re-sorted by order_id, not left in merge order"
+          }
+        ],
+        "starter": "import pandas as pd\n\ndef orders_with_city(orders, customers):\n    \"\"\"Return orders joined with their customer's city.\n\n    Inner merge on customer_id, columns ['order_id',\n    'customer_id', 'city'], rows sorted by order_id.\n    \"\"\"\n    pass\n",
+        "func": "orders_with_city",
+        "tests": [
+          {
+            "label": "one customer unknown",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "order_id",
+                    "customer_id"
+                  ],
+                  "rows": [
+                    [
+                      101,
+                      "c1"
+                    ],
+                    [
+                      102,
+                      "c2"
+                    ],
+                    [
+                      103,
+                      "c9"
+                    ]
+                  ]
+                }
+              },
+              {
+                "__df__": {
+                  "columns": [
+                    "customer_id",
+                    "city"
+                  ],
+                  "rows": [
+                    [
+                      "c1",
+                      "Berlin"
+                    ],
+                    [
+                      "c2",
+                      "Austin"
+                    ],
+                    [
+                      "c3",
+                      "Denver"
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": false,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "order_id",
+                  "customer_id",
+                  "city"
+                ],
+                "rows": [
+                  [
+                    101,
+                    "c1",
+                    "Berlin"
+                  ],
+                  [
+                    102,
+                    "c2",
+                    "Austin"
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "one-to-many with unsorted ids",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "order_id",
+                    "customer_id"
+                  ],
+                  "rows": [
+                    [
+                      3,
+                      "c1"
+                    ],
+                    [
+                      1,
+                      "c1"
+                    ],
+                    [
+                      2,
+                      "c2"
+                    ]
+                  ]
+                }
+              },
+              {
+                "__df__": {
+                  "columns": [
+                    "customer_id",
+                    "city"
+                  ],
+                  "rows": [
+                    [
+                      "c2",
+                      "Austin"
+                    ],
+                    [
+                      "c1",
+                      "Berlin"
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": false,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "order_id",
+                  "customer_id",
+                  "city"
+                ],
+                "rows": [
+                  [
+                    1,
+                    "c1",
+                    "Berlin"
+                  ],
+                  [
+                    2,
+                    "c2",
+                    "Austin"
+                  ],
+                  [
+                    3,
+                    "c1",
+                    "Berlin"
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "no customer overlaps",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "order_id",
+                    "customer_id"
+                  ],
+                  "rows": [
+                    [
+                      1,
+                      "x1"
+                    ],
+                    [
+                      2,
+                      "x2"
+                    ]
+                  ]
+                }
+              },
+              {
+                "__df__": {
+                  "columns": [
+                    "customer_id",
+                    "city"
+                  ],
+                  "rows": [
+                    [
+                      "y1",
+                      "Oslo"
+                    ],
+                    [
+                      "y2",
+                      "Kyoto"
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "order_id",
+                  "customer_id",
+                  "city"
+                ],
+                "rows": []
+              }
+            }
+          },
+          {
+            "label": "all orders match",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "order_id",
+                    "customer_id"
+                  ],
+                  "rows": [
+                    [
+                      7,
+                      "c2"
+                    ],
+                    [
+                      5,
+                      "c1"
+                    ],
+                    [
+                      6,
+                      "c3"
+                    ]
+                  ]
+                }
+              },
+              {
+                "__df__": {
+                  "columns": [
+                    "customer_id",
+                    "city"
+                  ],
+                  "rows": [
+                    [
+                      "c1",
+                      "Berlin"
+                    ],
+                    [
+                      "c2",
+                      "Austin"
+                    ],
+                    [
+                      "c3",
+                      "Denver"
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "order_id",
+                  "customer_id",
+                  "city"
+                ],
+                "rows": [
+                  [
+                    5,
+                    "c1",
+                    "Berlin"
+                  ],
+                  [
+                    6,
+                    "c3",
+                    "Denver"
+                  ],
+                  [
+                    7,
+                    "c2",
+                    "Austin"
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "extra customers are harmless",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "order_id",
+                    "customer_id"
+                  ],
+                  "rows": [
+                    [
+                      10,
+                      "c1"
+                    ],
+                    [
+                      11,
+                      "c2"
+                    ]
+                  ]
+                }
+              },
+              {
+                "__df__": {
+                  "columns": [
+                    "customer_id",
+                    "city"
+                  ],
+                  "rows": [
+                    [
+                      "c1",
+                      "Berlin"
+                    ],
+                    [
+                      "c2",
+                      "Austin"
+                    ],
+                    [
+                      "c3",
+                      "Denver"
+                    ],
+                    [
+                      "c4",
+                      "Oslo"
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "order_id",
+                  "customer_id",
+                  "city"
+                ],
+                "rows": [
+                  [
+                    10,
+                    "c1",
+                    "Berlin"
+                  ],
+                  [
+                    11,
+                    "c2",
+                    "Austin"
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "customer with three orders",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "order_id",
+                    "customer_id"
+                  ],
+                  "rows": [
+                    [
+                      9,
+                      "c1"
+                    ],
+                    [
+                      8,
+                      "c2"
+                    ],
+                    [
+                      7,
+                      "c1"
+                    ],
+                    [
+                      6,
+                      "c1"
+                    ]
+                  ]
+                }
+              },
+              {
+                "__df__": {
+                  "columns": [
+                    "customer_id",
+                    "city"
+                  ],
+                  "rows": [
+                    [
+                      "c1",
+                      "Berlin"
+                    ],
+                    [
+                      "c2",
+                      "Austin"
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "order_id",
+                  "customer_id",
+                  "city"
+                ],
+                "rows": [
+                  [
+                    6,
+                    "c1",
+                    "Berlin"
+                  ],
+                  [
+                    7,
+                    "c1",
+                    "Berlin"
+                  ],
+                  [
+                    8,
+                    "c2",
+                    "Austin"
+                  ],
+                  [
+                    9,
+                    "c1",
+                    "Berlin"
+                  ]
+                ]
+              }
+            }
+          }
+        ],
+        "hints": [
+          "What does a result row mean here — something from one table, or a fact combining both? Which verb produces that?",
+          "orders.merge(customers, on='customer_id') matches rows by key value; inner is the default, so unknown customers drop out. Then select the three columns in the required order.",
+          "merged = orders.merge(customers, on='customer_id')[['order_id', 'customer_id', 'city']]; return merged.sort_values('order_id').reset_index(drop=True) — merge output order is not a promise, the sort is."
+        ],
+        "reasoning": "<p>An inner merge is a <b>conjunction of existence</b>: a row survives only if its key exists on both sides, so orders from unknown customers vanish — that is the semantic difference from a left merge, and the reason the spec says \"inner\". The one-to-many direction (one customer, several orders) is the merge multiplication rule with n=1 on the right: each matching order pairs with the single customer row. Finally, note that merge output order is an implementation detail, not a contract — the explicit <code>sort_values(\"order_id\")</code> converts \"some order\" into a promise, which is what makes this checkable.</p>",
+        "solution": "import pandas as pd\n\ndef orders_with_city(orders, customers):\n    \"\"\"Return orders joined with their customer's city.\"\"\"\n    merged = orders.merge(customers, on=\"customer_id\")\n    merged = merged[[\"order_id\", \"customer_id\", \"city\"]]\n    return merged.sort_values(\"order_id\").reset_index(drop=True)\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "pd-merge-2",
+        "title": "Everyone gets a department",
+        "difficulty": "medium",
+        "tags": [
+          "merge",
+          "left-join",
+          "fillna",
+          "sentinel"
+        ],
+        "statement": "<p><code>employees</code>: each row is one employee with columns <code>employee</code> (str) and <code>dept_id</code> (str). <code>departments</code>: each row is one department with columns <code>dept_id</code> (str, unique) and <code>dept_name</code> (str). Not every employee's <code>dept_id</code> exists in <code>departments</code>.</p><p>Implement <code>employee_departments(employees, departments)</code> returning a DataFrame with exactly the columns <code>[\"employee\", \"dept_id\", \"dept_name\"]</code>: <b>every</b> employee, in the same order as the <code>employees</code> table, with the department name found by a <b>left merge</b> on <code>dept_id</code>. Employees without a matching department get the string <code>\"Unknown\"</code> in <code>dept_name</code>.</p>",
+        "constraints": [
+          "Left merge on dept_id: every employee row survives, in employees-table order",
+          "Unmatched dept_id yields dept_name 'Unknown' (not missing)",
+          "Return a DataFrame with exactly the columns ['employee', 'dept_id', 'dept_name'] in that order",
+          "dept_id is unique in departments, so no row multiplication happens"
+        ],
+        "examples": [
+          {
+            "call": "employee_departments(employees, departments)  # ana d1, bo d9, cy d2; departments d1 Engineering, d2 Sales",
+            "returns": "DataFrame with columns ['employee', 'dept_id', 'dept_name']: ana d1 Engineering, bo d9 Unknown, cy d2 Sales",
+            "why": "the left merge keeps bo even though d9 has no department row, and the missing name is replaced by the sentinel 'Unknown'"
+          },
+          {
+            "call": "employee_departments(employees, departments)  # all dept_ids known",
+            "returns": "every employee with their real dept_name",
+            "why": "with a full match the left merge behaves like an inner one and the sentinel never appears"
+          }
+        ],
+        "starter": "import pandas as pd\n\ndef employee_departments(employees, departments):\n    \"\"\"Return employees with their department name.\n\n    Left merge on dept_id; unmatched departments read\n    'Unknown'. Columns ['employee', 'dept_id', 'dept_name'],\n    rows in the employees-table order.\n    \"\"\"\n    pass\n",
+        "func": "employee_departments",
+        "tests": [
+          {
+            "label": "one unmatched employee",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "employee",
+                    "dept_id"
+                  ],
+                  "rows": [
+                    [
+                      "ana",
+                      "d1"
+                    ],
+                    [
+                      "bo",
+                      "d9"
+                    ],
+                    [
+                      "cy",
+                      "d2"
+                    ]
+                  ]
+                }
+              },
+              {
+                "__df__": {
+                  "columns": [
+                    "dept_id",
+                    "dept_name"
+                  ],
+                  "rows": [
+                    [
+                      "d1",
+                      "Engineering"
+                    ],
+                    [
+                      "d2",
+                      "Sales"
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": false,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "employee",
+                  "dept_id",
+                  "dept_name"
+                ],
+                "rows": [
+                  [
+                    "ana",
+                    "d1",
+                    "Engineering"
+                  ],
+                  [
+                    "bo",
+                    "d9",
+                    "Unknown"
+                  ],
+                  [
+                    "cy",
+                    "d2",
+                    "Sales"
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "everyone matches",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "employee",
+                    "dept_id"
+                  ],
+                  "rows": [
+                    [
+                      "ana",
+                      "d1"
+                    ],
+                    [
+                      "bo",
+                      "d2"
+                    ]
+                  ]
+                }
+              },
+              {
+                "__df__": {
+                  "columns": [
+                    "dept_id",
+                    "dept_name"
+                  ],
+                  "rows": [
+                    [
+                      "d1",
+                      "Engineering"
+                    ],
+                    [
+                      "d2",
+                      "Sales"
+                    ],
+                    [
+                      "d3",
+                      "Legal"
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": false,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "employee",
+                  "dept_id",
+                  "dept_name"
+                ],
+                "rows": [
+                  [
+                    "ana",
+                    "d1",
+                    "Engineering"
+                  ],
+                  [
+                    "bo",
+                    "d2",
+                    "Sales"
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "nobody matches",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "employee",
+                    "dept_id"
+                  ],
+                  "rows": [
+                    [
+                      "ana",
+                      "d7"
+                    ],
+                    [
+                      "bo",
+                      "d8"
+                    ],
+                    [
+                      "cy",
+                      "d9"
+                    ]
+                  ]
+                }
+              },
+              {
+                "__df__": {
+                  "columns": [
+                    "dept_id",
+                    "dept_name"
+                  ],
+                  "rows": [
+                    [
+                      "d1",
+                      "Engineering"
+                    ],
+                    [
+                      "d2",
+                      "Sales"
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "employee",
+                  "dept_id",
+                  "dept_name"
+                ],
+                "rows": [
+                  [
+                    "ana",
+                    "d7",
+                    "Unknown"
+                  ],
+                  [
+                    "bo",
+                    "d8",
+                    "Unknown"
+                  ],
+                  [
+                    "cy",
+                    "d9",
+                    "Unknown"
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "shared missing dept",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "employee",
+                    "dept_id"
+                  ],
+                  "rows": [
+                    [
+                      "ana",
+                      "d1"
+                    ],
+                    [
+                      "bo",
+                      "d9"
+                    ],
+                    [
+                      "cy",
+                      "d9"
+                    ],
+                    [
+                      "dee",
+                      "d2"
+                    ]
+                  ]
+                }
+              },
+              {
+                "__df__": {
+                  "columns": [
+                    "dept_id",
+                    "dept_name"
+                  ],
+                  "rows": [
+                    [
+                      "d1",
+                      "Engineering"
+                    ],
+                    [
+                      "d2",
+                      "Sales"
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "employee",
+                  "dept_id",
+                  "dept_name"
+                ],
+                "rows": [
+                  [
+                    "ana",
+                    "d1",
+                    "Engineering"
+                  ],
+                  [
+                    "bo",
+                    "d9",
+                    "Unknown"
+                  ],
+                  [
+                    "cy",
+                    "d9",
+                    "Unknown"
+                  ],
+                  [
+                    "dee",
+                    "d2",
+                    "Sales"
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "order preserved, gaps interleaved",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "employee",
+                    "dept_id"
+                  ],
+                  "rows": [
+                    [
+                      "e1",
+                      "d2"
+                    ],
+                    [
+                      "e2",
+                      "d9"
+                    ],
+                    [
+                      "e3",
+                      "d1"
+                    ],
+                    [
+                      "e4",
+                      "d9"
+                    ],
+                    [
+                      "e5",
+                      "d2"
+                    ]
+                  ]
+                }
+              },
+              {
+                "__df__": {
+                  "columns": [
+                    "dept_id",
+                    "dept_name"
+                  ],
+                  "rows": [
+                    [
+                      "d1",
+                      "Engineering"
+                    ],
+                    [
+                      "d2",
+                      "Sales"
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "employee",
+                  "dept_id",
+                  "dept_name"
+                ],
+                "rows": [
+                  [
+                    "e1",
+                    "d2",
+                    "Sales"
+                  ],
+                  [
+                    "e2",
+                    "d9",
+                    "Unknown"
+                  ],
+                  [
+                    "e3",
+                    "d1",
+                    "Engineering"
+                  ],
+                  [
+                    "e4",
+                    "d9",
+                    "Unknown"
+                  ],
+                  [
+                    "e5",
+                    "d2",
+                    "Sales"
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "single employee matches",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "employee",
+                    "dept_id"
+                  ],
+                  "rows": [
+                    [
+                      "solo",
+                      "d1"
+                    ]
+                  ]
+                }
+              },
+              {
+                "__df__": {
+                  "columns": [
+                    "dept_id",
+                    "dept_name"
+                  ],
+                  "rows": [
+                    [
+                      "d1",
+                      "Engineering"
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "employee",
+                  "dept_id",
+                  "dept_name"
+                ],
+                "rows": [
+                  [
+                    "solo",
+                    "d1",
+                    "Engineering"
+                  ]
+                ]
+              }
+            }
+          }
+        ],
+        "hints": [
+          "Which merge direction guarantees that employees without a department still appear? What does the dept_name cell look like for them right after that merge?",
+          "how='left' keeps every left row and fills unmatched right-side cells with NaN — so the follow-up is filling those NaNs in dept_name with 'Unknown' before selecting columns.",
+          "merged = employees.merge(departments, on='dept_id', how='left'); merged['dept_name'] = merged['dept_name'].fillna('Unknown'); return merged[['employee', 'dept_id', 'dept_name']] — left merges preserve the left table's row order."
+        ],
+        "reasoning": "<p>The left merge encodes a claim about the data: <i>the employees table is the complete inventory of people; departments is merely a lookup that may be stale</i>. Inner would silently delete people — wrong under that claim — so <code>how=\"left\"</code> keeps everyone and exposes the gaps as NaN. The sentinel fill is the second half of the pattern: reports group and count by <code>dept_name</code>, and a NaN group is invisible, while <code>\"Unknown\"</code> is a first-class bucket. Note the order guarantee comes from the merge itself — left merges emit left rows in left order.</p>",
+        "solution": "import pandas as pd\n\ndef employee_departments(employees, departments):\n    \"\"\"Return employees with dept names, 'Unknown' when missing.\"\"\"\n    merged = employees.merge(departments, on=\"dept_id\", how=\"left\")\n    merged[\"dept_name\"] = merged[\"dept_name\"].fillna(\"Unknown\")\n    return merged[[\"employee\", \"dept_id\", \"dept_name\"]].reset_index(drop=True)\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "pd-merge-3",
+        "title": "Two months of logs, one table",
+        "difficulty": "medium",
+        "tags": [
+          "concat",
+          "column-alignment",
+          "ignore-index",
+          "fillna"
+        ],
+        "statement": "<p>Log archives differ slightly by month. <code>jan</code> has columns <code>[\"ts\", \"level\", \"msg\"]</code>; <code>feb</code> has <code>[\"ts\", \"level\", \"msg\", \"host\"]</code> — the host field was only added in February. Each row is one log event.</p><p>Implement <code>combine_logs(jan, feb)</code> that concatenates the two tables — <b>all rows from <code>jan</code> first in their original order, then all rows from <code>feb</code> in their original order</b>, with a fresh positional index — and returns a DataFrame with exactly the columns <code>[\"ts\", \"level\", \"msg\", \"host\"]</code>. The <code>host</code> column does not exist in <code>jan</code>, so January rows read <code>\"unknown\"</code> there instead of missing.</p>",
+        "constraints": [
+          "Rows: jan rows first (original order), then feb rows (original order), fresh 0..n-1 index",
+          "Return a DataFrame with exactly the columns ['ts', 'level', 'msg', 'host'] in that order",
+          "The host value is 'unknown' for every row that came from jan (host missing there)",
+          "Neither table ever contains missing values in its own columns"
+        ],
+        "examples": [
+          {
+            "call": "combine_logs(jan, feb)  # jan has 2 events, feb has 2 events with hosts 'n1','n2'",
+            "returns": "DataFrame with columns ['ts', 'level', 'msg', 'host']: the two jan rows with host 'unknown', then the two feb rows with their real hosts",
+            "why": "concat stacks jan's rows before feb's and aligns columns; jan never had host, so its rows are filled with the sentinel"
+          },
+          {
+            "call": "combine_logs(jan, feb)  # feb is empty (but still declares its columns)",
+            "returns": "jan's rows with host 'unknown' throughout",
+            "why": "an empty feb contributes no rows, and every host value comes from the missing jan column"
+          }
+        ],
+        "starter": "import pandas as pd\n\ndef combine_logs(jan, feb):\n    \"\"\"Concatenate jan and feb logs into one aligned table.\n\n    Columns ['ts', 'level', 'msg', 'host']; jan rows first,\n    then feb rows, fresh index; missing host reads 'unknown'.\n    \"\"\"\n    pass\n",
+        "func": "combine_logs",
+        "tests": [
+          {
+            "label": "standard two months",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "ts",
+                    "level",
+                    "msg"
+                  ],
+                  "rows": [
+                    [
+                      10,
+                      "info",
+                      "boot"
+                    ],
+                    [
+                      12,
+                      "warn",
+                      "latency"
+                    ]
+                  ]
+                }
+              },
+              {
+                "__df__": {
+                  "columns": [
+                    "ts",
+                    "level",
+                    "msg",
+                    "host"
+                  ],
+                  "rows": [
+                    [
+                      20,
+                      "info",
+                      "deploy",
+                      "n1"
+                    ],
+                    [
+                      21,
+                      "error",
+                      "timeout",
+                      "n2"
+                    ],
+                    [
+                      22,
+                      "info",
+                      "health",
+                      "n1"
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": false,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "ts",
+                  "level",
+                  "msg",
+                  "host"
+                ],
+                "rows": [
+                  [
+                    10,
+                    "info",
+                    "boot",
+                    "unknown"
+                  ],
+                  [
+                    12,
+                    "warn",
+                    "latency",
+                    "unknown"
+                  ],
+                  [
+                    20,
+                    "info",
+                    "deploy",
+                    "n1"
+                  ],
+                  [
+                    21,
+                    "error",
+                    "timeout",
+                    "n2"
+                  ],
+                  [
+                    22,
+                    "info",
+                    "health",
+                    "n1"
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "single jan row",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "ts",
+                    "level",
+                    "msg"
+                  ],
+                  "rows": [
+                    [
+                      1,
+                      "info",
+                      "hello"
+                    ]
+                  ]
+                }
+              },
+              {
+                "__df__": {
+                  "columns": [
+                    "ts",
+                    "level",
+                    "msg",
+                    "host"
+                  ],
+                  "rows": [
+                    [
+                      2,
+                      "warn",
+                      "care",
+                      "n1"
+                    ],
+                    [
+                      3,
+                      "info",
+                      "ok",
+                      "n2"
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": false,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "ts",
+                  "level",
+                  "msg",
+                  "host"
+                ],
+                "rows": [
+                  [
+                    1,
+                    "info",
+                    "hello",
+                    "unknown"
+                  ],
+                  [
+                    2,
+                    "warn",
+                    "care",
+                    "n1"
+                  ],
+                  [
+                    3,
+                    "info",
+                    "ok",
+                    "n2"
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "empty february",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "ts",
+                    "level",
+                    "msg"
+                  ],
+                  "rows": [
+                    [
+                      5,
+                      "info",
+                      "a"
+                    ],
+                    [
+                      6,
+                      "warn",
+                      "b"
+                    ],
+                    [
+                      7,
+                      "error",
+                      "c"
+                    ]
+                  ]
+                }
+              },
+              {
+                "__df__": {
+                  "columns": [
+                    "ts",
+                    "level",
+                    "msg",
+                    "host"
+                  ],
+                  "rows": []
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "ts",
+                  "level",
+                  "msg",
+                  "host"
+                ],
+                "rows": [
+                  [
+                    5,
+                    "info",
+                    "a",
+                    "unknown"
+                  ],
+                  [
+                    6,
+                    "warn",
+                    "b",
+                    "unknown"
+                  ],
+                  [
+                    7,
+                    "error",
+                    "c",
+                    "unknown"
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "empty january",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "ts",
+                    "level",
+                    "msg"
+                  ],
+                  "rows": []
+                }
+              },
+              {
+                "__df__": {
+                  "columns": [
+                    "ts",
+                    "level",
+                    "msg",
+                    "host"
+                  ],
+                  "rows": [
+                    [
+                      30,
+                      "info",
+                      "deploy",
+                      "n9"
+                    ],
+                    [
+                      31,
+                      "warn",
+                      "slow",
+                      "n2"
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "ts",
+                  "level",
+                  "msg",
+                  "host"
+                ],
+                "rows": [
+                  [
+                    30,
+                    "info",
+                    "deploy",
+                    "n9"
+                  ],
+                  [
+                    31,
+                    "warn",
+                    "slow",
+                    "n2"
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "bigger mix",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "ts",
+                    "level",
+                    "msg"
+                  ],
+                  "rows": [
+                    [
+                      1,
+                      "info",
+                      "m1"
+                    ],
+                    [
+                      2,
+                      "warn",
+                      "m2"
+                    ],
+                    [
+                      3,
+                      "error",
+                      "m3"
+                    ],
+                    [
+                      4,
+                      "info",
+                      "m4"
+                    ],
+                    [
+                      5,
+                      "info",
+                      "m5"
+                    ]
+                  ]
+                }
+              },
+              {
+                "__df__": {
+                  "columns": [
+                    "ts",
+                    "level",
+                    "msg",
+                    "host"
+                  ],
+                  "rows": [
+                    [
+                      6,
+                      "warn",
+                      "m6",
+                      "n1"
+                    ],
+                    [
+                      7,
+                      "error",
+                      "m7",
+                      "n3"
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "ts",
+                  "level",
+                  "msg",
+                  "host"
+                ],
+                "rows": [
+                  [
+                    1,
+                    "info",
+                    "m1",
+                    "unknown"
+                  ],
+                  [
+                    2,
+                    "warn",
+                    "m2",
+                    "unknown"
+                  ],
+                  [
+                    3,
+                    "error",
+                    "m3",
+                    "unknown"
+                  ],
+                  [
+                    4,
+                    "info",
+                    "m4",
+                    "unknown"
+                  ],
+                  [
+                    5,
+                    "info",
+                    "m5",
+                    "unknown"
+                  ],
+                  [
+                    6,
+                    "warn",
+                    "m6",
+                    "n1"
+                  ],
+                  [
+                    7,
+                    "error",
+                    "m7",
+                    "n3"
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "levels interleaved",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "ts",
+                    "level",
+                    "msg"
+                  ],
+                  "rows": [
+                    [
+                      100,
+                      "error",
+                      "e1"
+                    ],
+                    [
+                      101,
+                      "info",
+                      "i1"
+                    ],
+                    [
+                      102,
+                      "warn",
+                      "w1"
+                    ]
+                  ]
+                }
+              },
+              {
+                "__df__": {
+                  "columns": [
+                    "ts",
+                    "level",
+                    "msg",
+                    "host"
+                  ],
+                  "rows": [
+                    [
+                      103,
+                      "info",
+                      "i2",
+                      "n2"
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "ts",
+                  "level",
+                  "msg",
+                  "host"
+                ],
+                "rows": [
+                  [
+                    100,
+                    "error",
+                    "e1",
+                    "unknown"
+                  ],
+                  [
+                    101,
+                    "info",
+                    "i1",
+                    "unknown"
+                  ],
+                  [
+                    102,
+                    "warn",
+                    "w1",
+                    "unknown"
+                  ],
+                  [
+                    103,
+                    "info",
+                    "i2",
+                    "n2"
+                  ]
+                ]
+              }
+            }
+          }
+        ],
+        "hints": [
+          "A result row here comes from exactly one month — is this a job for merge (combine facts) or concat (stack tables)?",
+          "pd.concat([jan, feb], ignore_index=True) stacks the rows and aligns the columns; jan's rows get NaN in host because jan has no such column.",
+          "both = pd.concat([jan, feb], ignore_index=True); both['host'] = both['host'].fillna('unknown'); return both[['ts', 'level', 'msg', 'host']] — selecting the column list also fixes its order."
+        ],
+        "reasoning": "<p>Concatenation is the \"same kind of row, more of them\" operation: each result row originates from exactly one input, unlike a merge row which pairs two tables' facts. Column alignment is where the semantics bite — <code>host</code> is a <b>structural</b> absence in jan (the field did not exist yet), so concat fills it with NaN, and the sentinel <code>\"unknown\"</code> turns that structural absence into a reportable value. <code>ignore_index=True</code> matters because the two months' old indexes overlap (both start at 0) and would produce duplicate labels; a fresh positional index says out loud that row identity here is just position.</p>",
+        "solution": "import pandas as pd\n\ndef combine_logs(jan, feb):\n    \"\"\"Concatenate jan and feb logs, filling missing host.\"\"\"\n    both = pd.concat([jan, feb], ignore_index=True)\n    both[\"host\"] = both[\"host\"].fillna(\"unknown\")\n    return both[[\"ts\", \"level\", \"msg\", \"host\"]]\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "pd-merge-4",
+        "title": "Revenue per region, ranked",
+        "difficulty": "hard",
+        "tags": [
+          "merge",
+          "groupby",
+          "pipeline",
+          "tie-breaking"
+        ],
+        "statement": "<p><code>orders</code>: each row is one order with columns <code>order_id</code> (int), <code>region_id</code> (int) and <code>amount</code> (float; negative for refunds). <code>regions</code>: each row is one region with columns <code>region_id</code> (int, unique) and <code>region_name</code> (str). Some orders point at regions that do not exist in <code>regions</code> — those orders must not be counted.</p><p>Implement <code>revenue_by_region(orders, regions)</code>:</p><ul><li>join orders to regions on <code>region_id</code> so every counted order knows its region name (orders with an unknown region are excluded);</li><li>sum <code>amount</code> per region into a column named <code>revenue</code>, <b>rounded to 2 decimal places</b>;</li><li>return a DataFrame with exactly the columns <code>[\"region_name\", \"revenue\"]</code>, one row per region that has at least one counted order, sorted by <code>revenue</code> <b>descending</b>; regions with equal revenue are ordered by <code>region_name</code> ascending.</li></ul>",
+        "constraints": [
+          "Only orders whose region_id exists in regions count toward revenue",
+          "Return a DataFrame with exactly the columns ['region_name', 'revenue'] in that order",
+          "revenue = sum of that region's order amounts, rounded to 2 decimal places (refunds subtract)",
+          "Rows sorted by revenue descending, ties by region_name ascending; regions with no orders do not appear"
+        ],
+        "examples": [
+          {
+            "call": "revenue_by_region(orders, regions)  # apac orders 100.5 and 50.25, emea order 200.25, plus one order for unknown region 9",
+            "returns": "DataFrame with columns ['region_name', 'revenue']: emea 200.25, apac 150.75",
+            "why": "the unknown region's order is dropped by the join; apac sums to 150.75 and emea's 200.25 ranks first"
+          },
+          {
+            "call": "revenue_by_region(orders, regions)  # alpha and beta both total exactly 100.0",
+            "returns": "rows: alpha 100.0, beta 100.0",
+            "why": "equal revenue is a tie, and the tie-break puts the alphabetically smaller region name first"
+          }
+        ],
+        "starter": "import pandas as pd\n\ndef revenue_by_region(orders, regions):\n    \"\"\"Return total revenue per region, ranked.\n\n    Join on region_id (unknown regions excluded), sum amount\n    per region as 'revenue' rounded to 2 decimals; columns\n    ['region_name', 'revenue'] sorted by revenue descending,\n    ties by region_name ascending.\n    \"\"\"\n    pass\n",
+        "func": "revenue_by_region",
+        "tests": [
+          {
+            "label": "unknown region excluded",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "order_id",
+                    "region_id",
+                    "amount"
+                  ],
+                  "rows": [
+                    [
+                      1,
+                      1,
+                      100.5
+                    ],
+                    [
+                      2,
+                      2,
+                      200.25
+                    ],
+                    [
+                      3,
+                      1,
+                      50.25
+                    ],
+                    [
+                      4,
+                      9,
+                      999.0
+                    ]
+                  ]
+                }
+              },
+              {
+                "__df__": {
+                  "columns": [
+                    "region_id",
+                    "region_name"
+                  ],
+                  "rows": [
+                    [
+                      1,
+                      "apac"
+                    ],
+                    [
+                      2,
+                      "emea"
+                    ],
+                    [
+                      3,
+                      "amer"
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": false,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "region_name",
+                  "revenue"
+                ],
+                "rows": [
+                  [
+                    "emea",
+                    200.25
+                  ],
+                  [
+                    "apac",
+                    150.75
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "tie broken by name",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "order_id",
+                    "region_id",
+                    "amount"
+                  ],
+                  "rows": [
+                    [
+                      1,
+                      1,
+                      60.0
+                    ],
+                    [
+                      2,
+                      1,
+                      40.0
+                    ],
+                    [
+                      3,
+                      2,
+                      100.0
+                    ],
+                    [
+                      4,
+                      3,
+                      30.0
+                    ]
+                  ]
+                }
+              },
+              {
+                "__df__": {
+                  "columns": [
+                    "region_id",
+                    "region_name"
+                  ],
+                  "rows": [
+                    [
+                      1,
+                      "beta"
+                    ],
+                    [
+                      2,
+                      "alpha"
+                    ],
+                    [
+                      3,
+                      "gamma"
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": false,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "region_name",
+                  "revenue"
+                ],
+                "rows": [
+                  [
+                    "alpha",
+                    100.0
+                  ],
+                  [
+                    "beta",
+                    100.0
+                  ],
+                  [
+                    "gamma",
+                    30.0
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "refund changes the ranking",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "order_id",
+                    "region_id",
+                    "amount"
+                  ],
+                  "rows": [
+                    [
+                      1,
+                      1,
+                      500.0
+                    ],
+                    [
+                      2,
+                      2,
+                      300.0
+                    ],
+                    [
+                      3,
+                      1,
+                      -250.0
+                    ]
+                  ]
+                }
+              },
+              {
+                "__df__": {
+                  "columns": [
+                    "region_id",
+                    "region_name"
+                  ],
+                  "rows": [
+                    [
+                      1,
+                      "north"
+                    ],
+                    [
+                      2,
+                      "south"
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "region_name",
+                  "revenue"
+                ],
+                "rows": [
+                  [
+                    "south",
+                    300.0
+                  ],
+                  [
+                    "north",
+                    250.0
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "single region",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "order_id",
+                    "region_id",
+                    "amount"
+                  ],
+                  "rows": [
+                    [
+                      1,
+                      7,
+                      10.0
+                    ],
+                    [
+                      2,
+                      7,
+                      20.0
+                    ]
+                  ]
+                }
+              },
+              {
+                "__df__": {
+                  "columns": [
+                    "region_id",
+                    "region_name"
+                  ],
+                  "rows": [
+                    [
+                      7,
+                      "solo"
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "region_name",
+                  "revenue"
+                ],
+                "rows": [
+                  [
+                    "solo",
+                    30.0
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "region without orders is absent",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "order_id",
+                    "region_id",
+                    "amount"
+                  ],
+                  "rows": [
+                    [
+                      1,
+                      1,
+                      15.5
+                    ]
+                  ]
+                }
+              },
+              {
+                "__df__": {
+                  "columns": [
+                    "region_id",
+                    "region_name"
+                  ],
+                  "rows": [
+                    [
+                      1,
+                      "used"
+                    ],
+                    [
+                      2,
+                      "idle"
+                    ],
+                    [
+                      3,
+                      "empty"
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "region_name",
+                  "revenue"
+                ],
+                "rows": [
+                  [
+                    "used",
+                    15.5
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "float noise rounded away",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "order_id",
+                    "region_id",
+                    "amount"
+                  ],
+                  "rows": [
+                    [
+                      1,
+                      1,
+                      0.1
+                    ],
+                    [
+                      2,
+                      1,
+                      0.2
+                    ],
+                    [
+                      3,
+                      2,
+                      0.3
+                    ]
+                  ]
+                }
+              },
+              {
+                "__df__": {
+                  "columns": [
+                    "region_id",
+                    "region_name"
+                  ],
+                  "rows": [
+                    [
+                      1,
+                      "penny"
+                    ],
+                    [
+                      2,
+                      "nickel"
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "region_name",
+                  "revenue"
+                ],
+                "rows": [
+                  [
+                    "nickel",
+                    0.3
+                  ],
+                  [
+                    "penny",
+                    0.3
+                  ]
+                ]
+              }
+            }
+          }
+        ],
+        "hints": [
+          "This is two operations in sequence: first attach region names to orders, then collapse per region. What join semantics drops the orders with unknown regions?",
+          "orders.merge(regions, on='region_id') gives each order a region_name (inner join drops unknowns). Then groupby('region_name') and sum amount — rename it to 'revenue' and round to 2 decimals.",
+          "out = merged.groupby('region_name', as_index=False)['amount'].sum().rename(columns={'amount': 'revenue'}); out['revenue'] = out['revenue'].round(2); return out.sort_values(['revenue', 'region_name'], ascending=[False, True]).reset_index(drop=True)."
+        ],
+        "reasoning": "<p>Pipelines are where row semantics compounds. The join first: an <b>inner</b> merge is the honest choice because the spec says unknown-region orders \"do not count\" — a left merge would keep them with a NaN region and pollute the sum. Then the aggregation: each output row means \"all counted orders of one region, netted\", which is why refunds subtract. Finally the ranking: revenue descending alone is ambiguous on ties, so the second key (<code>region_name</code> ascending) completes the promise — and rounding to 2 decimals keeps float noise from creating fake ties or fake gaps. Three steps, three explicit contracts.</p>",
+        "solution": "import pandas as pd\n\ndef revenue_by_region(orders, regions):\n    \"\"\"Return ranked total revenue per region.\"\"\"\n    merged = orders.merge(regions, on=\"region_id\")\n    out = (merged.groupby(\"region_name\", as_index=False)[\"amount\"]\n           .sum()\n           .rename(columns={\"amount\": \"revenue\"}))\n    out[\"revenue\"] = out[\"revenue\"].round(2)\n    return out.sort_values(\n        [\"revenue\", \"region_name\"], ascending=[False, True]\n    ).reset_index(drop=True)\n"
+      }
+    }
+  ]
+}

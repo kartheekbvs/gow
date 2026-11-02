@@ -1,0 +1,946 @@
+{
+  "id": "std-json-datetime",
+  "title": "json & datetime",
+  "icon": "🕐",
+  "level": "intermediate",
+  "order": 50,
+  "conceptRef": "stdlib.html#s2",
+  "blurb": "Canonical text and honest calendar math: serialize deterministically and let the date library own the arithmetic.",
+  "cells": [
+    {
+      "type": "concept",
+      "title": "Canonical JSON: same data, same bytes",
+      "body": "<p>Two services can build the same record in different orders — one reads fields from a form, another from a database row — and while the dicts compare equal, their default serializations differ: key order leaks into the bytes. Anything that depends on the bytes — caching, deduplication, hashing, diffing — then treats one value as two.</p><p>The fix is a <b>canonical form</b>: a serialization rule that produces identical text for identical data. <code>json.dumps(record, sort_keys=True, separators=(\",\", :\"))</code> is that rule — keys sorted, whitespace removed. Lists keep their order, because in a list order <i>is</i> data; only dict key order is an accident of construction. The habit generalizes far beyond JSON: whenever you fingerprint values, define the canonical form first, or your fingerprints quietly lie.</p>",
+      "demo": {
+        "code": "import json\n\ndef canon(record):\n    return json.dumps(record, sort_keys=True,\n                      separators=(\",\", \":\"))\n\na = {\"beta\": [1, 2], \"alpha\": True}\nb = {\"alpha\": True, \"beta\": [1, 2]}\nprint(json.dumps(a))\nprint(json.dumps(b))\nprint(canon(a), canon(a) == canon(b))"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "datetime: dates you can do arithmetic on",
+      "body": "<p>Calendar arithmetic is full of traps: months have different lengths, leap years add a day every four years (except when they do not), and '30 days later' crosses month boundaries unpredictably. Hand-rolled date math is where schedules quietly drift into wrongness.</p><p><code>date</code> and <code>timedelta</code> objects exist so you never do that math yourself. A date built from literals is a real calendar point; adding <code>timedelta(days=n)</code> carries across months, years and leap days correctly; and <code>isoformat()</code> renders the big-endian YYYY-MM-DD shape. That shape is not an aesthetic choice — because the most significant field comes first, ISO strings sort lexicographically in chronological order, so sorting dates and sorting their strings are the same operation. For practice code, one more discipline: construct dates from literals, never from a clock, so every run computes the same answer.</p>",
+      "demo": {
+        "code": "from datetime import date, timedelta\n\nlaunch = date(2024, 2, 27)  # 2024 is a leap year\nprint((launch + timedelta(days=3)).isoformat())\nprint(date.fromisoformat(\"2024-12-28\") + timedelta(days=5))\n\nq1 = [date(2024, 3, 8), date(2024, 3, 1), date(2024, 2, 29)]\nprint(sorted(d.isoformat() for d in q1))"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "strptime: strict parsing in many dialects",
+      "body": "<p>Humans write the same date in a dozen dialects — 2024-01-15, 15/01/2024, 20240115 — and import tools must accept several while rejecting garbage. <code>datetime.strptime(s, fmt)</code> is the disciplined way: it parses s according to exactly ONE format string, and raises ValueError in two different situations — the string's shape does not fit the format, or the shape fits but the date is impossible ('31/04/2024' has April's shape but April has 30 days).</p><p>That dual strictness turns a chain of attempts into a tiny rule engine: try each accepted format in order; the first that parses wins; if none parses, the entry is rejected. The companion idiom is the loop's <code>else</code> branch — it runs only when the loop completed without breaking, which is exactly the reject case. And because strptime validates the calendar itself, you never hand-write 'is month 2 and day 29 and year leap' logic.</p>",
+      "demo": {
+        "code": "from datetime import datetime\n\nSHAPES = (\"%Y-%m-%d\", \"%d/%m/%Y\", \"%Y%m%d\")\nfor raw in [\"2024-01-15\", \"15/01/2024\", \"20240115\",\n            \"31/04/2024\"]:\n    for fmt in SHAPES:\n        try:\n            print(raw, \"->\", datetime.strptime(raw, fmt).date())\n            break\n        except ValueError:\n            continue\n    else:\n        print(raw, \"-> rejected\")"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "std-json-datetime-1",
+        "title": "Fingerprint a payload",
+        "difficulty": "easy",
+        "tags": [
+          "json",
+          "canonical-form",
+          "determinism"
+        ],
+        "statement": "<p>Two microservices exchange record dictionaries, and both cache what they receive. To detect duplicates, the cache is keyed on a <b>fingerprint</b>: a canonical JSON rendering of the record that depends only on the record's <i>value</i> — never on the order its keys happened to be created in — and carries no insignificant whitespace.</p><p>Given a record (any JSON-serializable value), return its fingerprint string: every dictionary's keys sorted, and the compact separators that omit the spaces after ',' and ':'.</p>",
+        "constraints": [
+          "records contain only JSON types: dicts, lists, strings, numbers, bools, None",
+          "records hold at most a few thousand keys"
+        ],
+        "examples": [
+          {
+            "call": "fingerprint({\"b\": 1, \"a\": 2})",
+            "returns": "'{\"a\":2,\"b\":1}'",
+            "why": "keys sorted; no space after the separators"
+          },
+          {
+            "call": "fingerprint({\"z\": [3, 1, 2], \"a\": \"hi\"})",
+            "returns": "'{\"a\":\"hi\",\"z\":[3,1,2]}'",
+            "why": "dict keys sort, but the list keeps its order — in a list, order is data"
+          }
+        ],
+        "starter": "def fingerprint(record):\n    \"\"\"Return the canonical JSON text of the record.\"\"\"\n    pass\n",
+        "func": "fingerprint",
+        "tests": [
+          {
+            "label": "keys sorted, tight separators",
+            "args": [
+              {
+                "b": 1,
+                "a": 2
+              }
+            ],
+            "expected": "{\"a\":2,\"b\":1}",
+            "hidden": false
+          },
+          {
+            "label": "lists keep their order",
+            "args": [
+              {
+                "z": [
+                  3,
+                  1,
+                  2
+                ],
+                "a": "hi"
+              }
+            ],
+            "expected": "{\"a\":\"hi\",\"z\":[3,1,2]}",
+            "hidden": false
+          },
+          {
+            "label": "empty record",
+            "args": [
+              {}
+            ],
+            "expected": "{}",
+            "hidden": true
+          },
+          {
+            "label": "top-level list is not reordered",
+            "args": [
+              [
+                3,
+                1,
+                2
+              ]
+            ],
+            "expected": "[3,1,2]",
+            "hidden": true
+          },
+          {
+            "label": "booleans and null render as JSON",
+            "args": [
+              {
+                "ok": true,
+                "n": null
+              }
+            ],
+            "expected": "{\"n\":null,\"ok\":true}",
+            "hidden": true
+          },
+          {
+            "label": "spaces inside strings survive",
+            "args": [
+              {
+                "msg": "hello world"
+              }
+            ],
+            "expected": "{\"msg\":\"hello world\"}",
+            "hidden": true
+          },
+          {
+            "label": "sorting is recursive",
+            "args": [
+              {
+                "a": {
+                  "c": {
+                    "b": 1
+                  }
+                }
+              }
+            ],
+            "expected": "{\"a\":{\"c\":{\"b\":1}}}",
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "Two dicts built in different key orders compare equal but serialize differently by default. Which two json.dumps options erase that accident?",
+          "sort_keys=True orders every dictionary's keys; separators=(',', ':') drops the spaces json.dumps normally puts after commas and colons.",
+          "return json.dumps(record, sort_keys=True, separators=(',', ':')) — one expression. Lists are untouched: sorted keys apply to dicts only."
+        ],
+        "reasoning": "<p>A fingerprint is only honest if it is a <b>function of the value</b>: same data in, same bytes out, every time. Default serialization breaks that promise because Python dicts legitimately remember insertion order — two equal dicts can serialize differently. Sorting the keys at dump time replaces an accident of construction with a rule, and tight separators make the rule maximal: no optional whitespace anywhere. Notice what the rule carefully does <i>not</i> touch: list order is meaningful data, so [3, 1, 2] and [1, 2, 3] remain different fingerprints — as they should. This value-to-canonical-text move is the same discipline behind cache keys, request signing and stable snapshot diffs: decide the canonical form first, then compare, hash or store it.</p>",
+        "solution": "import json\n\n\ndef fingerprint(record):\n    \"\"\"Return the canonical JSON text of the record.\"\"\"\n    return json.dumps(record, sort_keys=True,\n                      separators=(\",\", \":\"))\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "std-json-datetime-2",
+        "title": "When does each job finish?",
+        "difficulty": "medium",
+        "tags": [
+          "datetime",
+          "timedelta",
+          "sorting"
+        ],
+        "statement": "<p>A maintenance plan is anchored to a start date given as an ISO string. Each visit in the plan is a pair <code>[lead_days, duration_days]</code>: the visit begins <code>lead_days</code> days after the start date and runs for <code>duration_days</code>, so it finishes <code>lead_days + duration_days</code> days after the start.</p><p>Return the finish date of every visit as an ISO string, sorted earliest first. The pairs arrive in no particular order, and two visits may finish on the same day — duplicates stay in the output.</p>",
+        "constraints": [
+          "start is a valid ISO date between 1900-01-01 and 2100-12-31",
+          "0 <= len(visits) <= 100,000",
+          "0 <= lead_days + duration_days <= 10,000"
+        ],
+        "examples": [
+          {
+            "call": "finish_dates(\"2024-03-01\", [[0, 10], [30, 5], [5, 2]])",
+            "returns": "['2024-03-08', '2024-03-11', '2024-04-05']",
+            "why": "the finishes land on Mar 8, Mar 11 and Apr 5; sorting reorders the unsorted plan"
+          },
+          {
+            "call": "finish_dates(\"2024-12-28\", [[3, 2]])",
+            "returns": "['2025-01-02']",
+            "why": "the finish crosses the year boundary into 2025 — no manual calendar math needed"
+          }
+        ],
+        "starter": "def finish_dates(start_iso, visits):\n    \"\"\"Return each visit's finish date as an ISO string,\n\n    sorted earliest first.\n    \"\"\"\n    pass\n",
+        "func": "finish_dates",
+        "tests": [
+          {
+            "label": "unsorted plan gets sorted",
+            "args": [
+              "2024-03-01",
+              [
+                [
+                  0,
+                  10
+                ],
+                [
+                  30,
+                  5
+                ],
+                [
+                  5,
+                  2
+                ]
+              ]
+            ],
+            "expected": [
+              "2024-03-08",
+              "2024-03-11",
+              "2024-04-05"
+            ],
+            "hidden": false
+          },
+          {
+            "label": "year boundary",
+            "args": [
+              "2024-12-28",
+              [
+                [
+                  3,
+                  2
+                ]
+              ]
+            ],
+            "expected": [
+              "2025-01-02"
+            ],
+            "hidden": false
+          },
+          {
+            "label": "no visits",
+            "args": [
+              "2024-03-01",
+              []
+            ],
+            "expected": [],
+            "hidden": true
+          },
+          {
+            "label": "zero duration finishes on the visit day",
+            "args": [
+              "2024-01-10",
+              [
+                [
+                  5,
+                  0
+                ]
+              ]
+            ],
+            "expected": [
+              "2024-01-15"
+            ],
+            "hidden": true
+          },
+          {
+            "label": "leap February carry",
+            "args": [
+              "2024-02-27",
+              [
+                [
+                  0,
+                  3
+                ]
+              ]
+            ],
+            "expected": [
+              "2024-03-01"
+            ],
+            "hidden": true
+          },
+          {
+            "label": "non-leap February carry",
+            "args": [
+              "2023-02-27",
+              [
+                [
+                  0,
+                  3
+                ]
+              ]
+            ],
+            "expected": [
+              "2023-03-02"
+            ],
+            "hidden": true
+          },
+          {
+            "label": "duplicate finishes stay",
+            "args": [
+              "2024-06-01",
+              [
+                [
+                  10,
+                  0
+                ],
+                [
+                  0,
+                  10
+                ],
+                [
+                  2,
+                  3
+                ]
+              ]
+            ],
+            "expected": [
+              "2024-06-06",
+              "2024-06-11",
+              "2024-06-11"
+            ],
+            "hidden": true
+          },
+          {
+            "label": "long plan, shared finish line",
+            "args": [
+              "2024-01-01",
+              {
+                "__repeat__": {
+                  "item": [
+                    [
+                      0,
+                      10
+                    ],
+                    [
+                      5,
+                      5
+                    ],
+                    [
+                      3,
+                      7
+                    ]
+                  ],
+                  "times": 300
+                }
+              }
+            ],
+            "expected": {
+              "__repeat__": {
+                "item": [
+                  "2024-01-11"
+                ],
+                "times": 900
+              }
+            },
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "Computing 'start plus n days' by hand means re-implementing the calendar, leap years included. Which library type already knows how many days February has?",
+          "Parse the anchor with date.fromisoformat, add timedelta(days=lead + duration) per visit, and render each result with isoformat().",
+          "ends = [(date.fromisoformat(start_iso) + timedelta(days=l + d)).isoformat() for l, d in visits]; return sorted(ends). ISO strings sort chronologically, so sorting strings IS sorting dates."
+        ],
+        "reasoning": "<p>Two library facts carry the whole exercise. First, <code>date + timedelta(days=n)</code> performs calendar-correct arithmetic — month lengths, year boundaries and leap days are handled inside the library, which is why the leap-year and year-end tests are just ordinary inputs, not special cases. Second, the ISO format is deliberately <b>big-endian</b>: year, then month, then day, most significant field first — so lexicographic order on ISO strings coincides with chronological order on the dates. That is why the solution can sort plain strings and be provably right about dates; the same trick underpins date-prefixed log files and database range queries. Note also what stays deterministic: every date is constructed from literals in the input, so the same plan always yields the same finishes.</p>",
+        "solution": "from datetime import date, timedelta\n\n\ndef finish_dates(start_iso, visits):\n    \"\"\"Return each visit's finish date as an ISO string,\n\n    sorted earliest first.\n    \"\"\"\n    start = date.fromisoformat(start_iso)\n    ends = []\n    for lead, duration in visits:\n        finish = start + timedelta(days=lead + duration)\n        ends.append(finish.isoformat())\n    return sorted(ends)\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "std-json-datetime-3",
+        "title": "Import day, in any dialect",
+        "difficulty": "hard",
+        "tags": [
+          "datetime",
+          "strptime",
+          "parsing"
+        ],
+        "statement": "<p>A legacy import field holds dates typed by users in four accepted dialects:</p><ul><li><code>2024-01-15</code> — ISO with hyphens,</li><li><code>15/01/2024</code> — day-first with slashes,</li><li><code>20240115</code> — compact digits,</li><li><code>2024/01/15</code> — year-first with slashes.</li></ul><p>Process a list of entries in order: try the dialects in the listed order and use the first that parses. An entry whose shape fits a dialect but names an impossible date — <code>31/04/2024</code>, <code>2024-13-01</code>, or a February 29 in a non-leap year — is <b>rejected</b>, not retried into a looser reading. Entries that fit no dialect are rejected too.</p><p>Return a tuple: the accepted dates normalized to ISO strings in input order, and the rejected entries in their original text, also in input order.</p>",
+        "constraints": [
+          "0 <= len(entries) <= 100,000",
+          "entries are 8 to 10 characters built from digits, hyphens and slashes",
+          "dialects are tried in the listed order; the first that parses wins"
+        ],
+        "examples": [
+          {
+            "call": "import_dates([\"2024-01-15\", \"15/01/2024\", \"n/a\"])",
+            "returns": "(['2024-01-15', '2024-01-15'], ['n/a'])",
+            "why": "two dialects, one normalized day; 'n/a' fits none of the four"
+          },
+          {
+            "call": "import_dates([\"20240229\", \"2023/02/29\"])",
+            "returns": "(['2024-02-29'], ['2023/02/29'])",
+            "why": "2024 is a leap year so February 29 exists; in 2023 the same day is impossible and is rejected"
+          }
+        ],
+        "starter": "def import_dates(entries):\n    \"\"\"Normalize messy date entries to ISO.\n\n    Returns (accepted ISO strings, rejected originals),\n    both in input order.\n    \"\"\"\n    pass\n",
+        "func": "import_dates",
+        "tests": [
+          {
+            "label": "two dialects, one rejection",
+            "args": [
+              [
+                "2024-01-15",
+                "15/01/2024",
+                "n/a"
+              ]
+            ],
+            "expected": {
+              "__tuple__": [
+                [
+                  "2024-01-15",
+                  "2024-01-15"
+                ],
+                [
+                  "n/a"
+                ]
+              ]
+            },
+            "hidden": false
+          },
+          {
+            "label": "leap day accepted only in leap years",
+            "args": [
+              [
+                "20240229",
+                "2023/02/29"
+              ]
+            ],
+            "expected": {
+              "__tuple__": [
+                [
+                  "2024-02-29"
+                ],
+                [
+                  "2023/02/29"
+                ]
+              ]
+            },
+            "hidden": false
+          },
+          {
+            "label": "no entries",
+            "args": [
+              []
+            ],
+            "expected": {
+              "__tuple__": [
+                [],
+                []
+              ]
+            },
+            "hidden": true
+          },
+          {
+            "label": "April never has a 31st",
+            "args": [
+              [
+                "31/04/2024"
+              ]
+            ],
+            "expected": {
+              "__tuple__": [
+                [],
+                [
+                  "31/04/2024"
+                ]
+              ]
+            },
+            "hidden": true
+          },
+          {
+            "label": "month 13 never exists",
+            "args": [
+              [
+                "2024-13-01"
+              ]
+            ],
+            "expected": {
+              "__tuple__": [
+                [],
+                [
+                  "2024-13-01"
+                ]
+              ]
+            },
+            "hidden": true
+          },
+          {
+            "label": "unpadded single digits still parse",
+            "args": [
+              [
+                "2024-1-5"
+              ]
+            ],
+            "expected": {
+              "__tuple__": [
+                [
+                  "2024-01-05"
+                ],
+                []
+              ]
+            },
+            "hidden": true
+          },
+          {
+            "label": "wrong separators fit no dialect",
+            "args": [
+              [
+                "15-01-2024"
+              ]
+            ],
+            "expected": {
+              "__tuple__": [
+                [],
+                [
+                  "15-01-2024"
+                ]
+              ]
+            },
+            "hidden": true
+          },
+          {
+            "label": "long import batch",
+            "args": [
+              {
+                "__repeat__": {
+                  "item": [
+                    "15/01/2024",
+                    "n/a"
+                  ],
+                  "times": 200
+                }
+              }
+            ],
+            "expected": {
+              "__tuple__": [
+                [
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15",
+                  "2024-01-15"
+                ],
+                [
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a",
+                  "n/a"
+                ]
+              ]
+            },
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "One format string describes one dialect. What does strptime raise for a shape mismatch — and what does it raise for a shape that fits but names April 31?",
+          "Loop over the four format strings with try/except ValueError; on the first success, append .date().isoformat() and break. Both failure kinds raise the same exception, so one except clause handles both.",
+          "for raw in entries: for fmt in SHAPES: try ... break / except ValueError: continue — then put the rejection in the for-loop's else branch, which runs only when no format broke out. Return (accepted, rejected)."
+        ],
+        "reasoning": "<p>The deep fact is that <code>strptime</code> is a parser <b>and</b> a validator. It checks the shape against the format string, then checks the resulting numbers against the real calendar — April 31, month 13 and non-leap February 29 all fail the second check, exactly as garbage fails the first. That is why the solution never inspects a digit manually: the exception already encodes 'this is not a real date'. Structurally, the chain of attempts is a small rule engine — ordered rules, first success wins, else reject — and the loop's <code>else</code> branch is the precise spelling of 'no rule matched', which is easy to get wrong with flags and much clearer with the idiom. The four dialects here are disjoint by separator and length, so ordering affects nothing, but writing the chain as ordered rules keeps it honest the day a fifth, overlapping dialect arrives.</p>",
+        "solution": "from datetime import datetime\n\n# the four accepted dialects, in try-order\n_SHAPES = (\"%Y-%m-%d\", \"%d/%m/%Y\", \"%Y%m%d\", \"%Y/%m/%d\")\n\n\ndef import_dates(entries):\n    \"\"\"Normalize messy date entries to ISO.\n\n    Returns (accepted ISO strings, rejected originals),\n    both in input order.\n    \"\"\"\n    accepted, rejected = [], []\n    for raw in entries:\n        for shape in _SHAPES:\n            try:\n                parsed = datetime.strptime(raw, shape).date()\n            except ValueError:\n                continue  # wrong shape OR impossible date\n            accepted.append(parsed.isoformat())\n            break\n        else:\n            rejected.append(raw)  # no dialect parsed\n    return (accepted, rejected)\n"
+      }
+    }
+  ]
+}

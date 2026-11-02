@@ -1,0 +1,9 @@
+{
+  "id": "py-core",
+  "title": "Python Core",
+  "icon": "🐍",
+  "tagline": "The language fundamentals every algorithm is built on — strings, lists, dicts, control flow, functions, objects, iterators.",
+  "accent": "blue",
+  "engine": "python",
+  "packages": []
+}

@@ -1,0 +1,990 @@
+{
+  "id": "pd-clean",
+  "title": "Missing Data & Types",
+  "icon": "🧹",
+  "level": "beginner",
+  "order": 20,
+  "conceptRef": "pandas.html#s6",
+  "blurb": "Missing values are data about the data: decide per column what absence means, then fill or drop with intent.",
+  "cells": [
+    {
+      "type": "concept",
+      "title": "NaN is a number — and that changes your column",
+      "body": "<p>In pandas, a missing value in a numeric column is stored as <code>NaN</code>, which is a float. The moment one reading is missing, the whole column becomes float64 — your integer counts silently turn into <code>3.0</code>. That is why <code>.isna()</code> (a mask of where values are missing) and <code>.notna()</code> are the first tools to reach for: they let you <b>see absence as data</b> before deciding what to do about it.</p><p>Row semantics decides the treatment. A missing <code>qty</code> in an inventory row often means \"zero were counted\", while a missing answer in a survey row often means \"no answer\" — a row that maybe should not count at all. Same NaN, opposite meanings, different operations. Neither is a syntax choice; it is a claim about the world the table describes.</p>",
+      "demo": {
+        "code": "import pandas as pd\n\nstock = pd.DataFrame({\n    \"item\": [\"bolt\", \"nut\", \"washer\"],\n    \"qty\": [100, None, 12],\n})\nprint(stock.dtypes.to_dict())\nprint(stock[\"qty\"].isna().tolist())\nprint(stock[\"qty\"].fillna(0).tolist())"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "Fill vs drop: two families, two questions",
+      "body": "<p><code>fillna</code> answers <i>\"what should I pretend the missing value was?\"</i> — a constant like 0, or something derived like the column mean. <code>dropna</code> answers <i>\"which rows are too incomplete to use?\"</i> — and its <code>thresh</code> parameter is the precise way to express it: <code>dropna(subset=questions, thresh=3)</code> keeps only rows with <b>at least 3 non-missing values among the question columns</b>.</p><p>Notice both are still row questions. fillna changes cells per column; dropna removes whole rows. Choosing between them is not a syntax decision — it is a decision about what a half-empty row <b>means</b> in your scenario, and the counting version (<code>notna().sum(axis=1)</code>) makes the \"how complete is this row?\" question inspectable before you commit to a rule.</p>",
+      "demo": {
+        "code": "import pandas as pd\n\nsurvey = pd.DataFrame({\n    \"person\": [\"ana\", \"bo\", \"cy\"],\n    \"q1\": [5, None, 3],\n    \"q2\": [4, 2, None],\n    \"q3\": [None, None, 1],\n})\nanswered = survey[[\"q1\", \"q2\", \"q3\"]].notna().sum(axis=1)\nprint(answered.tolist())\nprint(survey.dropna(subset=[\"q1\", \"q2\", \"q3\"], thresh=2))"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "Dirty text columns: coerce first, then decide",
+      "body": "<p>Real exports arrive with <code>\"1,250\"</code>, <code>\" 42 \"</code>, <code>\"n/a\"</code> and blanks all mixed into one column. <code>pd.to_numeric(s, errors=\"coerce\")</code> converts what it can and turns the rest into NaN — a single, inspectable place where all the junk lands. After coercing you can decide with full information: drop those rows, count them, or treat them as zero.</p><p>The coercion-first habit matters because it separates <b>parsing</b> from <b>policy</b>. Parsing is mechanical — strip spaces, remove thousands separators, coerce. Policy — what a failed parse <i>means</i> for the total — depends on what the rows represent. When a solution mixes the two, every new junk format breaks the logic; when they are separate, new junk just falls into the NaN bucket you already handle.</p>",
+      "demo": {
+        "code": "import pandas as pd\n\nraw = pd.Series([\"1,250\", \" 42 \", \"n/a\", 7.5])\ntext = raw.astype(str).str.strip().str.replace(\",\", \"\")\nclean = pd.to_numeric(text, errors=\"coerce\")\nprint(clean.tolist())\nprint(\"unparseable:\", clean.isna().sum())"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "pd-clean-1",
+        "title": "Fill the gaps in inventory",
+        "difficulty": "easy",
+        "tags": [
+          "missing-data",
+          "fillna",
+          "per-column-rules"
+        ],
+        "statement": "<p>A store keeps a <code>stock</code> table. Each row is one product with columns <code>item</code> (str), <code>qty</code> (count, may be missing) and <code>price</code> (may be missing).</p><p>A missing <code>qty</code> means nobody counted that shelf — the shop treats it as <b>0</b>. A missing <code>price</code> means the price was never entered — the shop fills those with the default price <b>9.99</b>.</p><p>Implement <code>fill_defaults(stock)</code> returning a DataFrame with the same columns <code>[\"item\", \"qty\", \"price\"]</code> in the same row order, where every missing <code>qty</code> is replaced by 0 and every missing <code>price</code> by 9.99. The returned frame contains <b>no missing values</b>.</p>",
+        "constraints": [
+          "Same columns ['item', 'qty', 'price'] in that order, same rows in the same order",
+          "Missing qty becomes 0; missing price becomes 9.99",
+          "Present values are never changed",
+          "The returned DataFrame has no missing values anywhere"
+        ],
+        "examples": [
+          {
+            "call": "fill_defaults(stock)  # rows: bolt 100 @ 0.15, nut missing @ 0.05, washer 12 @ missing",
+            "returns": "DataFrame with columns ['item', 'qty', 'price']: bolt 100 @ 0.15, nut 0 @ 0.05, washer 12 @ 9.99",
+            "why": "the uncounted shelf becomes qty 0 and the unentered price becomes the default 9.99; recorded values stay untouched"
+          },
+          {
+            "call": "fill_defaults(stock)  # rows: a 5 @ 1.5, b 7 @ 2.5 (nothing missing)",
+            "returns": "the same table unchanged",
+            "why": "fillna only touches missing cells, so a complete table passes through as-is"
+          }
+        ],
+        "starter": "import pandas as pd\n\ndef fill_defaults(stock):\n    \"\"\"Return stock with missing qty filled by 0 and missing\n    price filled by 9.99.\n\n    Same columns, same row order, no missing values left.\n    \"\"\"\n    pass\n",
+        "func": "fill_defaults",
+        "tests": [
+          {
+            "label": "mixed gaps",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "item",
+                    "qty",
+                    "price"
+                  ],
+                  "rows": [
+                    [
+                      "bolt",
+                      100,
+                      0.15
+                    ],
+                    [
+                      "nut",
+                      null,
+                      0.05
+                    ],
+                    [
+                      "washer",
+                      12,
+                      null
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": false,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "item",
+                  "qty",
+                  "price"
+                ],
+                "rows": [
+                  [
+                    "bolt",
+                    100.0,
+                    0.15
+                  ],
+                  [
+                    "nut",
+                    0.0,
+                    0.05
+                  ],
+                  [
+                    "washer",
+                    12.0,
+                    9.99
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "nothing missing",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "item",
+                    "qty",
+                    "price"
+                  ],
+                  "rows": [
+                    [
+                      "a",
+                      5,
+                      1.5
+                    ],
+                    [
+                      "b",
+                      7,
+                      2.5
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": false,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "item",
+                  "qty",
+                  "price"
+                ],
+                "rows": [
+                  [
+                    "a",
+                    5,
+                    1.5
+                  ],
+                  [
+                    "b",
+                    7,
+                    2.5
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "both columns mostly missing",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "item",
+                    "qty",
+                    "price"
+                  ],
+                  "rows": [
+                    [
+                      "x",
+                      null,
+                      null
+                    ],
+                    [
+                      "y",
+                      null,
+                      null
+                    ],
+                    [
+                      "z",
+                      1,
+                      2.0
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "item",
+                  "qty",
+                  "price"
+                ],
+                "rows": [
+                  [
+                    "x",
+                    0.0,
+                    9.99
+                  ],
+                  [
+                    "y",
+                    0.0,
+                    9.99
+                  ],
+                  [
+                    "z",
+                    1.0,
+                    2.0
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "rows missing price only",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "item",
+                    "qty",
+                    "price"
+                  ],
+                  "rows": [
+                    [
+                      "z",
+                      3,
+                      null
+                    ],
+                    [
+                      "w",
+                      4,
+                      1.5
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "item",
+                  "qty",
+                  "price"
+                ],
+                "rows": [
+                  [
+                    "z",
+                    3,
+                    9.99
+                  ],
+                  [
+                    "w",
+                    4,
+                    1.5
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "several gaps in both columns",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "item",
+                    "qty",
+                    "price"
+                  ],
+                  "rows": [
+                    [
+                      "p",
+                      null,
+                      2.0
+                    ],
+                    [
+                      "q",
+                      4,
+                      null
+                    ],
+                    [
+                      "r",
+                      null,
+                      null
+                    ],
+                    [
+                      "s",
+                      9,
+                      1.0
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "item",
+                  "qty",
+                  "price"
+                ],
+                "rows": [
+                  [
+                    "p",
+                    0.0,
+                    2.0
+                  ],
+                  [
+                    "q",
+                    4.0,
+                    9.99
+                  ],
+                  [
+                    "r",
+                    0.0,
+                    9.99
+                  ],
+                  [
+                    "s",
+                    9.0,
+                    1.0
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "five rows, gaps scattered",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "item",
+                    "qty",
+                    "price"
+                  ],
+                  "rows": [
+                    [
+                      "m",
+                      1,
+                      1.0
+                    ],
+                    [
+                      "n",
+                      null,
+                      2.0
+                    ],
+                    [
+                      "o",
+                      2,
+                      null
+                    ],
+                    [
+                      "pp",
+                      3,
+                      3.0
+                    ],
+                    [
+                      "q",
+                      null,
+                      0.5
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "item",
+                  "qty",
+                  "price"
+                ],
+                "rows": [
+                  [
+                    "m",
+                    1.0,
+                    1.0
+                  ],
+                  [
+                    "n",
+                    0.0,
+                    2.0
+                  ],
+                  [
+                    "o",
+                    2.0,
+                    9.99
+                  ],
+                  [
+                    "pp",
+                    3.0,
+                    3.0
+                  ],
+                  [
+                    "q",
+                    0.0,
+                    0.5
+                  ]
+                ]
+              }
+            }
+          }
+        ],
+        "hints": [
+          "What does a missing value in the qty column mean here, and what number stands for that meaning? And for price?",
+          "One fillna call can take a dictionary mapping each column name to its own fill value — no need to fill the two columns separately.",
+          "return stock.fillna({'qty': 0, 'price': 9.99}) — the dict form applies a per-column constant and leaves present values alone."
+        ],
+        "reasoning": "<p>Imputation is where row semantics becomes visible: a missing <code>qty</code> and a missing <code>price</code> are both NaN, but they are filled with <b>different constants</b>, because absence means different things in the two columns. The dictionary form of <code>fillna</code> exists precisely for this — it encodes \"what absence means\" as data, one entry per column. Also note what fillna promises not to do: it never touches cells that already hold values, so a complete table passes through unchanged, which is exactly the contract the tests rely on.</p>",
+        "solution": "import pandas as pd\n\ndef fill_defaults(stock):\n    \"\"\"Fill missing qty with 0 and missing price with 9.99.\"\"\"\n    return stock.fillna({\"qty\": 0, \"price\": 9.99})\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "pd-clean-2",
+        "title": "Keep the serious respondents",
+        "difficulty": "medium",
+        "tags": [
+          "missing-data",
+          "dropna",
+          "thresh",
+          "row-completeness"
+        ],
+        "statement": "<p>A survey tool exported one row per person. Each row of <code>survey</code> has columns <code>respondent</code> (str, never missing) and <code>q1</code>, <code>q2</code>, <code>q3</code>, <code>q4</code> (answers; each may be missing).</p><p>The analysis should only use <b>serious respondents</b>: people who answered at least <code>min_answers</code> of the four questions (a non-missing q1..q4 counts as an answer).</p><p>Implement <code>serious_respondents(survey, min_answers)</code> returning a Series named <code>respondent</code> listing, <b>in the same order as the table</b>, the respondents who answered at least <code>min_answers</code> questions.</p>",
+        "constraints": [
+          "A respondent counts as serious when at least min_answers of q1..q4 are non-missing",
+          "min_answers may be 0 (everyone qualifies) or larger than 4 (nobody does)",
+          "Return a Series named 'respondent' with the qualifying names in original table order",
+          "The respondent column itself is never missing"
+        ],
+        "examples": [
+          {
+            "call": "serious_respondents(survey, 3)  # ana answered 3, bo answered 1, cy answered 3",
+            "returns": "Series named 'respondent': ['ana', 'cy']",
+            "why": "ana and cy each have 3 non-missing answers, which meets the 'at least 3' bar; bo's single answer does not"
+          },
+          {
+            "call": "serious_respondents(survey, 1)  # same table",
+            "returns": "Series named 'respondent': ['ana', 'bo', 'cy']",
+            "why": "with the bar at 1, everyone who answered anything qualifies, and everyone did"
+          }
+        ],
+        "starter": "import pandas as pd\n\ndef serious_respondents(survey, min_answers):\n    \"\"\"Return the names of respondents who answered at least\n    min_answers of the four questions.\n\n    Series named 'respondent', original table order.\n    \"\"\"\n    pass\n",
+        "func": "serious_respondents",
+        "tests": [
+          {
+            "label": "three is the bar",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "respondent",
+                    "q1",
+                    "q2",
+                    "q3",
+                    "q4"
+                  ],
+                  "rows": [
+                    [
+                      "ana",
+                      5,
+                      4,
+                      null,
+                      3
+                    ],
+                    [
+                      "bo",
+                      null,
+                      2,
+                      null,
+                      null
+                    ],
+                    [
+                      "cy",
+                      3,
+                      null,
+                      1,
+                      2
+                    ]
+                  ]
+                }
+              },
+              3
+            ],
+            "hidden": false,
+            "expected": {
+              "__ser__": {
+                "values": [
+                  "ana",
+                  "cy"
+                ],
+                "name": "respondent"
+              }
+            }
+          },
+          {
+            "label": "bar of one keeps everyone",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "respondent",
+                    "q1",
+                    "q2",
+                    "q3",
+                    "q4"
+                  ],
+                  "rows": [
+                    [
+                      "ana",
+                      5,
+                      4,
+                      null,
+                      3
+                    ],
+                    [
+                      "bo",
+                      null,
+                      2,
+                      null,
+                      null
+                    ],
+                    [
+                      "cy",
+                      3,
+                      null,
+                      1,
+                      2
+                    ]
+                  ]
+                }
+              },
+              1
+            ],
+            "hidden": false,
+            "expected": {
+              "__ser__": {
+                "values": [
+                  "ana",
+                  "bo",
+                  "cy"
+                ],
+                "name": "respondent"
+              }
+            }
+          },
+          {
+            "label": "bar of four needs all answers",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "respondent",
+                    "q1",
+                    "q2",
+                    "q3",
+                    "q4"
+                  ],
+                  "rows": [
+                    [
+                      "dee",
+                      1,
+                      1,
+                      1,
+                      1
+                    ],
+                    [
+                      "eve",
+                      null,
+                      1,
+                      1,
+                      1
+                    ],
+                    [
+                      "fyi",
+                      2,
+                      2,
+                      2,
+                      2
+                    ]
+                  ]
+                }
+              },
+              4
+            ],
+            "hidden": true,
+            "expected": {
+              "__ser__": {
+                "values": [
+                  "dee",
+                  "fyi"
+                ],
+                "name": "respondent"
+              }
+            }
+          },
+          {
+            "label": "bar of zero includes empty answers",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "respondent",
+                    "q1",
+                    "q2",
+                    "q3",
+                    "q4"
+                  ],
+                  "rows": [
+                    [
+                      "felix",
+                      null,
+                      null,
+                      null,
+                      null
+                    ],
+                    [
+                      "gita",
+                      2,
+                      2,
+                      2,
+                      2
+                    ]
+                  ]
+                }
+              },
+              0
+            ],
+            "hidden": true,
+            "expected": {
+              "__ser__": {
+                "values": [
+                  "felix",
+                  "gita"
+                ],
+                "name": "respondent"
+              }
+            }
+          },
+          {
+            "label": "exactly at the bar counts",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "respondent",
+                    "q1",
+                    "q2",
+                    "q3",
+                    "q4"
+                  ],
+                  "rows": [
+                    [
+                      "hana",
+                      1,
+                      1,
+                      null,
+                      null
+                    ],
+                    [
+                      "ivan",
+                      1,
+                      null,
+                      null,
+                      null
+                    ],
+                    [
+                      "juno",
+                      null,
+                      null,
+                      4,
+                      5
+                    ]
+                  ]
+                }
+              },
+              2
+            ],
+            "hidden": true,
+            "expected": {
+              "__ser__": {
+                "values": [
+                  "hana",
+                  "juno"
+                ],
+                "name": "respondent"
+              }
+            }
+          },
+          {
+            "label": "bar above four keeps nobody",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "respondent",
+                    "q1",
+                    "q2",
+                    "q3",
+                    "q4"
+                  ],
+                  "rows": [
+                    [
+                      "ana",
+                      5,
+                      4,
+                      null,
+                      3
+                    ],
+                    [
+                      "bo",
+                      null,
+                      2,
+                      null,
+                      null
+                    ]
+                  ]
+                }
+              },
+              5
+            ],
+            "hidden": true,
+            "expected": {
+              "__ser__": {
+                "values": [],
+                "name": "respondent"
+              }
+            }
+          }
+        ],
+        "hints": [
+          "\"At least k of the four questions\" is a property of a whole row, not of any single cell. How could you count, per row, how many of q1..q4 are present?",
+          "notna() gives a True/False frame; summing across axis=1 turns each row into a count of answered questions. Compare that count to min_answers and index the respondent column with the mask.",
+          "answered = survey[['q1','q2','q3','q4']].notna().sum(axis=1); return survey.loc[answered >= min_answers, 'respondent'].reset_index(drop=True). (dropna(subset=[...], thresh=min_answers) does the same row-keeping.)"
+        ],
+        "reasoning": "<p>The reframe: \"serious respondent\" is a <b>row-level property</b> — a count of present cells among four specific columns — and pandas lets you compute that count per row with <code>notna().sum(axis=1)</code>. Once completeness is a column of integers, the filter is an ordinary comparison. This is the reasoning behind <code>dropna(thresh=...)</code> too: thresh is exactly \"keep rows with at least this many non-missing values in the subset\". The order guarantee comes free, because both approaches are boolean row selection, which never reorders.</p>",
+        "solution": "import pandas as pd\n\ndef serious_respondents(survey, min_answers):\n    \"\"\"Return names of respondents with at least min_answers answers.\"\"\"\n    answered = survey[[\"q1\", \"q2\", \"q3\", \"q4\"]].notna().sum(axis=1)\n    return survey.loc[answered >= min_answers, \"respondent\"].reset_index(drop=True)\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "pd-clean-3",
+        "title": "Total the messy ledger",
+        "difficulty": "hard",
+        "tags": [
+          "to-numeric",
+          "coerce",
+          "strings",
+          "aggregation"
+        ],
+        "statement": "<p>An accounting export was supposed to have one number per row, but the <code>amount</code> column of <code>ledger</code> (columns: <code>entry</code> str, <code>amount</code>) is a mess: real numbers mixed with strings like <code>\"1250.5\"</code>, <code>\"1,250.50\"</code> (thousands separator), <code>\" 42 \"</code> (surrounding spaces), and unparseable junk like <code>\"n/a\"</code> or <code>\"?\"</code>.</p><p>Implement <code>ledger_total(ledger)</code> that:</p><ul><li><b>cleans</b>: treats each cell as text, strips surrounding spaces and removes commas, so <code>\"1,250.50\"</code> reads 1250.50;</li><li><b>coerces</b>: converts with <code>pd.to_numeric(..., errors=\"coerce\")</code> — cells that still fail contribute nothing;</li><li><b>aggregates</b>: returns the total of all parseable amounts as a single float <b>rounded to 2 decimal places</b> (0 if nothing parses).</li></ul>",
+        "constraints": [
+          "Cleaning = treat the cell as text (astype(str)), strip whitespace, remove commas — nothing else",
+          "Unparseable cells (after cleaning) contribute 0 to the total",
+          "Return a single float rounded to 2 decimal places; 0.0 when nothing parses",
+          "Numbers stored as ints or floats must still count, e.g. the value 7.5 in a string column"
+        ],
+        "examples": [
+          {
+            "call": "ledger_total(ledger)  # amounts: 1250.5, '1,250.50', ' 42 ', 'n/a', 7.25",
+            "returns": "2550.25",
+            "why": "1250.5 + 1250.50 + 42 + 7.25 parse and sum; 'n/a' coerces to missing and contributes nothing"
+          },
+          {
+            "call": "ledger_total(ledger)  # amounts: 10, '20', '?'",
+            "returns": "30.0",
+            "why": "the bare int and the string '20' both parse; '?' does not"
+          }
+        ],
+        "starter": "import pandas as pd\n\ndef ledger_total(ledger):\n    \"\"\"Return the total of the parseable amounts, rounded to\n    2 decimal places.\n\n    Clean each cell as text (strip spaces, drop commas), then\n    coerce with errors='coerce'; unparseable cells add nothing.\n    \"\"\"\n    pass\n",
+        "func": "ledger_total",
+        "tests": [
+          {
+            "label": "mixed junk and numbers",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "entry",
+                    "amount"
+                  ],
+                  "rows": [
+                    [
+                      "inv-1",
+                      1250.5
+                    ],
+                    [
+                      "inv-2",
+                      "1,250.50"
+                    ],
+                    [
+                      "inv-3",
+                      " 42 "
+                    ],
+                    [
+                      "inv-4",
+                      "n/a"
+                    ],
+                    [
+                      "inv-5",
+                      7.25
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": false,
+            "expected": 2550.25
+          },
+          {
+            "label": "int plus numeric string",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "entry",
+                    "amount"
+                  ],
+                  "rows": [
+                    [
+                      "a",
+                      10
+                    ],
+                    [
+                      "b",
+                      "20"
+                    ],
+                    [
+                      "c",
+                      "?"
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": false,
+            "expected": 30.0
+          },
+          {
+            "label": "nothing parses",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "entry",
+                    "amount"
+                  ],
+                  "rows": [
+                    [
+                      "x",
+                      "n/a"
+                    ],
+                    [
+                      "y",
+                      "-"
+                    ],
+                    [
+                      "z",
+                      ""
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": 0.0
+          },
+          {
+            "label": "refunds are negative",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "entry",
+                    "amount"
+                  ],
+                  "rows": [
+                    [
+                      "r1",
+                      -50.5
+                    ],
+                    [
+                      "r2",
+                      "-1,000.25"
+                    ],
+                    [
+                      "s1",
+                      2000.0
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": 949.25
+          },
+          {
+            "label": "float noise is rounded away",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "entry",
+                    "amount"
+                  ],
+                  "rows": [
+                    [
+                      "p1",
+                      0.1
+                    ],
+                    [
+                      "p2",
+                      "0.2"
+                    ],
+                    [
+                      "p3",
+                      0.3
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": 0.6
+          },
+          {
+            "label": "spaced strings and floats",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "entry",
+                    "amount"
+                  ],
+                  "rows": [
+                    [
+                      "s1",
+                      " 7.5 "
+                    ],
+                    [
+                      "s2",
+                      " 8.25"
+                    ],
+                    [
+                      "s3",
+                      9.0
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": 24.75
+          }
+        ],
+        "hints": [
+          "Why does .str.strip() crash or lose data on a column that mixes numbers and strings? What single conversion makes every cell a string first?",
+          "Three steps in order: text = ledger['amount'].astype(str).str.strip().str.replace(',', '') — then amounts = pd.to_numeric(text, errors='coerce') — then a sum that skips the NaNs.",
+          "amounts = pd.to_numeric(ledger['amount'].astype(str).str.strip().str.replace(',', ''), errors='coerce'); return round(float(amounts.sum()), 2). Series.sum() skips missing values by default, so junk adds nothing."
+        ],
+        "reasoning": "<p>This pipeline is <b>parse, then policy</b>. Parsing is mechanical: <code>astype(str)</code> normalizes the mixed-type column (real numbers become their text form, so <code>7.5</code> survives the trip), strip and comma-removal undo cosmetic damage, and <code>errors=\"coerce\"</code> quarantines everything still unreadable into NaN. Policy is one decision at the end — unparseable entries contribute nothing — expressed by the fact that <code>.sum()</code> skips missing values. Because the junk decision is a single, explicit step, new junk formats land in the same NaN bucket instead of crashing a hand-rolled parser, and the final <code>round(., 2)</code> keeps float noise out of the ledger.</p>",
+        "solution": "import pandas as pd\n\ndef ledger_total(ledger):\n    \"\"\"Return the total of parseable amounts, rounded to 2 decimals.\"\"\"\n    text = ledger[\"amount\"].astype(str).str.strip().str.replace(\",\", \"\")\n    amounts = pd.to_numeric(text, errors=\"coerce\")\n    return round(float(amounts.sum()), 2)\n"
+      }
+    }
+  ]
+}

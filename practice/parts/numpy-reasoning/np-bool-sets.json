@@ -1,0 +1,714 @@
+{
+  "id": "np-bool-sets",
+  "title": "Boolean Masks & Set Logic",
+  "icon": "🎭",
+  "level": "intermediate",
+  "order": 60,
+  "conceptRef": "numpy.html#s17",
+  "blurb": "Comparisons produce arrays: combine masks logically and never loop over elements again.",
+  "cells": [
+    {
+      "type": "concept",
+      "title": "A boolean mask is an array you compute with",
+      "body": "<p>A comparison produces an <b>array</b>: <code>g &gt; 5</code> is a grid of <code>True</code>/<code>False</code> with the same shape as <code>g</code>. That mask is data — you can store it, combine it with <code>&amp;</code>, <code>|</code>, <code>~</code>, count it, and index with it: <code>g[mask]</code> returns the selected values as a 1-D array in reading order.</p><p>Counting is the key trick: on a boolean array, <code>.sum()</code> counts the <code>True</code> cells, so 'how many readings exceed the limit' is one comparison plus one sum. Selection and counting are the same mask used two ways — and because boolean indexing flattens in reading order, the selected values come out in a predictable, checkable order.</p>",
+      "demo": {
+        "code": "import numpy as np\n\ng = np.arange(12).reshape(3, 4)\nm = g > 5\nprint(m)\nprint(g[m])         # selected values, reading order\nprint(m.sum())      # counting = summing the mask\nprint((g % 3 == 0).sum())"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "NaN poisons comparisons — test for it explicitly",
+      "body": "<p>Every comparison with NaN is <code>False</code>: <code>np.nan &gt; 3</code> is <code>False</code>, and so is <code>np.nan &lt; 3</code> and even <code>np.nan == np.nan</code>. A float array with missing values therefore mis-classifies <i>silently</i>: NaN entries fall into every 'else' branch of a where-ladder and look like valid low readings.</p><p>The fix is a dedicated test: <code>np.isnan(v)</code> is the mask of missing entries, and it must be checked <b>first</b> in any priority ladder. Combine it with value conditions using <code>&amp;</code> (with parentheses — operator precedence bites here), or let a nested <code>np.where</code> test it at the outermost level so the value ladder only ever sees clean numbers.</p>",
+      "demo": {
+        "code": "import numpy as np\n\nv = np.array([1.0, np.nan, 3.0])\nprint(v > 2)            # NaN compares False with everything\nprint(np.isnan(v))\nprint(np.where(np.isnan(v), -1, v))   # plug the hole first"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "np-bool-sets-1",
+        "title": "Above the Limit",
+        "difficulty": "easy",
+        "tags": [
+          "numpy",
+          "boolean-masks",
+          "selection"
+        ],
+        "statement": "<p>A compliance sweep must extract every reading that exceeds a legal limit, in the order the sensors were read (row by row, left to right).</p><p>Implement <code>above_threshold(grid, t)</code>: return a 1-D <code>int64</code> array of the values <b>strictly greater</b> than <code>t</code>, in reading order — one boolean mask, one indexing step. If nothing exceeds the limit, return an <b>empty</b> 1-D int64 array; that case is part of the contract, not an error.</p>",
+        "constraints": [
+          "grid is 2-D int64; t is a plain int",
+          "the result is 1-D int64 in row-major (reading) order",
+          "empty result (length 0) when no value exceeds t"
+        ],
+        "examples": [
+          {
+            "call": "above_threshold(np.arange(12).reshape(3, 4), 5)",
+            "returns": "array([ 6,  7,  8,  9, 10, 11])",
+            "why": "values 6 through 11 pass the limit; they come out in reading order"
+          },
+          {
+            "call": "above_threshold(np.array([[1, 2], [3, 4]]), 10)",
+            "returns": "array([], dtype=int64)",
+            "why": "nothing exceeds 10, so the contract says: empty array"
+          }
+        ],
+        "starter": "import numpy as np\n\ndef above_threshold(grid, t):\n    \"\"\"Return the values strictly above t, in reading order.\n\n    grid is 2-D int64; the result is 1-D int64, empty if none pass.\n    \"\"\"\n    pass\n",
+        "func": "above_threshold",
+        "tests": [
+          {
+            "label": "3x4 limit 5",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      0,
+                      1,
+                      2,
+                      3
+                    ],
+                    [
+                      4,
+                      5,
+                      6,
+                      7
+                    ],
+                    [
+                      8,
+                      9,
+                      10,
+                      11
+                    ]
+                  ],
+                  "dtype": "int64"
+                }
+              },
+              5
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  6,
+                  7,
+                  8,
+                  9,
+                  10,
+                  11
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": false
+          },
+          {
+            "label": "nothing above",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      1,
+                      2
+                    ],
+                    [
+                      3,
+                      4
+                    ]
+                  ],
+                  "dtype": "int64"
+                }
+              },
+              10
+            ],
+            "expected": {
+              "__np__": {
+                "data": [],
+                "dtype": "int64"
+              }
+            },
+            "hidden": false
+          },
+          {
+            "label": "everything above",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      1,
+                      2,
+                      3
+                    ],
+                    [
+                      4,
+                      5,
+                      6
+                    ]
+                  ],
+                  "dtype": "int64"
+                }
+              },
+              -1
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "duplicates",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      5,
+                      6,
+                      5,
+                      6
+                    ]
+                  ],
+                  "dtype": "int64"
+                }
+              },
+              5
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  6,
+                  6
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "negatives",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      -3,
+                      -1,
+                      -4
+                    ]
+                  ],
+                  "dtype": "int64"
+                }
+              },
+              -2
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  -1
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "single row sweep",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      9,
+                      0,
+                      5,
+                      12,
+                      3
+                    ]
+                  ],
+                  "dtype": "int64"
+                }
+              },
+              4
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  9,
+                  5,
+                  12
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "One comparison gives you the mask; what does grid[mask] return, and in which order are the selected elements visited?",
+          "Boolean indexing flattens: grid[grid > t] is a 1-D array in row-major order regardless of the grid's shape, and it is empty when the mask is all False.",
+          "return grid[grid > t] — dtype int64 is inherited from the grid; for the no-match case numpy produces exactly the empty (0,) array the contract asks for."
+        ],
+        "reasoning": "<p>Boolean indexing is selection by <i>predicate</i>: <code>grid &gt; t</code> computes a same-shape mask, and <code>grid[mask]</code> walks the array in reading order, keeping the elements whose mask cell is True — so the output order is row-major by construction, which is exactly what 'in the order the sensors were read' demands. The empty case needs no special code: numpy returns a length-0 array of the same dtype when the mask is all False, and that satisfies the contract (comparisons are dtype-, shape- and value-aware). The same mask also answers the counting question — <code>(grid &gt; t).sum()</code> — so 'how many' and 'which ones' are one comparison apart.</p>",
+        "solution": "import numpy as np\n\ndef above_threshold(grid, t):\n    \"\"\"Return the values strictly above t, in reading order.\"\"\"\n    return grid[grid > t]\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "np-bool-sets-2",
+        "title": "IDs Seen Both Days",
+        "difficulty": "medium",
+        "tags": [
+          "numpy",
+          "isin",
+          "set-logic"
+        ],
+        "statement": "<p>Yesterday's maintenance log lists the sensor ids that reported; today's log lists another batch (ids can repeat within a log). Operations asks: <b>which ids were seen on both days?</b></p><p>Implement <code>common_ids(a, b)</code>: return the ids present in <b>both</b> arrays as a 1-D <code>int64</code> array, <b>sorted ascending</b> with each id appearing <b>once</b>. Build it with a membership mask (<code>np.isin</code>) and deduplicate with <code>np.unique</code>. If the two days share no id, return an empty array.</p>",
+        "constraints": [
+          "a and b are 1-D int64, each with at least 1 element; duplicates allowed inside each array",
+          "the result is sorted ascending, duplicate-free, 1-D int64; empty when there is no overlap"
+        ],
+        "examples": [
+          {
+            "call": "common_ids(np.array([4, 1, 3, 1]), np.array([3, 5, 1, 9]))",
+            "returns": "array([1, 3])",
+            "why": "1 and 3 appear in both logs; each is reported once, ascending"
+          },
+          {
+            "call": "common_ids(np.array([2, 2, 7]), np.array([7, 2, 2]))",
+            "returns": "array([2, 7])",
+            "why": "heavy duplication on both sides still yields each common id once"
+          }
+        ],
+        "starter": "import numpy as np\n\ndef common_ids(a, b):\n    \"\"\"Return the ids present in both arrays, sorted, deduplicated.\n\n    a and b are 1-D int64; duplicates inside each array are allowed.\n    \"\"\"\n    pass\n",
+        "func": "common_ids",
+        "tests": [
+          {
+            "label": "partial overlap",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    4,
+                    1,
+                    3,
+                    1
+                  ],
+                  "dtype": "int64"
+                }
+              },
+              {
+                "__np__": {
+                  "data": [
+                    3,
+                    5,
+                    1,
+                    9
+                  ],
+                  "dtype": "int64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  1,
+                  3
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": false
+          },
+          {
+            "label": "heavy duplicates",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    2,
+                    2,
+                    7
+                  ],
+                  "dtype": "int64"
+                }
+              },
+              {
+                "__np__": {
+                  "data": [
+                    7,
+                    2,
+                    2
+                  ],
+                  "dtype": "int64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  2,
+                  7
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": false
+          },
+          {
+            "label": "disjoint days",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    1,
+                    2
+                  ],
+                  "dtype": "int64"
+                }
+              },
+              {
+                "__np__": {
+                  "data": [
+                    3,
+                    4
+                  ],
+                  "dtype": "int64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "b subset of a",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    1,
+                    2,
+                    3,
+                    4
+                  ],
+                  "dtype": "int64"
+                }
+              },
+              {
+                "__np__": {
+                  "data": [
+                    2,
+                    4
+                  ],
+                  "dtype": "int64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  2,
+                  4
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "negatives",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    -5,
+                    0,
+                    3
+                  ],
+                  "dtype": "int64"
+                }
+              },
+              {
+                "__np__": {
+                  "data": [
+                    3,
+                    -5,
+                    10
+                  ],
+                  "dtype": "int64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  -5,
+                  3
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "identical logs",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    6,
+                    6,
+                    9
+                  ],
+                  "dtype": "int64"
+                }
+              },
+              {
+                "__np__": {
+                  "data": [
+                    6,
+                    6,
+                    9
+                  ],
+                  "dtype": "int64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  6,
+                  9
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "np.isin(a, b) returns a boolean mask with a's shape: True where the element occurs somewhere in b. What do you get when you index a with that mask, and what is still wrong with the result?",
+          "a[np.isin(a, b)] keeps a's surviving elements but preserves a's duplicates and a's order; np.unique sorts and deduplicates in one call, giving each common id once in ascending order.",
+          "return np.unique(a[np.isin(a, b)]) — for the no-overlap case this is the empty (0,) int64 array, which is the contract."
+        ],
+        "reasoning": "<p>Set questions on arrays decompose into <b>mask, then tidy</b>. The mask <code>np.isin(a, b)</code> answers membership per element of <code>a</code> against the whole of <code>b</code> in one vectorized pass; indexing <code>a</code> with it keeps the survivors — but survivors still carry <code>a</code>'s duplicates and <code>a</code>'s order, so the tidy step is <code>np.unique</code>, which sorts and deduplicates simultaneously. That two-step shape (predicate, then normalize) is the same one <code>np.intersect1d</code> implements internally — which is precisely what this composition computes. Note the ordering guarantee comes from the tidy step, not the mask: sorted output is a <i>property you impose</i>, and imposed properties are what make an expected array checkable.</p>",
+        "solution": "import numpy as np\n\ndef common_ids(a, b):\n    \"\"\"Return the ids present in both arrays, sorted, deduplicated.\"\"\"\n    return np.unique(a[np.isin(a, b)])\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "np-bool-sets-3",
+        "title": "NaN-Safe Classification",
+        "difficulty": "hard",
+        "tags": [
+          "numpy",
+          "isnan",
+          "np.where"
+        ],
+        "statement": "<p>A float telemetry stream contains missing samples (NaN). Classify each sample into one of four codes, with <b>missing checked first</b>:</p><ul><li>code <code>0</code> — missing: <code>isnan(v)</code></li><li>code <code>1</code> — low: <code>v &lt; 10</code></li><li>code <code>2</code> — normal: <code>10 &lt;= v &lt; 25</code></li><li>code <code>3</code> — high: <code>v &gt;= 25</code></li></ul><p>Implement <code>classify_readings(v)</code>: return the code array as 1-D <code>int64</code>, same length as <code>v</code>, built with nested <code>np.where</code> where the <b>outermost</b> test is <code>np.isnan</code>. The order is not cosmetic: NaN compares False against every threshold, so if the value ladder ran first, every missing sample would silently masquerade as a low reading.</p>",
+        "constraints": [
+          "v is 1-D float64, length >= 1, may contain NaN",
+          "the result is 1-D int64, same length; code 0 iff the value is NaN",
+          "boundaries: 10.0 is code 2, 25.0 is code 3; the lowest band catches all v < 10 including negatives"
+        ],
+        "examples": [
+          {
+            "call": "classify_readings(np.array([8.0, np.nan, 12.0, 30.0]))",
+            "returns": "array([1, 0, 2, 3])",
+            "why": "8.0 is low, the NaN is missing (code 0, not low!), 12.0 normal, 30.0 high"
+          },
+          {
+            "call": "classify_readings(np.array([10.0, 25.0, 9.999]))",
+            "returns": "array([2, 3, 1])",
+            "why": "exact edges: 10.0 opens the normal band, 25.0 opens the high band, 9.999 stays low"
+          }
+        ],
+        "starter": "import numpy as np\n\ndef classify_readings(v):\n    \"\"\"Classify each sample; NaN (checked first) is code 0.\n\n    Bands: 1 v<10; 2 10<=v<25; 3 v>=25. Returns int64 codes.\n    \"\"\"\n    pass\n",
+        "func": "classify_readings",
+        "tests": [
+          {
+            "label": "mixed with missing",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    8.0,
+                    NaN,
+                    12.0,
+                    30.0
+                  ],
+                  "dtype": "float64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  1,
+                  0,
+                  2,
+                  3
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": false
+          },
+          {
+            "label": "boundaries",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    10.0,
+                    25.0,
+                    9.999
+                  ],
+                  "dtype": "float64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  2,
+                  3,
+                  1
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": false
+          },
+          {
+            "label": "all missing",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    NaN,
+                    NaN
+                  ],
+                  "dtype": "float64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  0,
+                  0
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "all bands, no NaN",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    -1.0,
+                    5.0,
+                    15.0,
+                    40.0
+                  ],
+                  "dtype": "float64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  1,
+                  1,
+                  2,
+                  3
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "negatives only",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    -1.0,
+                    -20.0
+                  ],
+                  "dtype": "float64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  1,
+                  1
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "missing beside boundaries",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    NaN,
+                    24.999,
+                    25.0,
+                    NaN
+                  ],
+                  "dtype": "float64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  0,
+                  2,
+                  3,
+                  0
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "What is (np.nan >= 10) as a numpy expression — True, False, or an error? Decide what that implies for a ladder that never tests isnan.",
+          "Test isnan at the outermost level: np.where(np.isnan(v), 0, value_ladder). Inside the ladder every element is guaranteed non-NaN, so ordinary >= comparisons mean what they say.",
+          "code = np.where(np.isnan(v), 0, np.where(v >= 25, 3, np.where(v >= 10, 2, 1))); return code.astype(np.int64)."
+        ],
+        "reasoning": "<p>NaN is the only value in numpy that is unequal to <b>everything, including itself</b>, so every threshold comparison involving it evaluates False. In a value-first ladder, that False sends each missing sample down the 'nothing matched' branch — the lowest band — and the misclassification is silent: the code array looks perfectly typed. Putting <code>np.isnan</code> at the outermost <code>np.where</code> flips the structure: the value ladder only ever sees elements guaranteed non-NaN, so its comparisons mean what they say. The general rule for any multi-condition mask: <b>handle the poisoned values before the value conditions</b> — whether the poison is NaN, ±inf, or sentinels like -999. Priority order is correctness, not style.</p>",
+        "solution": "import numpy as np\n\ndef classify_readings(v):\n    \"\"\"Classify each sample; NaN (checked first) is code 0.\"\"\"\n    v = np.asarray(v)\n    code = np.where(np.isnan(v), 0,\n                    np.where(v >= 25, 3,\n                             np.where(v >= 10, 2, 1)))\n    return code.astype(np.int64)\n"
+      }
+    }
+  ]
+}

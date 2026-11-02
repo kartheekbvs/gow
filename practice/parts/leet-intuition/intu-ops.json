@@ -1,0 +1,171 @@
+{
+  "id": "intu-ops",
+  "title": "Operation Budgets — Count Your Work",
+  "icon": "🥋",
+  "level": "intermediate",
+  "order": 10,
+  "conceptRef": "python-basics.html#s8",
+  "blurb": "Big-O made physical: every element you inspect is charged, and the budget only fits approaches you can justify.",
+  "cells": [
+    {
+      "type": "concept",
+      "title": "Complexity is a count, not a vibe",
+      "body": "<p>When people say an algorithm is O(n) or O(n log n), they are describing <b>how many elementary operations it performs as the input grows</b>. That sentence hides a practical skill you can train: predicting — and then counting — the actual work. In this notebook every efficiency test hands your code an <code>OpCountList</code>, a list stand-in that charges 1 for every element you inspect: indexing one element costs 1, iterating costs 1 per element visited, and membership testing (<code>x in data</code>) costs the whole length because a linear scan looks at everything.</p><p>Reading a budget turns fuzzy claims into arithmetic. 'My solution is basically linear' becomes: two passes, each element inspected at most twice, so about <code>2n</code> operations — and the harness will tell you the exact number when you run the tests. When a hidden test with n = 50,000 and a budget of 110,000 inspections rejects your code, you do not need a complexity proof — you need to find the extra pass you forgot you were making.</p>",
+      "demo": {
+        "code": "data = [5, 3, 9, 1, 7]\n\n# each style below reports its inspection count\nprint('indexing :', data[0] + data[4])\ntotal = 0\nfor x in data:            # n visits\n    total += x\nprint('iterate  :', total)\nprint('contains :', 9 in data)   # one linear scan = n visits"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "The three honest ways to spend a budget",
+      "body": "<p>Almost every solution that fits a tight budget is built from one of three moves. <b>One clean pass</b>: decide what tiny state to carry (a count, a best-so-far, a running sum) so you never need to look back. <b>Table then consult</b>: spend one pass building a dict or set, after which every question about the data costs nothing — this converts repeated scans into one scan plus free lookups. <b>Sort once</b>: sorting the data (charged as n inspections here) permanently answers 'what is next to what?', which is the only fact many two-sided walks need.</p><p>Notice what is missing: 'rescan the input inside a loop' is not on the list, because n scans of n elements is n² inspections — the single most common budget violation. Before writing a nested loop, ask the counting question: <i>how many times will the inner loop touch the same element?</i> If the answer grows with n, the budget will find you.</p>",
+      "demo": {
+        "code": "def with_table(items, wanted):\n    seen = set(items)          # one pass: n visits\n    return [w for w in wanted if w in seen]  # lookups are free\n\ndef with_rescan(items, wanted):\n    out = []\n    for w in wanted:                     # u iterations\n        for x in items:                   # ...each scanning n items\n            if x == w:\n                out.append(w)\n                break\n    return out\n\nitems = list(range(50))\nprint(with_table(items, [3, 60, 49]) == with_rescan(items, [3, 60, 49]))\nprint('same answer - very different inspection counts')"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "intu-ops-1",
+        "title": "The Kit Packing Check",
+        "difficulty": "easy",
+        "tags": ["sets", "efficiency"],
+        "statement": "<p>A repair kit ships with a pile of spare parts. Before a job you receive the list of parts the job <b>needs</b> and must report which needed parts are <b>missing</b> from the kit, in the order they were requested (duplicates included).</p><p>Implement <code>missing_parts(needed, available)</code>. Both inputs arrive as <code>OpCountList</code>s. Your combined inspection budget on the big hidden test is generous for a table-building solution but hopeless for rescanning.</p>",
+        "constraints": [
+          "0 <= len(needed), len(available) <= 200,000",
+          "parts are represented by small integers",
+          "a needed part that appears in available at least once is NOT missing",
+          "inspection budget on the big test: 3 * (len(needed) + len(available))"
+        ],
+        "examples": [
+          {"call": "missing_parts([4, 7, 4, 9], [7, 1, 9])", "returns": "[4, 4]", "why": "4 is not available (requested twice, reported twice); 7 and 9 are present"}
+        ],
+        "starter": "def missing_parts(needed, available):\n    \"\"\"Return the needed parts that are missing from available,\n    in request order, duplicates included.\n    \"\"\"\n    pass\n",
+        "func": "missing_parts",
+        "tests": [
+          {"label": "example", "args": [[4, 7, 4, 9], [7, 1, 9]], "expected": [4, 4], "hidden": false},
+          {"label": "nothing missing", "args": [[1, 2], [2, 1, 3]], "expected": [], "hidden": false},
+          {"label": "empty needed", "args": [[], [1, 2]], "expected": [], "hidden": true},
+          {"label": "empty available", "args": [[5, 5], []], "expected": [5, 5], "hidden": true},
+          {"label": "both empty", "args": [[], []], "expected": [], "hidden": true},
+          {"label": "big test, budget enforced", "args": [{"__repeat__": {"item": [3, 11, 500], "times": 20000}}, {"__repeat__": {"item": [3, 11], "times": 20000}}], "expected": {"__repeat__": {"item": [500], "times": 20000}}, "hidden": true, "max_ops": 300000}
+        ],
+        "hints": [
+          "Rescanning 'available' for every needed part is the budget trap. What can you build from 'available' in ONE pass that makes every membership question free afterwards?",
+          "Build set(available) once — that costs one pass over 'available'. Then walk 'needed' once, keeping the parts not in the set.",
+          "have = set(available); return [p for p in needed if p not in have] — exactly n + m inspections."
+        ],
+        "reasoning": "<p>The budget is sized for exactly one pass over each input (n + m inspections, with headroom for the empty-check). A set built in one pass turns every later 'is this part available?' question into a free hash lookup — the table-then-consult move. The naive alternative asks that question by scanning 'available' again for each needed part: 60,000 × 40,000 = 2.4 billion inspections on the big test. Same answer, wildly different bill.</p>",
+        "solution": "def missing_parts(needed, available):\n    have = set(available)\n    return [p for p in needed if p not in have]\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "intu-ops-2",
+        "title": "The Rainy Season Window",
+        "difficulty": "medium",
+        "tags": ["efficiency", "running totals"],
+        "statement": "<p>A reservoir logs daily rainfall (all values non-negative). Water evaporates only when total accumulation <b>exceeds</b> a safety threshold B: the spill happens the moment the running total of a stretch of consecutive days goes above B. The engineers want the <b>longest stretch of consecutive days</b> whose total rainfall is at most B (a stretch of length 0 counts as 0).</p><p>Implement <code>longest_safe_stretch(rain, budget)</code>. <code>rain</code> arrives as an <code>OpCountList</code>; the big hidden test allows about 4 inspections per day — no room for re-summing every candidate stretch.</p>",
+        "constraints": [
+          "0 <= len(rain) <= 200,000",
+          "0 <= each rainfall, and each value <= budget (no single day can overflow alone)",
+          "0 <= budget <= 10^9",
+          "inspection budget on the big test: 4 * len(rain)"
+        ],
+        "examples": [
+          {"call": "longest_safe_stretch([2, 1, 3, 2, 1, 1, 4], 6)", "returns": "3", "why": "days 2-4 ([3, 2, 1]) total exactly 6; every length-4 stretch totals at least 7"}
+        ],
+        "starter": "def longest_safe_stretch(rain, budget):\n    \"\"\"Return the length of the longest run of consecutive days\n    whose rainfall total is <= budget.\n    \"\"\"\n    pass\n",
+        "func": "longest_safe_stretch",
+        "tests": [
+          {"label": "example", "args": [[2, 1, 3, 2, 1, 1, 4], 6], "expected": 3, "hidden": false},
+          {"label": "everything fits", "args": [[1, 1, 1], 100], "expected": 3, "hidden": false},
+          {"label": "empty log", "args": [[], 10], "expected": 0, "hidden": true},
+          {"label": "tight fit exactly at budget", "args": [[2, 2, 2], 6], "expected": 3, "hidden": true},
+          {"label": "best stretch in the middle", "args": [[5, 5, 1, 1, 1, 5, 5], 3], "expected": 3, "hidden": true},
+          {"label": "zeros count", "args": [[0, 0, 0, 7, 0], 2], "expected": 3, "hidden": true},
+          {"label": "big test, budget enforced", "args": [{"__opcount__": {"data": {"__repeat__": {"item": [1, 2, 1, 3, 2], "times": 40000}}}}, 50000], "expected": 27778, "hidden": true, "max_ops": 800000}
+        ],
+        "hints": [
+          "Re-summing every stretch from scratch is the trap. When you extend a stretch by one day on the right, what is the cheapest way to know its new total?",
+          "Keep a running total. Grow the right end every step; while the total exceeds the budget, shrink the left end. Because both ends only move forward, each day is entered and left at most once.",
+          "total += rain[right]; while total > budget: total -= rain[left]; left += 1. Track best = max(best, right - left + 1). Two forward-moving ends = at most 2n inspections."
+        ],
+        "reasoning": "<p>The invariant is what makes this honest: <i>the window's sum is always known, never recomputed</i>. Extending right adds one day's rainfall; shrinking left subtracts one. Both pointers only move forward, so every day is inspected when it enters the window and at most once more when it leaves — about 2n inspections total. The naive version asks 'how long is the stretch starting at day i?' for every i, re-adding the same rainfall over and over: worst case ~n²/2. Notice also WHY shrinking from the left is safe: with non-negative rainfall, the total can only decrease by removing days, so one left-step is guaranteed progress toward fitting the budget.</p>",
+        "solution": "def longest_safe_stretch(rain, budget):\n    best = 0\n    total = 0\n    left = 0\n    for right in range(len(rain)):\n        total += rain[right]\n        while total > budget:\n            total -= rain[left]\n            left += 1\n        if right - left + 1 > best:\n            best = right - left + 1\n    return best\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "intu-ops-3",
+        "title": "The Missing Badge",
+        "difficulty": "medium",
+        "tags": ["efficiency", "arithmetic"],
+        "statement": "<p>A conference handed out badges numbered <code>0</code> through <code>n</code> to <code>n + 1</code> attendees, then read the badges back at the exit door — but only <code>n</code> numbers came back. One badge number is missing. Given the list of returned numbers, find the missing number.</p><p>Implement <code>missing_badge(returns)</code>. The list arrives as an <code>OpCountList</code>; the big hidden test budgets about 2.5 inspections per returned badge.</p>",
+        "constraints": [
+          "1 <= len(returns) <= 200,000",
+          "returns is a permutation of 0..n with exactly one number missing (n = len(returns))",
+          "inspection budget on the big test: 2.5 * len(returns)"
+        ],
+        "examples": [
+          {"call": "missing_badge([0, 1, 3, 4])", "returns": "2", "why": "badges 0..4 were issued; 2 never came back"}
+        ],
+        "starter": "def missing_badge(returns):\n    \"\"\"Given a permutation of 0..n with one number missing,\n    return the missing number.\n    \"\"\"\n    pass\n",
+        "func": "missing_badge",
+        "tests": [
+          {"label": "example", "args": [[0, 1, 3, 4]], "expected": 2, "hidden": false},
+          {"label": "missing zero", "args": [[1, 2]], "expected": 0, "hidden": false},
+          {"label": "missing the last one", "args": [[0]], "expected": 1, "hidden": true},
+          {"label": "single element missing one", "args": [[1]], "expected": 0, "hidden": true},
+          {"label": "gap in the middle", "args": [[3, 0, 4, 1, 6, 2, 5, 8]], "expected": 7, "hidden": true},
+          {"label": "big test, budget enforced", "args": [{"__opcount__": {"data": {"__perm__": {"n": 199999, "skip": 137}}}}], "expected": 137, "hidden": true, "max_ops": 500000}
+        ],
+        "hints": [
+          "Scanning the list once per candidate number is the budget trap. What do you already KNOW about the complete set of numbers, without looking at the list at all?",
+          "The complete set is 0..n where n = len(returns). Its total is n*(n+1)/2 — computable with zero inspections. One pass over the list gives the returned total.",
+          "missing = n*(n+1)//2 - sum(returns). One pass, one subtraction. (XOR of all indices against all values works too — same single pass.)"
+        ],
+        "reasoning": "<p>The insight is a <b>reduction by arithmetic</b>: instead of searching for which number is absent, use the one fact you know for free — the full range 0..n and its exact sum. The difference between the expected sum and the observed sum <i>is</i> the missing badge. This turns a membership question into a subtraction, and it generalizes: whenever the input is supposed to be a complete range/permutation, ask what invariant (sum, XOR, count) the complete version has, and measure the gap.</p>",
+        "solution": "def missing_badge(returns):\n    n = len(returns)\n    expected = n * (n + 1) // 2\n    return expected - sum(returns)\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "intu-ops-4",
+        "title": "The Widest Tank",
+        "difficulty": "hard",
+        "tags": ["efficiency", "invariants"],
+        "statement": "<p>A canal is blocked by a row of vertical walls; wall <code>i</code> has height <code>h[i]</code>. Water can be contained between any two walls <code>i &lt; j</code>: the water level is capped by the <b>shorter</b> wall, so the trapped volume between them is <code>min(h[i], h[j]) * (j - i)</code>. Return the largest volume any pair of walls can hold.</p><p>Implement <code>widest_tank(heights)</code>. The big hidden test budgets about 3.5 inspections per wall — no room for trying every pair.</p>",
+        "constraints": [
+          "2 <= len(heights) <= 200,000",
+          "0 <= each height <= 10,000",
+          "inspection budget on the big test: 3.5 * len(heights)"
+        ],
+        "examples": [
+          {"call": "widest_tank([3, 9, 2, 7, 5])", "returns": "15", "why": "walls 1 and 4: min(9, 5) * (4 - 1) = 15 — the tall wall at index 1 pairs best with the far wall at index 4, not with the nearer height-7 wall"}
+        ],
+        "starter": "def widest_tank(heights):\n    \"\"\"Return max over all pairs i < j of min(h[i], h[j]) * (j - i).\n    \"\"\"\n    pass\n",
+        "func": "widest_tank",
+        "tests": [
+          {"label": "example", "args": [[3, 9, 2, 7, 5]], "expected": 15, "hidden": false},
+          {"label": "two walls", "args": [[4, 9]], "expected": 4, "hidden": false},
+          {"label": "flat walls", "args": [[5, 5, 5, 5]], "expected": 15, "hidden": true},
+          {"label": "best pair skips the peak", "args": [[1, 8, 6, 100, 5, 8]], "expected": 32, "hidden": true},
+          {"label": "zeros never help", "args": [[0, 0, 7, 0]], "expected": 0, "hidden": true},
+          {"label": "tall at the ends", "args": [[9, 1, 1, 1, 9]], "expected": 36, "hidden": true},
+          {"label": "big test, budget enforced", "args": [{"__opcount__": {"data": {"__repeat__": {"item": [4, 7, 2, 9, 1, 6, 8, 3], "times": 25000}}}}], "expected": 1799928, "hidden": true, "max_ops": 700000}
+        ],
+        "hints": [
+          "Trying all pairs is n²/2 inspections — hopeless. Start from the WIDEST pair (both ends) and ask: when is it safe to permanently give up on one of the two walls?",
+          "The pair (left, right) is capped by the shorter wall. Any pair that keeps the shorter wall and moves the other end inward has less width and is still capped by that same short wall — so it can never beat the current pair. The shorter wall is the one you can discard.",
+          "left, right = 0, len(h)-1; while left < right: record min*(right-left); discard the shorter end (move it inward). Each wall is inspected at most twice — about 2n inspections total."
+        ],
+        "reasoning": "<p>The discard argument is the whole problem. Fix the current widest pair. Suppose the left wall is the shorter one: every OTHER pair that still uses that left wall is narrower and still capped by it, so none can beat what you already recorded — the left wall is now useless and can be thrown away forever. That single sentence eliminates half the remaining pairs at every step, and the two ends walk toward each other in exactly n steps. This is what deriving an algorithm feels like: not remembering a trick, but proving that a large chunk of the search space cannot possibly contain the answer.</p>",
+        "solution": "def widest_tank(heights):\n    left, right = 0, len(heights) - 1\n    best = 0\n    while left < right:\n        width = right - left\n        if heights[left] < heights[right]:\n            volume = heights[left] * width\n            left += 1\n        else:\n            volume = heights[right] * width\n            right -= 1\n        if volume > best:\n            best = volume\n    return best\n"
+      }
+    }
+  ]
+}

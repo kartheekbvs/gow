@@ -1,0 +1,1434 @@
+{
+  "id": "pd-reshape",
+  "title": "Reshaping: pivot & melt",
+  "icon": "🔀",
+  "level": "intermediate",
+  "order": 50,
+  "conceptRef": "pandas.html#s9",
+  "blurb": "Wide and long are two shapes of the same facts: reshape deliberately, and always be able to say what shape comes out.",
+  "cells": [
+    {
+      "type": "concept",
+      "title": "Wide vs long: same facts, different shape",
+      "body": "<p>A temperature table can store one row per city with a column per month (wide), or one row per city-month pair (long). Neither is wrong — wide serves human eyes and spreadsheets; long serves pandas, because every value gets its own row with its own labels. <code>melt</code> is the wide-to-long move: it turns column headers themselves into data.</p><p>Reason about shape <b>before</b> reshaping by counting the facts: a wide table of 4 cities × 3 months holds 12 temperature facts, so the long version must have exactly 12 rows. If your melt produces a different count, something — an id column kept as <code>id_vars</code>, a stray column swept up as a value — was misclassified.</p>",
+      "demo": {
+        "code": "import pandas as pd\n\nwide = pd.DataFrame({\n    \"city\": [\"berlin\", \"austin\"],\n    \"Jan\": [2, 10],\n    \"Feb\": [3, 20],\n})\nlong = wide.melt(id_vars=\"city\", var_name=\"month\", value_name=\"temp\")\nprint(len(long))  # 2 cities x 2 months = 4 facts\nprint(long)"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "pivot_table: group and reshape in one call",
+      "body": "<p><code>pivot_table(index=..., columns=..., values=..., aggfunc=..., fill_value=...)</code> is groupby and unstack fused: it groups rows by the index key and the column key, collapses each cell with <code>aggfunc</code> (sum, mean, count...), and fills combinations that never occurred with <code>fill_value</code>. The result's rows are the sorted index keys and its columns are the sorted column keys — determinism for free.</p><p>The empty-cell question is where reasoning earns its keep: a missing combination means <i>no facts were observed</i>, which for counts and sums is naturally 0 — hence <code>fill_value=0</code> — but for an average it is a genuine unknown that should stay missing. The fill value is a claim about what absence means, not a cosmetic choice.</p>",
+      "demo": {
+        "code": "import pandas as pd\n\ntickets = pd.DataFrame({\n    \"team\": [\"core\", \"core\", \"apps\"],\n    \"day\": [\"Mon\", \"Tue\", \"Mon\"],\n    \"tickets\": [3, 4, 2],\n})\np = tickets.pivot_table(index=\"team\", columns=\"day\",\n                        values=\"tickets\", aggfunc=\"sum\",\n                        fill_value=0)\nprint(p)\nprint(list(p.columns))"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "Duplicates, unstack, and round-trips",
+      "body": "<p>melt and pivot are inverses only when the long table has a unique (row-key, column-key) combination. If the same pair appears twice, <code>.pivot</code> <b>raises</b> — a loud failure — while <code>pivot_table</code> silently aggregates the duplicates. Which behavior you want is a judgment call, and spotting it requires asking what a duplicate pair <i>means</i> (two shipments? a data error?).</p><p>The explicit route — <code>groupby([row, col]).sum()</code> followed by <code>.unstack(col)</code> — makes the aggregation its own visible step and the reshape the second. Wide summaries built this way are exactly as deterministic as you want to promise: rows sorted by the remaining key, columns sorted by the unstacked one.</p>",
+      "demo": {
+        "code": "import pandas as pd\n\nsales = pd.DataFrame({\n    \"region\": [\"north\", \"north\", \"south\"],\n    \"quarter\": [\"Q1\", \"Q1\", \"Q2\"],\n    \"sales\": [10, 5, 7],\n})\nagg = sales.groupby([\"region\", \"quarter\"])[\"sales\"].sum()\nprint(agg)\nprint(agg.unstack(\"quarter\"))"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "pd-reshape-1",
+        "title": "One row per city-month",
+        "difficulty": "easy",
+        "tags": [
+          "melt",
+          "wide-to-long",
+          "sorting"
+        ],
+        "statement": "<p>A weather service stores monthly temperatures in wide form. <code>wide</code> has one row per city (column <code>city</code>, str) plus one column per month: <code>\"Jan\"</code>, <code>\"Feb\"</code>, <code>\"Mar\"</code> — month columns always appear in calendar order in the frame, and a table may cover any two or all three of them.</p><p>Implement <code>to_long(wide)</code> returning a DataFrame with exactly the columns <code>[\"city\", \"month\", \"temp\"]</code> (in that order): one row per city-month combination, with the temperature in <code>temp</code>. Rows are sorted by <code>city</code> ascending; within a city, months appear in calendar order (Jan before Feb before Mar).</p>",
+        "constraints": [
+          "Return a DataFrame with exactly the columns ['city', 'month', 'temp'] in that order",
+          "One row per city-month pair — no pair repeated, none dropped",
+          "Rows sorted by city ascending; within a city, months in calendar order (Jan, Feb, Mar)",
+          "The input's month columns are always in calendar order; 'city' is the only other column"
+        ],
+        "examples": [
+          {
+            "call": "to_long(wide)  # berlin: Jan 2, Feb 3, Mar 5; austin: Jan 10, Feb 20, Mar 30",
+            "returns": "DataFrame with columns ['city', 'month', 'temp']: austin Jan 10, austin Feb 20, austin Mar 30, berlin Jan 2, berlin Feb 3, berlin Mar 5",
+            "why": "six city-month facts, grouped by city in alphabetical order with months in calendar order inside each city"
+          },
+          {
+            "call": "to_long(wide)  # oslo: Jan -2, Feb -1 (no Mar column at all)",
+            "returns": "rows: oslo Jan -2, oslo Feb -1",
+            "why": "a table that only tracks two months melts to two rows per city"
+          }
+        ],
+        "starter": "import pandas as pd\n\ndef to_long(wide):\n    \"\"\"Melt the wide monthly table into long form.\n\n    Columns ['city', 'month', 'temp'], one row per\n    city-month, sorted by city then calendar month.\n    \"\"\"\n    pass\n",
+        "func": "to_long",
+        "tests": [
+          {
+            "label": "two cities, three months",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "city",
+                    "Jan",
+                    "Feb",
+                    "Mar"
+                  ],
+                  "rows": [
+                    [
+                      "berlin",
+                      2,
+                      3,
+                      5
+                    ],
+                    [
+                      "austin",
+                      10,
+                      20,
+                      30
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": false,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "city",
+                  "month",
+                  "temp"
+                ],
+                "rows": [
+                  [
+                    "austin",
+                    "Jan",
+                    10
+                  ],
+                  [
+                    "austin",
+                    "Feb",
+                    20
+                  ],
+                  [
+                    "austin",
+                    "Mar",
+                    30
+                  ],
+                  [
+                    "berlin",
+                    "Jan",
+                    2
+                  ],
+                  [
+                    "berlin",
+                    "Feb",
+                    3
+                  ],
+                  [
+                    "berlin",
+                    "Mar",
+                    5
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "three cities, two months",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "city",
+                    "Jan",
+                    "Feb"
+                  ],
+                  "rows": [
+                    [
+                      "oslo",
+                      -2,
+                      -1
+                    ],
+                    [
+                      "peru",
+                      25,
+                      24
+                    ],
+                    [
+                      "cairo",
+                      19,
+                      21
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": false,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "city",
+                  "month",
+                  "temp"
+                ],
+                "rows": [
+                  [
+                    "cairo",
+                    "Jan",
+                    19
+                  ],
+                  [
+                    "cairo",
+                    "Feb",
+                    21
+                  ],
+                  [
+                    "oslo",
+                    "Jan",
+                    -2
+                  ],
+                  [
+                    "oslo",
+                    "Feb",
+                    -1
+                  ],
+                  [
+                    "peru",
+                    "Jan",
+                    25
+                  ],
+                  [
+                    "peru",
+                    "Feb",
+                    24
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "cities need sorting",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "city",
+                    "Jan",
+                    "Feb",
+                    "Mar"
+                  ],
+                  "rows": [
+                    [
+                      "tokyo",
+                      7,
+                      9,
+                      13
+                    ],
+                    [
+                      "austin",
+                      10,
+                      20,
+                      30
+                    ],
+                    [
+                      "cairo",
+                      19,
+                      21,
+                      24
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "city",
+                  "month",
+                  "temp"
+                ],
+                "rows": [
+                  [
+                    "austin",
+                    "Jan",
+                    10
+                  ],
+                  [
+                    "austin",
+                    "Feb",
+                    20
+                  ],
+                  [
+                    "austin",
+                    "Mar",
+                    30
+                  ],
+                  [
+                    "cairo",
+                    "Jan",
+                    19
+                  ],
+                  [
+                    "cairo",
+                    "Feb",
+                    21
+                  ],
+                  [
+                    "cairo",
+                    "Mar",
+                    24
+                  ],
+                  [
+                    "tokyo",
+                    "Jan",
+                    7
+                  ],
+                  [
+                    "tokyo",
+                    "Feb",
+                    9
+                  ],
+                  [
+                    "tokyo",
+                    "Mar",
+                    13
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "single city",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "city",
+                    "Jan",
+                    "Feb",
+                    "Mar"
+                  ],
+                  "rows": [
+                    [
+                      "solo",
+                      1,
+                      2,
+                      3
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "city",
+                  "month",
+                  "temp"
+                ],
+                "rows": [
+                  [
+                    "solo",
+                    "Jan",
+                    1
+                  ],
+                  [
+                    "solo",
+                    "Feb",
+                    2
+                  ],
+                  [
+                    "solo",
+                    "Mar",
+                    3
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "four cities, two months",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "city",
+                    "Jan",
+                    "Feb"
+                  ],
+                  "rows": [
+                    [
+                      "delta",
+                      4,
+                      5
+                    ],
+                    [
+                      "alpha",
+                      1,
+                      2
+                    ],
+                    [
+                      "charlie",
+                      3,
+                      4
+                    ],
+                    [
+                      "bravo",
+                      2,
+                      3
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "city",
+                  "month",
+                  "temp"
+                ],
+                "rows": [
+                  [
+                    "alpha",
+                    "Jan",
+                    1
+                  ],
+                  [
+                    "alpha",
+                    "Feb",
+                    2
+                  ],
+                  [
+                    "bravo",
+                    "Jan",
+                    2
+                  ],
+                  [
+                    "bravo",
+                    "Feb",
+                    3
+                  ],
+                  [
+                    "charlie",
+                    "Jan",
+                    3
+                  ],
+                  [
+                    "charlie",
+                    "Feb",
+                    4
+                  ],
+                  [
+                    "delta",
+                    "Jan",
+                    4
+                  ],
+                  [
+                    "delta",
+                    "Feb",
+                    5
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "middle-sorting city name",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "city",
+                    "Jan",
+                    "Feb"
+                  ],
+                  "rows": [
+                    [
+                      "cairo",
+                      19,
+                      21
+                    ],
+                    [
+                      "budapest",
+                      1,
+                      3
+                    ],
+                    [
+                      "austin",
+                      10,
+                      20
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "city",
+                  "month",
+                  "temp"
+                ],
+                "rows": [
+                  [
+                    "austin",
+                    "Jan",
+                    10
+                  ],
+                  [
+                    "austin",
+                    "Feb",
+                    20
+                  ],
+                  [
+                    "budapest",
+                    "Jan",
+                    1
+                  ],
+                  [
+                    "budapest",
+                    "Feb",
+                    3
+                  ],
+                  [
+                    "cairo",
+                    "Jan",
+                    19
+                  ],
+                  [
+                    "cairo",
+                    "Feb",
+                    21
+                  ]
+                ]
+              }
+            }
+          }
+        ],
+        "hints": [
+          "Count the facts first: how many rows must the long table have? Which column is an identifier (stays) and which columns are really values wearing header hats?",
+          "wide.melt(id_vars='city', var_name='month', value_name='temp') turns month headers into rows — but melt emits month-major blocks (all cities for Jan, then Feb...), so a sort is needed afterwards.",
+          "long = wide.melt(id_vars='city', var_name='month', value_name='temp'); long = long.sort_values('city', kind='stable').reset_index(drop=True); return long[['city', 'month', 'temp']] — the stable sort keeps the calendar order that melt gave each city's months."
+        ],
+        "reasoning": "<p>Melt is a shape translation, not a computation: the number of facts is invariant (cities × months in, same count out), and each wide header becomes a value in a <code>month</code> column. The ordering is the subtle part — melt emits <b>month-major</b> blocks (every city's January first), while the spec asks for <b>city-major</b> rows. A <i>stable</i> sort by city fixes exactly this: it regroups by city while preserving the calendar order each city's months already had inside the melt blocks. Unstable sorts would also regroup but could scramble the months within a city — determinism is not just about which key sorts, but how.</p>",
+        "solution": "import pandas as pd\n\ndef to_long(wide):\n    \"\"\"Melt the wide monthly table into long form.\"\"\"\n    long = wide.melt(id_vars=\"city\", var_name=\"month\", value_name=\"temp\")\n    long = long.sort_values(\"city\", kind=\"stable\").reset_index(drop=True)\n    return long[[\"city\", \"month\", \"temp\"]]\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "pd-reshape-2",
+        "title": "The team-day grid",
+        "difficulty": "medium",
+        "tags": [
+          "pivot-table",
+          "aggregation",
+          "fill-value"
+        ],
+        "statement": "<p>Ticket batches land raw: each row of <code>batches</code> is one recorded batch with columns <code>team</code> (str), <code>day</code> (str — one of <code>\"Mon\"</code>, <code>\"Tue\"</code>, <code>\"Wed\"</code>) and <code>tickets</code> (int). The same team-day can appear in several batches, and some team-days never occur.</p><p>Implement <code>team_grid(batches)</code> returning a DataFrame with exactly the columns <code>[\"team\", \"Mon\", \"Tue\", \"Wed\"]</code>: one row per team sorted by <code>team</code> ascending, one column per day in that order, each cell holding the <b>total</b> tickets recorded for that team on that day (sum over batches). Team-days with no batches count as <b>0</b>. Every input contains at least one row for each of the three days somewhere in the table, so all three day columns always exist.</p>",
+        "constraints": [
+          "Return a DataFrame with exactly the columns ['team', 'Mon', 'Tue', 'Wed'] in that order",
+          "Cells hold the sum of tickets over all batches for that team-day; missing combinations are 0",
+          "One row per team, sorted by team ascending",
+          "The input always contains each of Mon/Tue/Wed at least once somewhere"
+        ],
+        "examples": [
+          {
+            "call": "team_grid(batches)  # core: Mon 3, Tue 4; apps: Mon 2; web: Wed 1",
+            "returns": "DataFrame with columns ['team', 'Mon', 'Tue', 'Wed']: apps 2 0 0, core 3 4 0, web 0 0 1",
+            "why": "apps never logged Tue or Wed, so those cells fill with 0; core's Wednesday is also an unobserved combination"
+          },
+          {
+            "call": "team_grid(batches)  # core logged Mon twice: 3 and 4",
+            "returns": "a row core 7 ... for Monday",
+            "why": "two batches for the same team-day sum into one grid cell"
+          }
+        ],
+        "starter": "import pandas as pd\n\ndef team_grid(batches):\n    \"\"\"Return the team-by-day ticket grid.\n\n    Columns ['team', 'Mon', 'Tue', 'Wed'], one row per team\n    sorted ascending, cells are summed tickets, missing\n    team-days are 0.\n    \"\"\"\n    pass\n",
+        "func": "team_grid",
+        "tests": [
+          {
+            "label": "sparse batches",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "team",
+                    "day",
+                    "tickets"
+                  ],
+                  "rows": [
+                    [
+                      "core",
+                      "Mon",
+                      3
+                    ],
+                    [
+                      "core",
+                      "Tue",
+                      4
+                    ],
+                    [
+                      "apps",
+                      "Mon",
+                      2
+                    ],
+                    [
+                      "web",
+                      "Wed",
+                      1
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": false,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "team",
+                  "Mon",
+                  "Tue",
+                  "Wed"
+                ],
+                "rows": [
+                  [
+                    "apps",
+                    2,
+                    0,
+                    0
+                  ],
+                  [
+                    "core",
+                    3,
+                    4,
+                    0
+                  ],
+                  [
+                    "web",
+                    0,
+                    0,
+                    1
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "duplicate team-day sums",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "team",
+                    "day",
+                    "tickets"
+                  ],
+                  "rows": [
+                    [
+                      "core",
+                      "Mon",
+                      3
+                    ],
+                    [
+                      "core",
+                      "Mon",
+                      4
+                    ],
+                    [
+                      "apps",
+                      "Mon",
+                      2
+                    ],
+                    [
+                      "web",
+                      "Wed",
+                      5
+                    ],
+                    [
+                      "apps",
+                      "Tue",
+                      1
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": false,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "team",
+                  "Mon",
+                  "Tue",
+                  "Wed"
+                ],
+                "rows": [
+                  [
+                    "apps",
+                    2,
+                    1,
+                    0
+                  ],
+                  [
+                    "core",
+                    7,
+                    0,
+                    0
+                  ],
+                  [
+                    "web",
+                    0,
+                    0,
+                    5
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "team with a missing day",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "team",
+                    "day",
+                    "tickets"
+                  ],
+                  "rows": [
+                    [
+                      "a",
+                      "Mon",
+                      1
+                    ],
+                    [
+                      "b",
+                      "Tue",
+                      2
+                    ],
+                    [
+                      "a",
+                      "Wed",
+                      3
+                    ],
+                    [
+                      "b",
+                      "Mon",
+                      4
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "team",
+                  "Mon",
+                  "Tue",
+                  "Wed"
+                ],
+                "rows": [
+                  [
+                    "a",
+                    1,
+                    0,
+                    3
+                  ],
+                  [
+                    "b",
+                    4,
+                    2,
+                    0
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "single team, all days",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "team",
+                    "day",
+                    "tickets"
+                  ],
+                  "rows": [
+                    [
+                      "solo",
+                      "Mon",
+                      5
+                    ],
+                    [
+                      "solo",
+                      "Tue",
+                      6
+                    ],
+                    [
+                      "solo",
+                      "Wed",
+                      7
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "team",
+                  "Mon",
+                  "Tue",
+                  "Wed"
+                ],
+                "rows": [
+                  [
+                    "solo",
+                    5,
+                    6,
+                    7
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "three teams, scattered days",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "team",
+                    "day",
+                    "tickets"
+                  ],
+                  "rows": [
+                    [
+                      "web",
+                      "Wed",
+                      1
+                    ],
+                    [
+                      "apps",
+                      "Mon",
+                      2
+                    ],
+                    [
+                      "core",
+                      "Tue",
+                      3
+                    ],
+                    [
+                      "web",
+                      "Mon",
+                      4
+                    ],
+                    [
+                      "apps",
+                      "Wed",
+                      5
+                    ],
+                    [
+                      "core",
+                      "Mon",
+                      6
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "team",
+                  "Mon",
+                  "Tue",
+                  "Wed"
+                ],
+                "rows": [
+                  [
+                    "apps",
+                    2,
+                    0,
+                    5
+                  ],
+                  [
+                    "core",
+                    6,
+                    3,
+                    0
+                  ],
+                  [
+                    "web",
+                    4,
+                    0,
+                    1
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "zeros from real batches",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "team",
+                    "day",
+                    "tickets"
+                  ],
+                  "rows": [
+                    [
+                      "core",
+                      "Mon",
+                      0
+                    ],
+                    [
+                      "apps",
+                      "Tue",
+                      7
+                    ],
+                    [
+                      "web",
+                      "Wed",
+                      0
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "team",
+                  "Mon",
+                  "Tue",
+                  "Wed"
+                ],
+                "rows": [
+                  [
+                    "apps",
+                    0,
+                    7,
+                    0
+                  ],
+                  [
+                    "core",
+                    0,
+                    0,
+                    0
+                  ],
+                  [
+                    "web",
+                    0,
+                    0,
+                    0
+                  ]
+                ]
+              }
+            }
+          }
+        ],
+        "hints": [
+          "Each grid cell answers 'how many tickets did this team log on this day?' — that is a group-by-two-keys sum. Which single call groups by two keys AND lays one of them out as columns?",
+          "pivot_table(index='team', columns='day', values='tickets', aggfunc='sum', fill_value=0) builds the grid; rows come out sorted by team and columns sorted alphabetically — which for Mon/Tue/Wed is exactly the calendar order.",
+          "grid = batches.pivot_table(index='team', columns='day', values='tickets', aggfunc='sum', fill_value=0); return grid[['Mon', 'Tue', 'Wed']].reset_index() — selecting the day list pins the column order, reset_index turns team back into a column."
+        ],
+        "reasoning": "<p>A grid is a two-key aggregation displayed as a rectangle: each cell is \"sum of tickets for (team, day)\" — groupby semantics — and the reshape merely bends the <code>day</code> key into columns. <code>pivot_table</code> does both at once, and the details are where the meaning lives: <code>aggfunc=\"sum\"</code> says duplicate batches <b>add up</b> rather than collide, and <code>fill_value=0</code> is a semantic claim — an unobserved team-day had zero tickets logged, which is true for counts but would be a lie for, say, an average. The sorted index and columns are pivot_table's contract, which is what lets the spec promise \"teams ascending, days in order\".</p>",
+        "solution": "import pandas as pd\n\ndef team_grid(batches):\n    \"\"\"Return the team-by-day ticket grid with 0 for gaps.\"\"\"\n    grid = batches.pivot_table(\n        index=\"team\", columns=\"day\", values=\"tickets\",\n        aggfunc=\"sum\", fill_value=0,\n    )\n    return grid[[\"Mon\", \"Tue\", \"Wed\"]].reset_index()\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "pd-reshape-3",
+        "title": "Quarterly matrix from messy rows",
+        "difficulty": "hard",
+        "tags": [
+          "groupby",
+          "unstack",
+          "long-to-wide",
+          "duplicates"
+        ],
+        "statement": "<p>Sales data arrives from several systems, so duplicates are common. Each row of <code>sales_long</code> is one sales record with columns <code>region</code> (str), <code>quarter</code> (str — one of <code>\"Q1\"</code>..<code>\"Q4\"</code>) and <code>sales</code> (int). The same region-quarter pair can appear multiple times and must be <b>summed</b>; some region-quarter combinations never occur and must show <b>0</b>. Every quarter Q1-Q4 occurs at least once somewhere in the input.</p><p>Implement <code>quarterly_matrix(sales_long)</code> returning a DataFrame with exactly the columns <code>[\"region\", \"Q1\", \"Q2\", \"Q3\", \"Q4\"]</code>: one row per region sorted by <code>region</code> ascending, one column per quarter in that order, cells holding the region-quarter totals.</p>",
+        "constraints": [
+          "Return a DataFrame with exactly the columns ['region', 'Q1', 'Q2', 'Q3', 'Q4'] in that order",
+          "Duplicate region-quarter rows sum into one cell; region-quarters with no records are 0",
+          "One row per region, sorted by region ascending",
+          "Every quarter Q1..Q4 appears at least once somewhere in the input, so all four columns exist"
+        ],
+        "examples": [
+          {
+            "call": "quarterly_matrix(sales_long)  # north: Q1 10 and Q1 5 (duplicate), Q2 7; south: Q2 3",
+            "returns": "a DataFrame whose north row reads Q1 15, Q2 7, Q3 0, Q4 0",
+            "why": "the two Q1 records for north sum to 15, and quarters north never sold show 0"
+          },
+          {
+            "call": "quarterly_matrix(sales_long)  # emea sold in every quarter; apac only in Q3",
+            "returns": "two rows: apac 0 0 9 0, then emea 4 3 2 1",
+            "why": "rows sort by region name ascending so apac precedes emea, and apac's unobserved quarters fill with 0"
+          }
+        ],
+        "starter": "import pandas as pd\n\ndef quarterly_matrix(sales_long):\n    \"\"\"Return the region-by-quarter sales matrix.\n\n    Columns ['region', 'Q1', 'Q2', 'Q3', 'Q4'], one row per\n    region sorted ascending, summed cells, 0 for gaps.\n    \"\"\"\n    pass\n",
+        "func": "quarterly_matrix",
+        "tests": [
+          {
+            "label": "duplicates summed, gaps zero",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "region",
+                    "quarter",
+                    "sales"
+                  ],
+                  "rows": [
+                    [
+                      "north",
+                      "Q1",
+                      10
+                    ],
+                    [
+                      "north",
+                      "Q1",
+                      5
+                    ],
+                    [
+                      "north",
+                      "Q2",
+                      7
+                    ],
+                    [
+                      "south",
+                      "Q2",
+                      3
+                    ],
+                    [
+                      "east",
+                      "Q3",
+                      2
+                    ],
+                    [
+                      "west",
+                      "Q4",
+                      4
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": false,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "region",
+                  "Q1",
+                  "Q2",
+                  "Q3",
+                  "Q4"
+                ],
+                "rows": [
+                  [
+                    "east",
+                    0.0,
+                    0.0,
+                    2.0,
+                    0.0
+                  ],
+                  [
+                    "north",
+                    15.0,
+                    7.0,
+                    0.0,
+                    0.0
+                  ],
+                  [
+                    "south",
+                    0.0,
+                    3.0,
+                    0.0,
+                    0.0
+                  ],
+                  [
+                    "west",
+                    0.0,
+                    0.0,
+                    0.0,
+                    4.0
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "dense region plus sparse one",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "region",
+                    "quarter",
+                    "sales"
+                  ],
+                  "rows": [
+                    [
+                      "emea",
+                      "Q1",
+                      4
+                    ],
+                    [
+                      "emea",
+                      "Q2",
+                      3
+                    ],
+                    [
+                      "emea",
+                      "Q3",
+                      2
+                    ],
+                    [
+                      "emea",
+                      "Q4",
+                      1
+                    ],
+                    [
+                      "apac",
+                      "Q3",
+                      9
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": false,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "region",
+                  "Q1",
+                  "Q2",
+                  "Q3",
+                  "Q4"
+                ],
+                "rows": [
+                  [
+                    "apac",
+                    0.0,
+                    0.0,
+                    9.0,
+                    0.0
+                  ],
+                  [
+                    "emea",
+                    4.0,
+                    3.0,
+                    2.0,
+                    1.0
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "region missing a middle quarter",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "region",
+                    "quarter",
+                    "sales"
+                  ],
+                  "rows": [
+                    [
+                      "r1",
+                      "Q1",
+                      5
+                    ],
+                    [
+                      "r1",
+                      "Q3",
+                      6
+                    ],
+                    [
+                      "r2",
+                      "Q2",
+                      7
+                    ],
+                    [
+                      "r2",
+                      "Q4",
+                      8
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "region",
+                  "Q1",
+                  "Q2",
+                  "Q3",
+                  "Q4"
+                ],
+                "rows": [
+                  [
+                    "r1",
+                    5.0,
+                    0.0,
+                    6.0,
+                    0.0
+                  ],
+                  [
+                    "r2",
+                    0.0,
+                    7.0,
+                    0.0,
+                    8.0
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "many duplicates across regions",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "region",
+                    "quarter",
+                    "sales"
+                  ],
+                  "rows": [
+                    [
+                      "a",
+                      "Q1",
+                      1
+                    ],
+                    [
+                      "b",
+                      "Q1",
+                      2
+                    ],
+                    [
+                      "a",
+                      "Q1",
+                      3
+                    ],
+                    [
+                      "b",
+                      "Q2",
+                      4
+                    ],
+                    [
+                      "a",
+                      "Q3",
+                      5
+                    ],
+                    [
+                      "b",
+                      "Q3",
+                      6
+                    ],
+                    [
+                      "a",
+                      "Q4",
+                      7
+                    ],
+                    [
+                      "b",
+                      "Q4",
+                      8
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "region",
+                  "Q1",
+                  "Q2",
+                  "Q3",
+                  "Q4"
+                ],
+                "rows": [
+                  [
+                    "a",
+                    4.0,
+                    0.0,
+                    5.0,
+                    7.0
+                  ],
+                  [
+                    "b",
+                    2.0,
+                    4.0,
+                    6.0,
+                    8.0
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "single region all quarters",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "region",
+                    "quarter",
+                    "sales"
+                  ],
+                  "rows": [
+                    [
+                      "only",
+                      "Q1",
+                      1
+                    ],
+                    [
+                      "only",
+                      "Q2",
+                      2
+                    ],
+                    [
+                      "only",
+                      "Q3",
+                      3
+                    ],
+                    [
+                      "only",
+                      "Q4",
+                      4
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "region",
+                  "Q1",
+                  "Q2",
+                  "Q3",
+                  "Q4"
+                ],
+                "rows": [
+                  [
+                    "only",
+                    1,
+                    2,
+                    3,
+                    4
+                  ]
+                ]
+              }
+            }
+          },
+          {
+            "label": "regions sort alphabetically",
+            "args": [
+              {
+                "__df__": {
+                  "columns": [
+                    "region",
+                    "quarter",
+                    "sales"
+                  ],
+                  "rows": [
+                    [
+                      "zeta",
+                      "Q1",
+                      9
+                    ],
+                    [
+                      "beta",
+                      "Q2",
+                      8
+                    ],
+                    [
+                      "alpha",
+                      "Q3",
+                      7
+                    ],
+                    [
+                      "zeta",
+                      "Q4",
+                      6
+                    ]
+                  ]
+                }
+              }
+            ],
+            "hidden": true,
+            "expected": {
+              "__df__": {
+                "columns": [
+                  "region",
+                  "Q1",
+                  "Q2",
+                  "Q3",
+                  "Q4"
+                ],
+                "rows": [
+                  [
+                    "alpha",
+                    0.0,
+                    0.0,
+                    7.0,
+                    0.0
+                  ],
+                  [
+                    "beta",
+                    0.0,
+                    8.0,
+                    0.0,
+                    0.0
+                  ],
+                  [
+                    "zeta",
+                    9.0,
+                    0.0,
+                    0.0,
+                    6.0
+                  ]
+                ]
+              }
+            }
+          }
+        ],
+        "hints": [
+          "If the same (region, quarter) appears twice, what happens if you reshape first and aggregate later? (.pivot raises on duplicate key pairs — why?)",
+          "Aggregate first: groupby(['region', 'quarter'])['sales'].sum() produces one value per pair. Then .unstack('quarter') bends the quarter level of the index into columns — and leaves region as the row index.",
+          "agg = sales_long.groupby(['region', 'quarter'])['sales'].sum(); wide = agg.unstack('quarter').fillna(0); return wide[['Q1', 'Q2', 'Q3', 'Q4']].reset_index() — the column selection pins Q1..Q4 order and reset_index names the region column."
+        ],
+        "reasoning": "<p>Duplicate keys force the order of operations: reshaping a long table with repeated (region, quarter) pairs is ill-defined — which value should the cell hold? — so <code>.pivot</code> refuses. Aggregating <b>first</b> resolves the ambiguity (sum, per the spec) and yields a Series with a two-level index holding exactly one value per pair; <code>unstack</code> is then purely mechanical, moving the quarter level into columns. The remaining gaps — region-quarters that never occurred — surface as NaN after the unstack, and <code>fillna(0)</code> states what absence means for a sales total. Aggregate, then reshape: the safest ordering whenever duplicates are possible.</p>",
+        "solution": "import pandas as pd\n\ndef quarterly_matrix(sales_long):\n    \"\"\"Return the region-by-quarter summed sales matrix.\"\"\"\n    agg = sales_long.groupby([\"region\", \"quarter\"])[\"sales\"].sum()\n    wide = agg.unstack(\"quarter\").fillna(0)\n    return wide[[\"Q1\", \"Q2\", \"Q3\", \"Q4\"]].reset_index()\n"
+      }
+    }
+  ]
+}

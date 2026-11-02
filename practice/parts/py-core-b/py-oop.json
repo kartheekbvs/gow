@@ -1,0 +1,728 @@
+{
+  "id": "py-oop",
+  "title": "Objects & Classes",
+  "icon": "🧱",
+  "level": "intermediate",
+  "order": 100,
+  "conceptRef": "python-basics.html#s12",
+  "blurb": "Bundle state with behavior, speak the language of dunders, and inherit instead of rewriting — then prove it all through scripted drivers.",
+  "cells": [
+    {
+      "type": "concept",
+      "title": "Classes bundle state with the behavior that guards it",
+      "body": "<p>A class pairs data with the code allowed to touch it. The <code>__init__</code> method runs once per object and establishes its starting state; every method receives that state as <code>self</code>. The payoff is not 'organization' — it is that rules about the data live in exactly one place. If a thermostat must reject settings outside 10..30, that check belongs in the method that sets the value, and then <i>no other code path can forget it</i>.</p><p>This is also the honest answer to 'parallel lists' code: instead of <code>names[i]</code>, <code>temps[i]</code>, <code>modes[i]</code> drifting out of sync, one object owns its name, temperature and mode together. When you feel yourself indexing three lists in lockstep, that is the moment a class is trying to happen. State + invariants + operations in one namespace is the whole idea.</p>",
+      "demo": {
+        "code": "class Odometer:\n    def __init__(self, start):\n        self.km = start\n\n    def drive(self, distance):\n        self.km += distance\n        return self.km\n\n\ntrip = Odometer(100)\nprint(trip.drive(20), trip.drive(5))\nprint(\"total:\", trip.km)"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "Dunder methods make objects speak Python",
+      "body": "<p>Double-underscore methods are how your object plugs into the language itself. Define <code>__eq__</code> and <code>2 == 1</code>-style comparisons consult your rule; define <code>__lt__</code> and <code>sorted()</code>, <code>min()</code> and <code>max()</code> work on your objects with zero extra code; define <code>__str__</code> and <code>print()</code> shows what you choose. You are not overriding syntax — you are filling in the hooks the built-ins were already calling.</p><p>The practical consequence for algorithmic work: comparison-driven algorithms (sorting, priority queues, binary search) are generic. Get <code>__lt__</code> right and your <code>Version</code> or <code>Job</code> type slots into all of them. One rule to keep in mind: <code>__lt__</code> must be a consistent ordering (if a &lt; b and b &lt; c then a &lt; c), or the sort still 'works' but produces garbage — the dunder is a contract, not a suggestion.</p>",
+      "demo": {
+        "code": "class Point:\n    def __init__(self, x):\n        self.x = x\n\n    def __lt__(self, other):\n        return self.x < other.x\n\n    def __str__(self):\n        return \"P\" + str(self.x)\n\n\nprint([str(p) for p in sorted([Point(3), Point(1), Point(2)])])"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "Inheritance: build on, don't rebuild — and test through drivers",
+      "body": "<p>Inheritance says 'a Square is a Rectangle with a tighter constructor', not 'these two classes feel similar'. The subclass reuses everything the parent does and changes only what differs — typically by calling <code>super().__init__(...)</code> and then adding or overriding behavior. If you cannot say the '<i>is-a</i>' sentence out loud, prefer composition (one object holding another) over inheritance.</p><p>Because classes expose behavior rather than plain values, the practical testing pattern on this platform is the <b>driver</b>: a function that builds your objects, feeds them a scripted sequence of operations, and returns a plain list/string/number the tests can compare. The driver pattern mirrors how real test suites exercise stateful code — you assert on the <i>observable trace</i> of a session, not on the object's private internals.</p>",
+      "demo": {
+        "code": "class Instrument:\n    def __init__(self, name):\n        self.name = name\n\n    def sound(self):\n        return self.name + \" hums\"\n\n\nclass Bell(Instrument):\n    def sound(self):            # override, reuse nothing else\n        return self.name + \" rings\"\n\n\nfor thing in (Instrument(\"viola\"), Bell(\"brass\")):\n    print(thing.sound())"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-oop-1",
+        "title": "The Crate Stack",
+        "difficulty": "easy",
+        "tags": [
+          "classes",
+          "stack",
+          "state"
+        ],
+        "statement": "<p>A dock crane can only reach the top of a pile of crates: the last crate placed is the first one taken off. Model the pile as a class <code>CrateStack</code> with <code>push(item)</code>, <code>pop()</code> (returning the top crate, or <code>None</code> when the pile is empty — never an exception), and <code>size()</code>.</p><p>Then write the driver <code>stack_run(ops)</code>, which is what the tests call. Each op is either the string <code>\"pop\"</code>, the string <code>\"size\"</code>, or a pair <code>[\"push\", item]</code>. The driver builds one <code>CrateStack</code>, replays the ops in order, and returns the flat list of values produced by the pops and size checks.</p>",
+        "constraints": [
+          "0 <= len(ops) <= 500",
+          "items may be strings, ints or any other value",
+          "pop on an empty pile returns None and the driver keeps going"
+        ],
+        "examples": [
+          {
+            "call": "stack_run([[\"push\", \"crate7\"], [\"push\", \"crate3\"], \"pop\", \"pop\", \"pop\"])",
+            "returns": "['crate3', 'crate7', None]",
+            "why": "last-in-first-out, then one pop too many"
+          },
+          {
+            "call": "stack_run([[\"push\", 1], \"size\", \"pop\", \"size\"])",
+            "returns": "[1, 1, 0]",
+            "why": "size reports 1 after the push; the pop returns 1; then the pile is empty"
+          }
+        ],
+        "starter": "class CrateStack:\n    \"\"\"A last-in-first-out pile of crates.\"\"\"\n\n    def __init__(self):\n        pass\n\n    def push(self, item):\n        pass\n\n    def pop(self):\n        pass\n\n    def size(self):\n        pass\n\n\ndef stack_run(ops):\n    \"\"\"Replay ops against one CrateStack; return the flat result list.\"\"\"\n    pass\n",
+        "func": "stack_run",
+        "tests": [
+          {
+            "label": "lifo order then underflow",
+            "args": [
+              [
+                [
+                  "push",
+                  "crate7"
+                ],
+                [
+                  "push",
+                  "crate3"
+                ],
+                "pop",
+                "pop",
+                "pop"
+              ]
+            ],
+            "expected": [
+              "crate3",
+              "crate7",
+              null
+            ],
+            "hidden": false
+          },
+          {
+            "label": "sizes along the way",
+            "args": [
+              [
+                [
+                  "push",
+                  1
+                ],
+                "size",
+                "pop",
+                "size"
+              ]
+            ],
+            "expected": [
+              1,
+              1,
+              0
+            ],
+            "hidden": false
+          },
+          {
+            "label": "no operations",
+            "args": [
+              []
+            ],
+            "expected": [],
+            "hidden": true
+          },
+          {
+            "label": "underflow first",
+            "args": [
+              [
+                "pop",
+                [
+                  "push",
+                  "x"
+                ],
+                "pop"
+              ]
+            ],
+            "expected": [
+              null,
+              "x"
+            ],
+            "hidden": true
+          },
+          {
+            "label": "interleaved pushes",
+            "args": [
+              [
+                [
+                  "push",
+                  "a"
+                ],
+                [
+                  "push",
+                  "b"
+                ],
+                "pop",
+                [
+                  "push",
+                  "c"
+                ],
+                "pop",
+                "pop"
+              ]
+            ],
+            "expected": [
+              "b",
+              "c",
+              "a"
+            ],
+            "hidden": true
+          },
+          {
+            "label": "size trace",
+            "args": [
+              [
+                "size",
+                [
+                  "push",
+                  5
+                ],
+                [
+                  "push",
+                  6
+                ],
+                "size",
+                "pop",
+                "size"
+              ]
+            ],
+            "expected": [
+              0,
+              2,
+              6,
+              1
+            ],
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "Which built-in list behavior already is a last-in-first-out pile? You mostly need to guard one operation.",
+          "Store the crates in a list; push appends, pop removes and returns the last element — but only after handling the empty case with None. size is len of the list.",
+          "In the driver, compare op to the strings 'pop' and 'size' first, otherwise it is a push pair and op[1] is the item. Append every pop/size result to out."
+        ],
+        "reasoning": "<p>The class exists to own one rule: <i>the pile is last-in-first-out, and it can run empty</i>. Both facts live in <code>pop()</code> — return the most recent item, or <code>None</code> when there is nothing — so no caller can get the underflow policy wrong. The driver, meanwhile, shows why we test stateful objects through a scripted trace: a single push or pop proves little, but the <i>sequence</i> (push two, pop three, push mid-sequence) forces the pile's behavior to be right at every step, and its flat output list is directly comparable. Designing the trace is the same skill as designing a regression test for any stateful component.</p>",
+        "solution": "class CrateStack:\n    \"\"\"A last-in-first-out pile of crates.\"\"\"\n\n    def __init__(self):\n        self._crates = []\n\n    def push(self, item):\n        self._crates.append(item)\n\n    def pop(self):\n        if not self._crates:\n            return None           # empty stack: no exception\n        return self._crates.pop()\n\n    def size(self):\n        return len(self._crates)\n\n\ndef stack_run(ops):\n    stack = CrateStack()\n    out = []\n    for op in ops:\n        if op == \"pop\":\n            out.append(stack.pop())\n        elif op == \"size\":\n            out.append(stack.size())\n        else:                      # [\"push\", item]\n            stack.push(op[1])\n    return out\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-oop-2",
+        "title": "The Guarded Thermostat",
+        "difficulty": "medium",
+        "tags": [
+          "classes",
+          "validation",
+          "exceptions"
+        ],
+        "statement": "<p>A thermostat unit only accepts integer targets from <code>10</code> to <code>30</code> inclusive. Build a class <code>Thermostat</code> where both the constructor <code>Thermostat(start)</code> and the method <code>set(value)</code> raise <code>ValueError</code> for out-of-range targets; <code>value()</code> returns the current target. A rejected set leaves the previous target untouched.</p><p>Then write the driver <code>thermostat_trace(start, ops)</code> (what the tests call). It constructs <code>Thermostat(start)</code>; if that raises, it returns <code>[\"invalid start\"]</code> immediately. Otherwise it replays ops — each op is <code>[\"set\", v]</code> or <code>[\"get\"]</code> — recording <code>\"ok\"</code> or <code>\"ValueError\"</code> for each set (caught, never crashing) and the current target for each get, and returns the list.</p>",
+        "constraints": [
+          "valid targets are the integers 10 through 30 inclusive",
+          "construction and set use the same rule; a bad start means the whole trace is invalid",
+          "ops contains only 'set' and 'get' entries"
+        ],
+        "examples": [
+          {
+            "call": "thermostat_trace(20, [[\"set\", 25], [\"set\", 99], [\"get\"]])",
+            "returns": "['ok', 'ValueError', 25]",
+            "why": "99 is out of range so it is refused and the target stays 25"
+          },
+          {
+            "call": "thermostat_trace(15, [[\"get\"], [\"set\", 10], [\"get\"]])",
+            "returns": "[15, 'ok', 10]",
+            "why": "10 is the lowest legal target"
+          }
+        ],
+        "starter": "class Thermostat:\n    \"\"\"Integer targets between 10 and 30 inclusive.\"\"\"\n\n    def __init__(self, start):\n        pass\n\n    def set(self, value):\n        pass\n\n    def value(self):\n        pass\n\n\ndef thermostat_trace(start, ops):\n    \"\"\"Build a Thermostat, replay ops, return the outcome list.\n\n    A bad start returns [\"invalid start\"]. Each [\"set\", v] records\n    \"ok\" or \"ValueError\"; each [\"get\"] records the current target.\n    \"\"\"\n    pass\n",
+        "func": "thermostat_trace",
+        "tests": [
+          {
+            "label": "refused set keeps old target",
+            "args": [
+              20,
+              [
+                [
+                  "set",
+                  25
+                ],
+                [
+                  "set",
+                  99
+                ],
+                [
+                  "get"
+                ]
+              ]
+            ],
+            "expected": [
+              "ok",
+              "ValueError",
+              25
+            ],
+            "hidden": false
+          },
+          {
+            "label": "lowest legal target",
+            "args": [
+              15,
+              [
+                [
+                  "get"
+                ],
+                [
+                  "set",
+                  10
+                ],
+                [
+                  "get"
+                ]
+              ]
+            ],
+            "expected": [
+              15,
+              "ok",
+              10
+            ],
+            "hidden": false
+          },
+          {
+            "label": "invalid start",
+            "args": [
+              99,
+              [
+                [
+                  "get"
+                ]
+              ]
+            ],
+            "expected": [
+              "invalid start"
+            ],
+            "hidden": true
+          },
+          {
+            "label": "both boundaries",
+            "args": [
+              10,
+              [
+                [
+                  "set",
+                  30
+                ],
+                [
+                  "set",
+                  31
+                ],
+                [
+                  "set",
+                  9
+                ],
+                [
+                  "get"
+                ]
+              ]
+            ],
+            "expected": [
+              "ok",
+              "ValueError",
+              "ValueError",
+              30
+            ],
+            "hidden": true
+          },
+          {
+            "label": "no ops",
+            "args": [
+              22,
+              []
+            ],
+            "expected": [],
+            "hidden": true
+          },
+          {
+            "label": "rejection does not disturb state",
+            "args": [
+              25,
+              [
+                [
+                  "set",
+                  10
+                ],
+                [
+                  "get"
+                ],
+                [
+                  "set",
+                  10
+                ],
+                [
+                  "get"
+                ]
+              ]
+            ],
+            "expected": [
+              "ok",
+              10,
+              "ok",
+              10
+            ],
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "If the constructor and set() must enforce the same rule, how do you write that rule exactly once?",
+          "Let __init__ just call self.set(start). set raises ValueError outside 10..30 and otherwise stores the target. The driver wraps each set in try/except and never lets the exception escape.",
+          "try: unit = Thermostat(start) except ValueError: return [\"invalid start\"]. Then per op: for set, try unit.set(v), appending 'ok' or 'ValueError'; for get, append unit.value()."
+        ],
+        "reasoning": "<p>The design move is <b>single-point validation</b>: the constructor delegates to <code>set()</code>, so the range rule exists in exactly one method and the constructor cannot disagree with later updates. The driver then demonstrates the right way to live with a raising API: catch at the <i>call site that has a recovery plan</i> (record the refusal, keep going) and let everything else propagate. Two edge details matter: a rejected set must leave state untouched — which happens naturally because the assignment sits after the check — and an invalid <i>start</i> is a different outcome from an invalid <i>set</i>, so the driver reports them differently. Contracts that distinguish construction failure from update failure are much easier to build on.</p>",
+        "solution": "class Thermostat:\n    \"\"\"Integer targets between MIN and MAX, inclusive.\"\"\"\n\n    MIN = 10\n    MAX = 30\n\n    def __init__(self, start):\n        self.set(start)          # same validation as any later set\n\n    def set(self, value):\n        if not (self.MIN <= value <= self.MAX):\n            raise ValueError(\"target out of range: %r\" % value)\n        self._target = value\n\n    def value(self):\n        return self._target\n\n\ndef thermostat_trace(start, ops):\n    try:\n        unit = Thermostat(start)\n    except ValueError:\n        return [\"invalid start\"]\n    out = []\n    for op in ops:\n        if op[0] == \"set\":\n            try:\n                unit.set(op[1])\n                out.append(\"ok\")\n            except ValueError:\n                out.append(\"ValueError\")\n        else:                     # [\"get\"]\n            out.append(unit.value())\n    return out\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-oop-3",
+        "title": "Shape Ledger",
+        "difficulty": "medium",
+        "tags": [
+          "classes",
+          "inheritance",
+          "polymorphism"
+        ],
+        "statement": "<p>A landscaping app bills plots by area and needs a small shape hierarchy. Define a base class <code>Shape</code> that declares the contract (<code>name()</code> and <code>area()</code>), a <code>Rectangle(width, height)</code> with area <code>width * height</code>, a <code>Square(side)</code> that <b>inherits from Rectangle</b> and reuses its constructor by calling <code>super()</code> with the side twice, and a <code>Compound(a, b)</code> holding two earlier-built shapes whose area is their sum. The names reported are exactly <code>\"rectangle\"</code>, <code>\"square\"</code> and <code>\"compound\"</code>.</p><p>Write the driver <code>shape_report(specs)</code> (the tested function). Specs are processed in order: <code>[\"rect\", w, h]</code>, <code>[\"square\", s]</code>, or <code>[\"compound\", i, j]</code> where <code>i, j</code> are indices of <b>previously built</b> shapes. It returns a list of strings <code>\"index:name=area\"</code> in build order.</p>",
+        "constraints": [
+          "1 <= w, h, side <= 100",
+          "compound indices always reference earlier entries (they may reference other compounds)",
+          "a shape may be reused in several compounds"
+        ],
+        "examples": [
+          {
+            "call": "shape_report([[\"rect\", 3, 4], [\"square\", 5]])",
+            "returns": "['0:rectangle=12', '1:square=25']",
+            "why": "a 3x4 rectangle and a 5x5 square"
+          },
+          {
+            "call": "shape_report([[\"rect\", 2, 3], [\"square\", 2], [\"compound\", 0, 1]])",
+            "returns": "['0:rectangle=6', '1:square=4', '2:compound=10']",
+            "why": "the compound combines shapes 0 and 1, so its area is 6 + 4"
+          }
+        ],
+        "starter": "class Shape:\n    \"\"\"Base contract: name() and area() for every shape.\"\"\"\n\n\nclass Rectangle(Shape):\n    pass\n\n\nclass Square(Rectangle):\n    pass\n\n\nclass Compound(Shape):\n    pass\n\n\ndef shape_report(specs):\n    \"\"\"Build shapes from specs; return 'index:name=area' per shape.\"\"\"\n    pass\n",
+        "func": "shape_report",
+        "tests": [
+          {
+            "label": "rectangle and square",
+            "args": [
+              [
+                [
+                  "rect",
+                  3,
+                  4
+                ],
+                [
+                  "square",
+                  5
+                ]
+              ]
+            ],
+            "expected": [
+              "0:rectangle=12",
+              "1:square=25"
+            ],
+            "hidden": false
+          },
+          {
+            "label": "compound of two shapes",
+            "args": [
+              [
+                [
+                  "rect",
+                  2,
+                  3
+                ],
+                [
+                  "square",
+                  2
+                ],
+                [
+                  "compound",
+                  0,
+                  1
+                ]
+              ]
+            ],
+            "expected": [
+              "0:rectangle=6",
+              "1:square=4",
+              "2:compound=10"
+            ],
+            "hidden": false
+          },
+          {
+            "label": "no shapes",
+            "args": [
+              []
+            ],
+            "expected": [],
+            "hidden": true
+          },
+          {
+            "label": "compound of a compound",
+            "args": [
+              [
+                [
+                  "square",
+                  3
+                ],
+                [
+                  "square",
+                  4
+                ],
+                [
+                  "compound",
+                  0,
+                  1
+                ],
+                [
+                  "compound",
+                  2,
+                  0
+                ]
+              ]
+            ],
+            "expected": [
+              "0:square=9",
+              "1:square=16",
+              "2:compound=25",
+              "3:compound=34"
+            ],
+            "hidden": true
+          },
+          {
+            "label": "unit shapes",
+            "args": [
+              [
+                [
+                  "rect",
+                  1,
+                  1
+                ]
+              ]
+            ],
+            "expected": [
+              "0:rectangle=1"
+            ],
+            "hidden": true
+          },
+          {
+            "label": "same shape reused twice",
+            "args": [
+              [
+                [
+                  "rect",
+                  7,
+                  8
+                ],
+                [
+                  "compound",
+                  0,
+                  0
+                ]
+              ]
+            ],
+            "expected": [
+              "0:rectangle=56",
+              "1:compound=112"
+            ],
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "Square differs from Rectangle only in how it is constructed. What is the smallest way to express that?",
+          "Square.__init__ calls super().__init__(side, side) and inherits area() unchanged. Compound holds the two shape objects it is given; its area() delegates to them.",
+          "In the driver, keep a built list; for each spec create the right object (Compound takes built[i] and built[j] — the objects themselves, not their indices). Append str(i) + ':' + name + '=' + str(area)."
+        ],
+        "reasoning": "<p>The hierarchy earns its keep through two relationships. <code>Square is-a Rectangle</code>: it inherits <code>area()</code> untouched and only tightens construction — which is exactly when inheritance is the right tool (shared behavior, different initialization). <code>Compound has-a</code> pair of shapes: it stores the objects themselves, so its <code>area()</code> just delegates and adds — and because it depends only on the Shape contract, compounds of compounds work with no extra code. The driver is a tiny interpreter over specs, and the fact that its output is a list of plain strings is the driver-pattern lesson: rich object graphs are verified through their canonical, printable projections.</p>",
+        "solution": "class Shape:\n    \"\"\"Base contract: every shape reports a name and an area.\"\"\"\n\n    def name(self):\n        raise NotImplementedError(\"subclasses implement name()\")\n\n    def area(self):\n        raise NotImplementedError(\"subclasses implement area()\")\n\n\nclass Rectangle(Shape):\n    def __init__(self, width, height):\n        self.width = width\n        self.height = height\n\n    def name(self):\n        return \"rectangle\"\n\n    def area(self):\n        return self.width * self.height\n\n\nclass Square(Rectangle):\n    def __init__(self, side):\n        super().__init__(side, side)   # a square IS a rectangle\n\n    def name(self):\n        return \"square\"\n\n\nclass Compound(Shape):\n    def __init__(self, first, second):\n        self.first = first\n        self.second = second\n\n    def name(self):\n        return \"compound\"\n\n    def area(self):\n        return self.first.area() + self.second.area()\n\n\ndef shape_report(specs):\n    built = []\n    out = []\n    for i, spec in enumerate(specs):\n        if spec[0] == \"rect\":\n            shape = Rectangle(spec[1], spec[2])\n        elif spec[0] == \"square\":\n            shape = Square(spec[1])\n        else:                          # [\"compound\", i, j]\n            shape = Compound(built[spec[1]], built[spec[2]])\n        built.append(shape)\n        out.append(str(i) + \":\" + shape.name() + \"=\" + str(shape.area()))\n    return out\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "py-oop-4",
+        "title": "Version Sorting",
+        "difficulty": "hard",
+        "tags": [
+          "classes",
+          "dunders",
+          "sorting"
+        ],
+        "statement": "<p>A plugin manager must order versions written as <code>\"major.minor.patch\"</code>, where missing parts count as zero: <code>\"2\"</code> means <code>2.0.0</code> and equals <code>\"2.0.0\"</code>. Comparison is <b>numeric per part</b> — <code>1.9 &lt; 1.10</code>, exactly unlike text ordering — and the canonical text of a version always prints all three parts.</p><p>Implement a class <code>Version(major, minor, patch)</code> with <code>__eq__</code> and <code>__lt__</code> so that <code>sorted()</code> works on Version objects, plus <code>__str__</code> rendering <code>\"major.minor.patch\"</code>. Then write the tested driver <code>version_sort(specs)</code>: parse each spec string into a Version, and return <code>[sorted_strs, distinct]</code> where <code>sorted_strs</code> is the list of <code>str(v)</code> in sorted order and <code>distinct</code> is the number of distinct versions (duplicates detected with <code>==</code>).</p>",
+        "constraints": [
+          "each spec is 'a', 'a.b' or 'a.b.c' with integer parts 0..999, no leading zeros",
+          "0 <= len(specs) <= 500",
+          "sorted() must rely on your __lt__; duplicates must be detected via your __eq__",
+          "sorting is stable, so equal versions keep their input order in the output"
+        ],
+        "examples": [
+          {
+            "call": "version_sort([\"1.2.3\", \"0.1.0\", \"1.0.0\"])",
+            "returns": "[['0.1.0', '1.0.0', '1.2.3'], 3]",
+            "why": "plain numeric ordering of three distinct versions"
+          },
+          {
+            "call": "version_sort([\"2\", \"1.10\", \"1.9\"])",
+            "returns": "[['1.9.0', '1.10.0', '2.0.0'], 3]",
+            "why": "1.9 < 1.10 numerically, and '2' is canonically printed as 2.0.0"
+          }
+        ],
+        "starter": "class Version:\n    \"\"\"A major.minor.patch version with numeric comparison.\"\"\"\n\n    def __init__(self, major, minor, patch):\n        pass\n\n    def __eq__(self, other):\n        pass\n\n    def __lt__(self, other):\n        pass\n\n    def __str__(self):\n        pass\n\n\ndef version_sort(specs):\n    \"\"\"Return [sorted version strings, count of distinct versions].\"\"\"\n    pass\n",
+        "func": "version_sort",
+        "tests": [
+          {
+            "label": "three distinct versions",
+            "args": [
+              [
+                "1.2.3",
+                "0.1.0",
+                "1.0.0"
+              ]
+            ],
+            "expected": [
+              [
+                "0.1.0",
+                "1.0.0",
+                "1.2.3"
+              ],
+              3
+            ],
+            "hidden": false
+          },
+          {
+            "label": "numeric beats text order",
+            "args": [
+              [
+                "2",
+                "1.10",
+                "1.9"
+              ]
+            ],
+            "expected": [
+              [
+                "1.9.0",
+                "1.10.0",
+                "2.0.0"
+              ],
+              3
+            ],
+            "hidden": false
+          },
+          {
+            "label": "empty list",
+            "args": [
+              []
+            ],
+            "expected": [
+              [],
+              0
+            ],
+            "hidden": true
+          },
+          {
+            "label": "all duplicates",
+            "args": [
+              [
+                "1.0.0",
+                "1.0.0",
+                "1.0.0"
+              ]
+            ],
+            "expected": [
+              [
+                "1.0.0",
+                "1.0.0",
+                "1.0.0"
+              ],
+              1
+            ],
+            "hidden": true
+          },
+          {
+            "label": "single version",
+            "args": [
+              [
+                "0.0.1"
+              ]
+            ],
+            "expected": [
+              [
+                "0.0.1"
+              ],
+              1
+            ],
+            "hidden": true
+          },
+          {
+            "label": "missing parts are zeros",
+            "args": [
+              [
+                "1.2",
+                "1.2.0",
+                "1.2.0"
+              ]
+            ],
+            "expected": [
+              [
+                "1.2.0",
+                "1.2.0",
+                "1.2.0"
+              ],
+              1
+            ],
+            "hidden": true
+          },
+          {
+            "label": "two-digit majors",
+            "args": [
+              [
+                "10.0.0",
+                "9.9.9",
+                "10.0.1"
+              ]
+            ],
+            "expected": [
+              [
+                "9.9.9",
+                "10.0.0",
+                "10.0.1"
+              ],
+              3
+            ],
+            "hidden": true
+          },
+          {
+            "label": "mixed duplicates and order",
+            "args": [
+              [
+                "3.3.3",
+                "3.2.4",
+                "3.3.2",
+                "3.3.3"
+              ]
+            ],
+            "expected": [
+              [
+                "3.2.4",
+                "3.3.2",
+                "3.3.3",
+                "3.3.3"
+              ],
+              3
+            ],
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "What single piece of data decides both equality and order for a version? How do tuples already compare?",
+          "Store the three numbers and compare a key tuple (major, minor, patch) in both __eq__ and __lt__. The driver pads missing parts with zeros when parsing and prints via __str__.",
+          "parts = [int(p) for p in spec.split('.')]; pad with [0] * (3 - len(parts)). sorted(versions) needs only __lt__; count distinct by keeping a seen list and testing v == d for each — that path exercises your __eq__."
+        ],
+        "reasoning": "<p>Everything hinges on realizing that a version <i>is</i> a 3-tuple of numbers: tuples already compare lexicographically, so <code>__eq__</code> and <code>__lt__</code> both reduce to comparing <code>(major, minor, patch)</code> — one source of truth for the whole ordering, which is why it cannot disagree with itself. The <code>1.9 &lt; 1.10</code> trap is what string sorting gets wrong and per-part numeric comparison gets right. The dunder payoff is structural: because <code>sorted()</code> calls <code>__lt__</code>, your type slots into the entire sorting machinery for free — and the distinct-count loop calls <code>__eq__</code> directly, so both halves of the comparison protocol are actually exercised. Canonicalizing the string in <code>__str__</code> (always three parts) keeps '2' and '2.0.0' printing identically after they compare equal.</p>",
+        "solution": "class Version:\n    \"\"\"A major.minor.patch version that compares numerically.\"\"\"\n\n    def __init__(self, major, minor, patch):\n        self.major = major\n        self.minor = minor\n        self.patch = patch\n\n    def _key(self):\n        return (self.major, self.minor, self.patch)\n\n    def __eq__(self, other):\n        return self._key() == other._key()\n\n    def __lt__(self, other):\n        return self._key() < other._key()\n\n    def __str__(self):\n        return \"%d.%d.%d\" % self._key()\n\n\ndef version_sort(specs):\n    versions = []\n    for spec in specs:\n        parts = [int(p) for p in spec.split(\".\")]\n        parts += [0] * (3 - len(parts))   # missing parts are zero\n        versions.append(Version(parts[0], parts[1], parts[2]))\n    ordered = [str(v) for v in sorted(versions)]\n    distinct = []\n    for v in versions:\n        if not any(v == d for d in distinct):   # uses __eq__\n            distinct.append(v)\n    return [ordered, len(distinct)]\n"
+      }
+    }
+  ]
+}

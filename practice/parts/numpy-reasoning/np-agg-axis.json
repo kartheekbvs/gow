@@ -1,0 +1,1111 @@
+{
+  "id": "np-agg-axis",
+  "title": "Aggregation & the Axis Dimension",
+  "icon": "📐",
+  "level": "intermediate",
+  "order": 50,
+  "conceptRef": "numpy.html#s11",
+  "blurb": "Aggregation folds one dimension away: the axis you name is the dimension that disappears.",
+  "cells": [
+    {
+      "type": "concept",
+      "title": "axis names the dimension that disappears",
+      "body": "<p>In <code>a.sum(axis=0)</code>, axis 0 is <b>not</b> the axis that survives — it is the axis that gets folded away. Rows are axis 0 and columns are axis 1; summing over axis 0 collapses the rows and leaves one value per <b>column</b>.</p><p>The fastest way to internalize this: check the output shape. An array of shape (3, 4) gives <code>a.sum(axis=0).shape == (4,)</code> and <code>a.sum(axis=1).shape == (3,)</code>. If your result has the wrong length, you folded the wrong axis — the shape is the proof. 'Return shape proves axis understanding' is exactly how the exercises in this notebook are graded: the length of your answer is the evidence of which dimension you folded.</p>",
+      "demo": {
+        "code": "import numpy as np\n\na = np.arange(12).reshape(3, 4)\nprint(a.shape, a.sum(axis=0).shape, a.sum(axis=1).shape)\nprint(a.sum(axis=0))   # one value per column: rows folded away\nprint(a.sum(axis=1))   # one value per row: columns folded away"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "argmax gives positions — gather with them",
+      "body": "<p>Aggregations that return <b>positions</b> (<code>argmax</code>, <code>argsort</code>) instead of values are the bridge to fancy indexing: once you know <i>where</i> the interesting element is, you index with those positions to fetch the values — or to fetch something else stored at the same spot (the timestamp of the peak, the label of the best arm).</p><p>The idiom for 2-D: <code>i = a.argmax(axis=1)</code> gives one column index per row; pair it with a row-index array — <code>a[np.arange(R), i]</code> — or use <code>np.take_along_axis</code>, which is the same idea generalized to any axis. This gather step is what makes 'argmax, and then...' one-liners possible in pipelines.</p>",
+      "demo": {
+        "code": "import numpy as np\n\na = np.arange(12).reshape(3, 4)\ni = a.argmax(axis=1)\nprint(i)                            # position of each row's max\nprint(a[np.arange(3), i])           # the max value of each row\nprint(np.take_along_axis(a, i[:, None], axis=1).ravel())"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "np-agg-axis-1",
+        "title": "Column Totals",
+        "difficulty": "easy",
+        "tags": [
+          "numpy",
+          "aggregation",
+          "axis"
+        ],
+        "statement": "<p>Rainfall is recorded as a matrix: one <b>row per day</b>, one <b>column per station</b>. The weekly report needs each station's total.</p><p>Implement <code>column_sums(a)</code>: return a 1-D <code>int64</code> array of length <code>C</code> (the number of columns) holding each column's sum — computed with the <code>axis</code> argument, so the <b>shape of your answer is the proof you folded the right axis</b>.</p>",
+        "constraints": [
+          "a is 2-D int64 with shape (R, C), R >= 1, C >= 1",
+          "the result is 1-D int64 with length exactly C"
+        ],
+        "examples": [
+          {
+            "call": "column_sums(np.array([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]]))",
+            "returns": "array([15, 18, 21, 24])",
+            "why": "three days, four stations: one total per station"
+          },
+          {
+            "call": "column_sums(np.array([[7, 7], [7, 7], [7, 7]]))",
+            "returns": "array([21, 21])",
+            "why": "constant grid: every station's total is 3 * 7"
+          }
+        ],
+        "starter": "import numpy as np\n\ndef column_sums(a):\n    \"\"\"Return one total per column.\n\n    a is 2-D int64 (R, C); the result is 1-D int64 of length C.\n    \"\"\"\n    pass\n",
+        "func": "column_sums",
+        "tests": [
+          {
+            "label": "3x4 rainfall",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      1,
+                      2,
+                      3,
+                      4
+                    ],
+                    [
+                      5,
+                      6,
+                      7,
+                      8
+                    ],
+                    [
+                      9,
+                      10,
+                      11,
+                      12
+                    ]
+                  ],
+                  "dtype": "int64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  15,
+                  18,
+                  21,
+                  24
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": false
+          },
+          {
+            "label": "all equal",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      7,
+                      7
+                    ],
+                    [
+                      7,
+                      7
+                    ],
+                    [
+                      7,
+                      7
+                    ]
+                  ],
+                  "dtype": "int64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  21,
+                  21
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": false
+          },
+          {
+            "label": "single column",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      2
+                    ],
+                    [
+                      4
+                    ],
+                    [
+                      6
+                    ],
+                    [
+                      8
+                    ]
+                  ],
+                  "dtype": "int64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  20
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "single row",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      3,
+                      1,
+                      4,
+                      1
+                    ]
+                  ],
+                  "dtype": "int64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  3,
+                  1,
+                  4,
+                  1
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "negatives",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      -5,
+                      -1,
+                      -3
+                    ],
+                    [
+                      -2,
+                      -6,
+                      -4
+                    ]
+                  ],
+                  "dtype": "int64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  -7,
+                  -7,
+                  -7
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "wide 2x5",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      1,
+                      2,
+                      3,
+                      4,
+                      5
+                    ],
+                    [
+                      6,
+                      7,
+                      8,
+                      9,
+                      10
+                    ]
+                  ],
+                  "dtype": "int64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  7,
+                  9,
+                  11,
+                  13,
+                  15
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "Days are rows and stations are columns. Which axis do you fold away so that days disappear and stations survive — and what length must the answer have?",
+          "a.sum(axis=0) collapses the rows and leaves one total per column. Verify with the shape: for an (R, C) input the output must be (C,).",
+          "return a.sum(axis=0) — int64 in, int64 out; the length equals the number of columns by construction."
+        ],
+        "reasoning": "<p>The <code>axis</code> argument names the dimension that <b>disappears</b>, not the one that survives: with days on axis 0, <code>sum(axis=0)</code> folds the days together and every station keeps its own total. The shape check is the discipline to build: <code>(R, C)</code> input, <code>(C,)</code> output. If you get a length-3 array from a 3×4 grid, you folded columns instead — and every station's reading got mixed across days. Once the axis is right, the dtype follows for free (int64 in, int64 out), and the same one-liner becomes 'per-station mean' or 'per-station max' by swapping the function while keeping the fold.</p>",
+        "solution": "import numpy as np\n\ndef column_sums(a):\n    \"\"\"Return one total per column: fold the row axis away.\"\"\"\n    return a.sum(axis=0)\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "np-agg-axis-2",
+        "title": "Row Peaks, Gathered",
+        "difficulty": "medium",
+        "tags": [
+          "numpy",
+          "argmax",
+          "gather"
+        ],
+        "statement": "<p>Each row of a sensor matrix is one sensor's trace. The report needs each sensor's <b>peak value</b> — but produced the way pipelines do it: first find <i>where</i> the peak sits (<code>argmax</code> per row), then <b>gather</b> the values at those positions.</p><p>Implement <code>row_peaks(a)</code>: return a 1-D <code>int64</code> array of length <code>R</code> where element <code>i</code> is the maximum of row <code>i</code>, computed as argmax along axis 1 followed by a coordinate-pair gather. No loops — and resist just calling <code>a.max(axis=1)</code>: the argmax-then-gather idiom is the transferable skill, because the same positions can fetch anything stored at the peak (its timestamp, its label).</p>",
+        "constraints": [
+          "a is 2-D int64 with shape (R, C), R >= 1, C >= 1",
+          "the result is 1-D int64 with length exactly R",
+          "compute via a.argmax(axis=1), then gather with the position array"
+        ],
+        "examples": [
+          {
+            "call": "row_peaks(np.array([[3, 9, 1, 7], [7, 2, 8, 4], [5, 5, 5, 5]]))",
+            "returns": "array([9, 8, 5])",
+            "why": "peaks sit at columns 1, 2 and 0; gathering gives 9, 8 and 5"
+          },
+          {
+            "call": "row_peaks(np.array([[-5, -1, -9]]))",
+            "returns": "array([-1])",
+            "why": "with all values negative the peak is still the largest: -1 at position 1"
+          }
+        ],
+        "starter": "import numpy as np\n\ndef row_peaks(a):\n    \"\"\"Return the peak value of each row via argmax + gather.\n\n    a is 2-D int64 (R, C); the result is 1-D int64 of length R.\n    \"\"\"\n    pass\n",
+        "func": "row_peaks",
+        "tests": [
+          {
+            "label": "3x4 traces",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      3,
+                      9,
+                      1,
+                      7
+                    ],
+                    [
+                      7,
+                      2,
+                      8,
+                      4
+                    ],
+                    [
+                      5,
+                      5,
+                      5,
+                      5
+                    ]
+                  ],
+                  "dtype": "int64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  9,
+                  8,
+                  5
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": false
+          },
+          {
+            "label": "negatives",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      -5,
+                      -1,
+                      -9
+                    ],
+                    [
+                      0,
+                      -3,
+                      -2
+                    ]
+                  ],
+                  "dtype": "int64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  -1,
+                  0
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": false
+          },
+          {
+            "label": "single column",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      2
+                    ],
+                    [
+                      9
+                    ],
+                    [
+                      4
+                    ],
+                    [
+                      7
+                    ]
+                  ],
+                  "dtype": "int64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  2,
+                  9,
+                  4,
+                  7
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "all equal rows",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      4,
+                      4,
+                      4
+                    ],
+                    [
+                      2,
+                      2,
+                      2
+                    ],
+                    [
+                      9,
+                      9,
+                      9
+                    ]
+                  ],
+                  "dtype": "int64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  4,
+                  2,
+                  9
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "single row",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      6,
+                      1,
+                      4,
+                      1
+                    ]
+                  ],
+                  "dtype": "int64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  6
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "2x5 distinct",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      10,
+                      3,
+                      8,
+                      1,
+                      6
+                    ],
+                    [
+                      2,
+                      9,
+                      4,
+                      7,
+                      5
+                    ]
+                  ],
+                  "dtype": "int64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  10,
+                  9
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "a.argmax(axis=1) returns positions, one per row. How do you turn a list of column-positions into the values at (row, position) — remembering that each position belongs to its own row?",
+          "idx = a.argmax(axis=1); then pair it with row numbers: a[np.arange(a.shape[0]), idx] zips row i with its column idx[i] — the coordinate-pair fancy indexing from the first notebook.",
+          "idx = a.argmax(axis=1); return a[np.arange(a.shape[0]), idx]. For ties argmax returns the first position; since we gather the value, ties are harmless."
+        ],
+        "reasoning": "<p>Splitting 'find it' from 'fetch it' is what makes the pattern reusable. <code>argmax(axis=1)</code> collapses the column dimension into one position per row; the gather <code>a[np.arange(R), idx]</code> then zips row numbers against those positions — coordinate-pair fancy indexing, exactly the rover-gather from the first notebook, now generated by an aggregation. Because positions are integers, the same gather can pull <i>anything</i> stored at the peak's index: another array's values (timestamps), a lookup table, or the second-best index from an argsort. Value-returning shortcuts like <code>a.max(axis=1)</code> cannot do any of that, which is why pipelines keep the argmax form even when a max exists.</p>",
+        "solution": "import numpy as np\n\ndef row_peaks(a):\n    \"\"\"Return the peak value of each row via argmax + gather.\"\"\"\n    idx = a.argmax(axis=1)\n    return a[np.arange(a.shape[0]), idx]\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "np-agg-axis-3",
+        "title": "The Three Sums",
+        "difficulty": "medium",
+        "tags": [
+          "numpy",
+          "aggregation",
+          "axis"
+        ],
+        "statement": "<p>An auditor wants a ledger checked three ways at once: the grand total, the per-station (column) totals, and the per-day (row) totals — the three answers you get from the same aggregation under <code>axis=None</code>, <code>axis=0</code> and <code>axis=1</code>.</p><p>Implement <code>axis_sums(a)</code>: return a <b>list of exactly three items</b> — <code>[grand_total, column_sums, row_sums]</code>: first a plain integer, then a 1-D <code>int64</code> array of length <code>C</code>, then a 1-D <code>int64</code> array of length <code>R</code>.</p>",
+        "constraints": [
+          "a is 2-D int64 with shape (R, C)",
+          "item 1: plain int; item 2: int64 array of shape (C,); item 3: int64 array of shape (R,)",
+          "return a list (not a tuple): [a.sum(), a.sum(axis=0), a.sum(axis=1)]",
+          "the three items are a.sum() under axis None, 0 and 1 respectively"
+        ],
+        "examples": [
+          {
+            "call": "axis_sums(np.array([[1, 2, 3], [4, 5, 6]]))",
+            "returns": "[21, array([5, 7, 9]), array([ 6, 15])]",
+            "why": "grand 21; columns 5, 7, 9; rows 6 and 15"
+          },
+          {
+            "call": "axis_sums(np.array([[9]]))",
+            "returns": "[9, array([9]), array([9])]",
+            "why": "a 1x1 ledger: all three views agree on the single value"
+          }
+        ],
+        "starter": "import numpy as np\n\ndef axis_sums(a):\n    \"\"\"Return [grand total, column sums, row sums] as a list.\n\n    a is 2-D int64 (R, C). The first item is a scalar; the other\n    two are 1-D int64 arrays of length C and R respectively.\n    \"\"\"\n    pass\n",
+        "func": "axis_sums",
+        "tests": [
+          {
+            "label": "2x3 ledger",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      1,
+                      2,
+                      3
+                    ],
+                    [
+                      4,
+                      5,
+                      6
+                    ]
+                  ],
+                  "dtype": "int64"
+                }
+              }
+            ],
+            "expected": [
+              21,
+              {
+                "__np__": {
+                  "data": [
+                    5,
+                    7,
+                    9
+                  ],
+                  "dtype": "int64"
+                }
+              },
+              {
+                "__np__": {
+                  "data": [
+                    6,
+                    15
+                  ],
+                  "dtype": "int64"
+                }
+              }
+            ],
+            "hidden": false
+          },
+          {
+            "label": "1x1 ledger",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      9
+                    ]
+                  ],
+                  "dtype": "int64"
+                }
+              }
+            ],
+            "expected": [
+              9,
+              {
+                "__np__": {
+                  "data": [
+                    9
+                  ],
+                  "dtype": "int64"
+                }
+              },
+              {
+                "__np__": {
+                  "data": [
+                    9
+                  ],
+                  "dtype": "int64"
+                }
+              }
+            ],
+            "hidden": false
+          },
+          {
+            "label": "single row",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      2,
+                      4,
+                      6,
+                      8
+                    ]
+                  ],
+                  "dtype": "int64"
+                }
+              }
+            ],
+            "expected": [
+              20,
+              {
+                "__np__": {
+                  "data": [
+                    2,
+                    4,
+                    6,
+                    8
+                  ],
+                  "dtype": "int64"
+                }
+              },
+              {
+                "__np__": {
+                  "data": [
+                    20
+                  ],
+                  "dtype": "int64"
+                }
+              }
+            ],
+            "hidden": true
+          },
+          {
+            "label": "negatives",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      -3,
+                      1
+                    ],
+                    [
+                      2,
+                      -4
+                    ]
+                  ],
+                  "dtype": "int64"
+                }
+              }
+            ],
+            "expected": [
+              -4,
+              {
+                "__np__": {
+                  "data": [
+                    -1,
+                    -3
+                  ],
+                  "dtype": "int64"
+                }
+              },
+              {
+                "__np__": {
+                  "data": [
+                    -2,
+                    -2
+                  ],
+                  "dtype": "int64"
+                }
+              }
+            ],
+            "hidden": true
+          },
+          {
+            "label": "3x2 grid",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      1,
+                      2
+                    ],
+                    [
+                      3,
+                      4
+                    ],
+                    [
+                      5,
+                      6
+                    ]
+                  ],
+                  "dtype": "int64"
+                }
+              }
+            ],
+            "expected": [
+              21,
+              {
+                "__np__": {
+                  "data": [
+                    9,
+                    12
+                  ],
+                  "dtype": "int64"
+                }
+              },
+              {
+                "__np__": {
+                  "data": [
+                    3,
+                    7,
+                    11
+                  ],
+                  "dtype": "int64"
+                }
+              }
+            ],
+            "hidden": true
+          },
+          {
+            "label": "4x3 larger",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      1,
+                      2,
+                      3
+                    ],
+                    [
+                      4,
+                      5,
+                      6
+                    ],
+                    [
+                      7,
+                      8,
+                      9
+                    ],
+                    [
+                      10,
+                      11,
+                      12
+                    ]
+                  ],
+                  "dtype": "int64"
+                }
+              }
+            ],
+            "expected": [
+              78,
+              {
+                "__np__": {
+                  "data": [
+                    22,
+                    26,
+                    30
+                  ],
+                  "dtype": "int64"
+                }
+              },
+              {
+                "__np__": {
+                  "data": [
+                    6,
+                    15,
+                    24,
+                    33
+                  ],
+                  "dtype": "int64"
+                }
+              }
+            ],
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "Three aggregations, one function. What does a.sum() return when you pass no axis at all — and what are the output lengths for axis=0 and axis=1 on an (R, C) matrix?",
+          "No axis folds everything into one scalar; axis=0 folds rows (length C out); axis=1 folds columns (length R out). Just call a.sum() three times with the three axis choices.",
+          "return [a.sum(), a.sum(axis=0), a.sum(axis=1)] — a list; the first item is a numpy scalar that compares like a plain int."
+        ],
+        "reasoning": "<p>The three calls are the same operation with three different ideas of 'what disappears'. <code>axis=None</code> folds <b>everything</b> — the result is a scalar, not an array. <code>axis=0</code> folds the day dimension: one number per station, length C. <code>axis=1</code> folds the station dimension: one number per day, length R. The output <i>lengths</i> are the mnemonic — C, R, and dimensionless respectively — and they instantly expose a swapped-axis bug. Seeing the three side by side is the point of this exercise: choose the fold from the <b>shape you want back</b>, never from a vague memory of which number felt right.</p>",
+        "solution": "import numpy as np\n\ndef axis_sums(a):\n    \"\"\"Return [grand total, column sums, row sums] as a list.\"\"\"\n    return [a.sum(), a.sum(axis=0), a.sum(axis=1)]\n"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "np-agg-axis-4",
+        "title": "Top Two Per Row",
+        "difficulty": "hard",
+        "tags": [
+          "numpy",
+          "argsort",
+          "take_along_axis"
+        ],
+        "statement": "<p>For a fault report you need, per sensor (row), its two <b>largest</b> readings: the maximum and the runner-up, in that order — as a fixed-shape array so downstream code can index columns 0 and 1 without any checks.</p><p>Implement <code>top_two(a)</code>: return an <code>(R, 2)</code> <code>int64</code> array where row <code>i</code> is <code>[max(row_i), second_max(row_i)]</code>. Build it by argsort per row, slice out the two winning positions, and gather with <code>np.take_along_axis</code> — no loops. Ties are naturally handled: equal values gather equal results, so the <b>values</b> are well-defined even though the tied <i>positions</i> are not.</p>",
+        "constraints": [
+          "a is 2-D int64 with shape (R, C), R >= 1, C >= 2",
+          "the result has shape exactly (R, 2), dtype int64",
+          "row i is [largest value of row i, second-largest value of row i]; ties give repeated values"
+        ],
+        "examples": [
+          {
+            "call": "top_two(np.array([[3, 9, 1, 7], [7, 2, 8, 4], [5, 6, 5, 1]]))",
+            "returns": "array([[9, 7],\n       [8, 7],\n       [6, 5]])",
+            "why": "row 0 tops are 9 and 7, row 1 gives 8 and 7, and row 2 (5, 6, 5, 1) tops are 6 and 5"
+          },
+          {
+            "call": "top_two(np.array([[1, 2], [4, 3]]))",
+            "returns": "array([[2, 1],\n       [4, 3]])",
+            "why": "with exactly two columns, each row is its own top two, largest first"
+          }
+        ],
+        "starter": "import numpy as np\n\ndef top_two(a):\n    \"\"\"Per row, [max, second max] as a fixed (R, 2) array.\n\n    a is 2-D int64 (R, C) with C >= 2; result is int64 (R, 2).\n    \"\"\"\n    pass\n",
+        "func": "top_two",
+        "tests": [
+          {
+            "label": "3x4 report",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      3,
+                      9,
+                      1,
+                      7
+                    ],
+                    [
+                      7,
+                      2,
+                      8,
+                      4
+                    ],
+                    [
+                      5,
+                      6,
+                      5,
+                      1
+                    ]
+                  ],
+                  "dtype": "int64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  [
+                    9,
+                    7
+                  ],
+                  [
+                    8,
+                    7
+                  ],
+                  [
+                    6,
+                    5
+                  ]
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": false
+          },
+          {
+            "label": "two columns",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      1,
+                      2
+                    ],
+                    [
+                      4,
+                      3
+                    ]
+                  ],
+                  "dtype": "int64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  [
+                    2,
+                    1
+                  ],
+                  [
+                    4,
+                    3
+                  ]
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": false
+          },
+          {
+            "label": "ties at the top",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      7,
+                      7,
+                      1
+                    ],
+                    [
+                      5,
+                      5,
+                      9
+                    ]
+                  ],
+                  "dtype": "int64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  [
+                    7,
+                    7
+                  ],
+                  [
+                    9,
+                    5
+                  ]
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "all equal rows",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      4,
+                      4,
+                      4
+                    ],
+                    [
+                      2,
+                      2,
+                      2
+                    ]
+                  ],
+                  "dtype": "int64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  [
+                    4,
+                    4
+                  ],
+                  [
+                    2,
+                    2
+                  ]
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "negatives",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      -1,
+                      -9
+                    ],
+                    [
+                      -4,
+                      -2
+                    ]
+                  ],
+                  "dtype": "int64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  [
+                    -1,
+                    -9
+                  ],
+                  [
+                    -2,
+                    -4
+                  ]
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          },
+          {
+            "label": "single row",
+            "args": [
+              {
+                "__np__": {
+                  "data": [
+                    [
+                      6,
+                      2,
+                      9,
+                      4
+                    ]
+                  ],
+                  "dtype": "int64"
+                }
+              }
+            ],
+            "expected": {
+              "__np__": {
+                "data": [
+                  [
+                    9,
+                    6
+                  ]
+                ],
+                "dtype": "int64"
+              }
+            },
+            "hidden": true
+          }
+        ],
+        "hints": [
+          "argsort(axis=1) orders each row's positions by value. Which end of that sorted index array holds the positions of the two largest values — and in what order do you need them?",
+          "order = np.argsort(a, axis=1) is ascending, so order[:, ::-1] lists positions largest-first; keep its first two columns: top = order[:, ::-1][:, :2].",
+          "return np.take_along_axis(a, top, axis=1) — take_along_axis gathers a's values at those per-row positions, producing the (R, 2) result in one call."
+        ],
+        "reasoning": "<p><code>argsort</code> sorts <i>positions</i> by value; ascending order means the largest values' positions sit at the end, so <code>order[:, ::-1]</code> re-reads it largest-first and a <code>:2</code> slice keeps exactly the top two positions. The gather (<code>take_along_axis</code> with <code>axis=1</code>) then walks each row and collects <code>a[i, top[i, k]]</code>. The fixed <code>(R, 2)</code> shape is the design lesson: a per-row top-k with fixed k lets consumers do vectorized column access — <code>result[:, 0]</code>, <code>result[:, 1]</code> — without lists of lists. And because we gather <b>values</b>, not positions, argsort's unspecified tie order is invisible: two equal maxima produce two equal gathered values.</p>",
+        "solution": "import numpy as np\n\ndef top_two(a):\n    \"\"\"Per row, [max, second max] as a fixed (R, 2) array.\"\"\"\n    order = np.argsort(a, axis=1)          # positions, ascending\n    top = order[:, ::-1][:, :2]            # positions of the two largest\n    return np.take_along_axis(a, top, axis=1)\n"
+      }
+    }
+  ]
+}

@@ -1,0 +1,115 @@
+{
+  "id": "dl-tf-shapes",
+  "title": "TensorFlow: Shapes & Layers",
+  "icon": "🧠",
+  "level": "intermediate",
+  "order": 30,
+  "conceptRef": "tensorflow.html#s1",
+  "blurb": "Do the layer arithmetic in your head: Dense kernels, the conv output formula, and the fate of the time axis in stacked RNNs.",
+  "cells": [
+    {
+      "type": "concept",
+      "title": "Dense: a matrix multiply on the last axis",
+      "body": "<p>A <code>Dense</code> layer is one matrix multiply plus a bias: <code>output = input @ W + b</code>, with <code>W</code> of shape <code>(in_features, units)</code> and <code>b</code> of shape <code>(units,)</code>. Two facts fall out immediately. The output's <b>last axis becomes <code>units</code></b> — every other axis (the batch axis, a time axis) passes through untouched. And the parameter count is always <code>in_features × units + units</code>: one weight per (input, output) pair, plus one bias per output unit.</p><p>This is why shape reasoning is pure arithmetic: see <code>Dense(32)</code> after an input of width 16 and you can compute the kernel (16 × 32 = 512 weights), the bias (32), the total (544) and the output shape (…, 32) without instantiating anything. Forgetting the bias is the most common slip — the bias counts once per <i>output</i> unit, not per input feature.</p>",
+      "demo": {
+        "code": "def dense_params(in_features, units):\n    return in_features * units + units      # kernel + bias\n\nprint('Dense(3) on (None, 4):')\nprint('  output shape: (None, 3)')\nprint('  params: 4*3 + 3 =', dense_params(4, 3))\nprint('Dense(5) on (None, 12): params: 12*5 + 5 =', dense_params(12, 5))"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "Convolution and pooling arithmetic",
+      "body": "<p>Convolution and pooling sizes follow one formula each, and both are worth memorizing. For a conv layer: <code>out = (H − K + 2P) / S + 1</code> — input height H, kernel K, padding P, stride S. <code>padding='valid'</code> means P = 0 (no padding at all); <code>padding='same'</code> means pad just enough to keep the spatial size (for a kernel of 3, that is P = 1 on every side). The channel axis obeys a different rule: it becomes the <b>number of filters</b>, regardless of the input depth — each filter learns a kernel of K × K × in_channels.</p><p><code>MaxPooling2D(pool_size=2)</code> takes the max over each 2×2 window, and its stride defaults to the pool size — so it simply <b>halves</b> H and W (28 becomes 14) and leaves the channel count alone. Whenever you review a CNN, run the formula layer by layer; it is faster than any debugger.</p>",
+      "demo": {
+        "code": "def conv_out(H, K, pad=0, stride=1):\n    return (H - K + 2 * pad) // stride + 1\n\nprint('28x28 image, kernel 3:')\nprint('  valid (pad 0):', conv_out(28, 3))\nprint('  same  (pad 1):', conv_out(28, 3, pad=1))\nprint('  pad 2        :', conv_out(28, 3, pad=2))\nprint(\"then 2x2 pool (stride 2) on the 'same' result:\",\n      conv_out(conv_out(28, 3, pad=1), 2, stride=2))"
+      }
+    },
+    {
+      "type": "concept",
+      "title": "Recurrent layers keep or drop the time axis",
+      "body": "<p>Recurrent layers have a switch that decides the fate of the <b>time axis</b>. <code>LSTM(units, return_sequences=True)</code> returns the hidden state at <i>every</i> timestep: shape <code>(batch, timesteps, units)</code>. With <code>return_sequences=False</code> (the default) it returns only the <i>last</i> timestep's hidden state: shape <code>(batch, units)</code> — the whole sequence collapses to a single vector.</p><p>The stacking rule that follows: every recurrent layer feeding another recurrent layer must set <code>return_sequences=True</code>, because the next layer expects a 3-D sequence, not a 2-D vector; only the last recurrent layer (or one feeding a plain Dense head) may drop the sequences. And remember from the Dense concept: <code>Dense</code> only ever remaps the <b>last</b> axis, so applying it to <code>(batch, T, units)</code> keeps T and maps units to its own width — one transformation per timestep.</p>",
+      "demo": {
+        "code": "def lstm_outputs(n_steps, units, return_sequences):\n    per_step = [[0.0] * units for _ in range(n_steps)]\n    if return_sequences:\n        return per_step            # shape (T, units)\n    return per_step[-1]            # shape (units,)\n\nseq = lstm_outputs(12, 16, return_sequences=True)\nprint('return_sequences=True  ->', len(seq), 'timesteps x', len(seq[0]), 'units')\nlast = lstm_outputs(12, 16, return_sequences=False)\nprint('return_sequences=False -> just', len(last), 'values (last timestep)')\nprint('a following Dense(4) acts on the LAST axis: (batch, 12, 16) -> (batch, 12, 4)')"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "dl-tf-shapes-1",
+        "title": "Predict: one Dense layer",
+        "difficulty": "easy",
+        "tags": ["tensorflow", "dense", "parameters"],
+        "mode": "predict",
+        "statement": "<p>Warm up your layer arithmetic. This model has exactly one <code>Dense</code> layer on top of an input of width 10. Predict the two printed values — the output shape and the total parameter count.</p>",
+        "code": "from tensorflow.keras import Sequential\nfrom tensorflow.keras.layers import Dense, Input\n\nmodel = Sequential([\n    Input(shape=(10,)),\n    Dense(64),\n])\nprint(model.output_shape)\nprint(model.count_params())",
+        "options": [
+          "A. (None, 64) and 704",
+          "B. (None, 64) and 640",
+          "C. (None, 64) and 650",
+          "D. (None, 10) and 640"
+        ],
+        "answer": 0,
+        "explain": "<p><code>Dense</code> computes <code>input @ W + b</code> with kernel <code>W</code> shaped <code>(10, 64)</code> and bias <code>b</code> shaped <code>(64,)</code>. The last axis is remapped from 10 to <b>64</b>, and the batch axis stays <code>None</code> — so the output shape is <code>(None, 64)</code>. Parameters: 10 × 64 = 640 weights plus 64 bias terms = <b>704</b>. B forgets the bias entirely; C counts only 10 biases — one per <i>input</i> feature — but there is one bias per <i>output</i> unit, which is 64; D keeps the input width, but <code>Dense</code> always remaps the last axis to its unit count. Note that the batch dimension never contributes parameters: <code>None</code> in a shape is about layout, not learnable sizes.</p>"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "dl-tf-shapes-2",
+        "title": "Predict: Flatten then Dense",
+        "difficulty": "medium",
+        "tags": ["tensorflow", "flatten", "dense"],
+        "mode": "predict",
+        "statement": "<p>A classic MNIST-shaped head. The model flattens a 28×28 image and maps it to 10 logits. Predict the two printed values — and watch out for the trap hidden in one of the options, which describes a model that would run without any error.</p>",
+        "code": "from tensorflow.keras import Sequential\nfrom tensorflow.keras.layers import Dense, Flatten, Input\n\nmodel = Sequential([\n    Input(shape=(28, 28)),\n    Flatten(),\n    Dense(10),\n])\nprint(model.output_shape)\nprint(model.count_params())",
+        "options": [
+          "A. (None, 10) and 7840",
+          "B. (None, 10) and 7850",
+          "C. (None, 784) and 784",
+          "D. (None, 28, 10) and 290"
+        ],
+        "answer": 1,
+        "explain": "<p><code>Flatten</code> rolls the 28 × 28 grid into a single axis of 28 × 28 = <b>784</b> values, giving <code>(None, 784)</code>. <code>Dense(10)</code> then uses a kernel of shape (784, 10) — 7,840 weights — plus 10 biases = <b>7,850</b> parameters, and the output is <code>(None, 10)</code>. A is the forgot-the-bias slip again (7,840 + 10 = 7,850). C stops at the Flatten output and imagines one parameter per input value. D is the interesting trap: it is what you would get <b>without</b> the <code>Flatten</code> — <code>Dense</code> remaps only the last axis, so on <code>(None, 28, 28)</code> it would map each row of 28 features to 10, giving <code>(None, 28, 10)</code> with kernel (28, 10) plus 10 biases = 290 parameters. That wrong model builds and trains without any error — it is just semantically wrong, which is exactly why this prediction skill matters.</p>"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "dl-tf-shapes-3",
+        "title": "Predict: Conv2D then MaxPooling2D",
+        "difficulty": "medium",
+        "tags": ["tensorflow", "conv2d", "pooling"],
+        "mode": "predict",
+        "statement": "<p>CNN shape arithmetic with a twist: the same two-layer model is built twice, once with <code>padding='same'</code> and once with <code>padding='valid'</code>. Predict both printed lines — the output shape after conv plus pooling, for each padding mode.</p>",
+        "code": "from tensorflow.keras import Sequential\nfrom tensorflow.keras.layers import Conv2D, Input, MaxPooling2D\n\ndef build(padding):\n    return Sequential([\n        Input(shape=(32, 32, 3)),\n        Conv2D(32, kernel_size=3, padding=padding, activation='relu'),\n        MaxPooling2D(pool_size=2),\n    ])\n\nfor padding in ('same', 'valid'):\n    m = build(padding)\n    print(padding, '->', m.output_shape)",
+        "options": [
+          "A. same -> (None, 16, 16, 32) ; valid -> (None, 15, 15, 32)",
+          "B. same -> (None, 15, 15, 32) ; valid -> (None, 15, 15, 32)",
+          "C. same -> (None, 30, 30, 32) ; valid -> (None, 28, 28, 32)",
+          "D. same -> (None, 16, 16, 3) ; valid -> (None, 15, 15, 3)"
+        ],
+        "answer": 0,
+        "explain": "<p>Use <code>out = (H − K + 2P)/S + 1</code>. With <code>padding='same'</code> and kernel 3, P = 1: (32 − 3 + 2×1)/1 + 1 = 32, so the conv output is (32, 32, <b>32</b>) — spatial size preserved, channels equal to the number of filters. <code>MaxPooling2D(2)</code> has stride defaulting to the pool size, so it halves each spatial dim: 32/2 = 16, giving <code>(None, 16, 16, 32)</code>. With <code>padding='valid'</code>, P = 0: (32 − 3)/1 + 1 = 30, so (30, 30, 32), and pooling gives 30/2 = 15: <code>(None, 15, 15, 32)</code>. B forgets that 'same' zero-pads precisely to preserve the size; C subtracts the pool size (30 − 2 = 28) instead of dividing — pooling with size 2 and stride 2 halves, it does not shave; D keeps the input's 3 channels, but the channel axis is always replaced by the filter count (here 32 filters, each holding a 3×3×3 kernel: 3·3·3·32 + 32 = 896 weights and biases).</p>"
+      }
+    },
+    {
+      "type": "exercise",
+      "exercise": {
+        "id": "dl-tf-shapes-4",
+        "title": "Predict: a stacked LSTM model",
+        "difficulty": "hard",
+        "tags": ["tensorflow", "lstm", "shapes"],
+        "mode": "predict",
+        "statement": "<p>The final shape puzzle: a stacked LSTM model reading sequences of 20 timesteps with 8 features per step. Three layers, three printed shapes. Predict all three — the fate of the time axis is the whole game.</p>",
+        "code": "from tensorflow.keras import Sequential\nfrom tensorflow.keras.layers import Dense, Input, LSTM\n\nmodel = Sequential([\n    Input(shape=(20, 8)),            # 20 timesteps, 8 features per step\n    LSTM(64, return_sequences=True),\n    LSTM(32),\n    Dense(10),\n])\nprint(model.layers[0].output_shape)  # LSTM(64, return_sequences=True)\nprint(model.layers[1].output_shape)  # LSTM(32)\nprint(model.layers[2].output_shape)  # Dense(10)",
+        "options": [
+          "A. (None, 64) / (None, 32) / (None, 10)",
+          "B. (None, 20, 64) / (None, 20, 32) / (None, 20, 10)",
+          "C. (None, 20, 64) / (None, 32) / (None, 10)",
+          "D. (None, 20, 64) / (None, 32) / (None, 20, 10)"
+        ],
+        "answer": 2,
+        "explain": "<p>Layer by layer. <code>LSTM(64, return_sequences=True)</code> emits its 64-dimensional hidden state at <i>every</i> timestep: <code>(None, 20, 64)</code> — the time axis survives. <code>LSTM(32)</code> defaults to <code>return_sequences=False</code>, so it collapses the sequence to the <i>last</i> timestep's hidden state: <code>(None, 32)</code>. <code>Dense(10)</code> remaps only the last axis, 32 to 10: <code>(None, 10)</code> — one logit vector per sequence, which is what sequence classification wants. A forgets that <code>return_sequences=True</code> keeps the time axis — and without it the second LSTM would crash at build time, because it demands a 3-D sequence input; B keeps the time axis through everything, forgetting that the final LSTM collapses it by default (a <code>Dense</code> applied to <code>(None, 20, 32)</code> really would give <code>(None, 20, 10)</code> — one prediction per timestep, the shape you want for sequence <i>labeling</i>, not classification); D mixes the two confusions.</p>"
+      }
+    }
+  ]
+}
